@@ -1,0 +1,11 @@
+{
+  "name": "dimigo-council",
+  "version": "0.0.0",
+  "description": "KDMHS intranet service for the student council",
+  "author": "lanzarote0tr <me@trillion-won.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "packageManager": "npm@12.2.0",
+  "workspaces": [],
+  "scripts": {}
+}
