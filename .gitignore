@@ -2,3 +2,6 @@
 .DS_Store
 ._*
 
+# npm dependencies
+node_modules/
+
