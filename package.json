@@ -8,6 +8,7 @@
   "packageManager": "npm@12.2.0",
   "workspaces": ["apps/backend"],
   "scripts": {
+    "start:backend": "npm --workspace @dimigo-council/backend run start",
     "dev:backend": "npm --workspace @dimigo-council/backend run dev"
   }
 }
