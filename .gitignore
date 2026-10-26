@@ -4,7 +4,10 @@
 
 # npm dependencies
 node_modules/
+dist/
 
 # environment file
 *.env
+.env.*
+!.env.example
 

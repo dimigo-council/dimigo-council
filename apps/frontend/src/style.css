@@ -1,0 +1,152 @@
+:root {
+  font-family: Inter, 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+  color: #17324d;
+  background: #f5f8fc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+.site-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.container {
+  width: min(100% - 40px, 1080px);
+  margin-inline: auto;
+}
+
+.site-header {
+  background: #fff;
+  border-bottom: 1px solid #e2eaf3;
+}
+.header-content {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.brand {
+  color: #123a63;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.brand strong {
+  color: #2c7bc5;
+}
+.header-label {
+  color: #60758b;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+main {
+  flex: 1;
+}
+.hero {
+  padding-block: clamp(76px, 11vw, 148px) 96px;
+}
+.eyebrow {
+  margin: 0 0 20px;
+  color: #2775ba;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+h1 {
+  margin: 0;
+  color: #123a63;
+  font-size: clamp(2.6rem, 7vw, 5rem);
+  line-height: 1.16;
+  letter-spacing: -0.055em;
+}
+.hero-description {
+  margin: 28px 0 0;
+  color: #536a80;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.7;
+}
+
+.features {
+  padding-bottom: 112px;
+}
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.section-heading h2 {
+  margin: 0;
+  color: #123a63;
+  font-size: 1.5rem;
+}
+.section-heading p {
+  margin: 0;
+  color: #6a7d90;
+  font-size: 0.9rem;
+}
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.feature-card {
+  padding: 28px;
+  border: 1px solid #e1e9f1;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgba(23, 50, 77, 0.035);
+}
+.feature-card h3 {
+  margin: 0 0 12px;
+  color: #17558b;
+  font-size: 1.15rem;
+}
+.feature-card p {
+  margin: 0;
+  color: #60758b;
+  line-height: 1.65;
+}
+
+.site-footer {
+  padding: 28px 0;
+  border-top: 1px solid #e2eaf3;
+  color: #7a8da0;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 700px) {
+  .header-content {
+    min-height: 64px;
+  }
+  .header-label {
+    font-size: 0.75rem;
+  }
+  .hero {
+    padding-block: 80px;
+  }
+  .section-heading {
+    display: block;
+  }
+  .section-heading p {
+    margin-top: 8px;
+  }
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}

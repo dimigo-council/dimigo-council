@@ -6,9 +6,14 @@
   "license": "UNLICENSED",
   "private": true,
   "packageManager": "npm@12.2.0",
-  "workspaces": ["apps/backend"],
+  "workspaces": ["apps/backend", "apps/frontend"],
   "scripts": {
     "start:backend": "npm --workspace @dimigo-council/backend run start",
-    "dev:backend": "npm --workspace @dimigo-council/backend run dev"
+    "dev:backend": "npm --workspace @dimigo-council/backend run dev",
+    "dev:frontend": "npm --workspace @dimigo-council/frontend run dev",
+    "build:frontend": "npm --workspace @dimigo-council/frontend run build",
+    "lint:frontend": "npm --workspace @dimigo-council/frontend run lint",
+    "format:frontend": "npm --workspace @dimigo-council/frontend run format",
+    "preview:frontend": "npm --workspace @dimigo-council/frontend run preview"
   }
 }
