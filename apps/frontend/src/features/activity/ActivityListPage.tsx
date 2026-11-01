@@ -57,10 +57,7 @@ export function ActivityListPage() {
 
   return (
     <>
-      <PageHeader
-        title="학생회 활동"
-        description="공개된 안건의 검토부터 결과까지의 기록입니다. 학생회 내부 기록은 공개 범위에 따라 빠질 수 있습니다."
-      />
+      <PageHeader title="학생회 활동" visuallyHidden />
 
       <SegmentedControl
         aria-label="안건 보기"

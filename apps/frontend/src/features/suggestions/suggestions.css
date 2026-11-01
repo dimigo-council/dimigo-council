@@ -1,21 +1,12 @@
 /* 건의: 내 건의 · 새 건의 · 건의 상세 */
 
 /* 내 건의 */
-.status-flow {
+.suggestion-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 10px;
-  margin: 0 0 20px;
-  color: var(--color-ink-3);
-  font-size: var(--text-xs);
-}
-.status-flow__steps {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-}
-.status-flow strong {
-  color: var(--color-ink-2);
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .suggestion-list {
   margin: 16px 0 0;

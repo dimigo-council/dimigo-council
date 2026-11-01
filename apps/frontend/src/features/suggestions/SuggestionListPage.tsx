@@ -74,40 +74,23 @@ export function SuggestionListPage() {
 
   return (
     <>
-      <PageHeader
-        title="내 건의"
-        description="내가 낸 건의와 처리 상황입니다. 답변이 달리거나 상태가 바뀌면 알림을 보내드립니다."
-        actions={
-          <Link className="btn btn--primary" to="/suggestions/new">
-            <PlusIcon />새 건의
-          </Link>
-        }
-      />
+      <PageHeader title="내 건의" visuallyHidden />
 
-      <p className="status-flow">
-        <span>처리 단계</span>
-        <span className="status-flow__steps">
-          <strong>접수 대기</strong>
-          <span aria-hidden="true">›</span>
-          <strong>검토 중</strong>
-          <span aria-hidden="true">›</span>
-          <span>
-            <strong>답변 완료</strong>, <strong>안건 채택</strong> 또는{' '}
-            <strong>반려</strong>
-          </span>
-        </span>
-      </p>
-
-      <SegmentedControl
-        aria-label="건의 보기"
-        value={filter}
-        onChange={setFilter}
-        items={[
-          { value: 'all', label: `전체 ${suggestions.length}` },
-          { value: 'open', label: `처리 중 ${open.length}` },
-          { value: 'done', label: `끝난 건의 ${done.length}` },
-        ]}
-      />
+      <div className="suggestion-toolbar">
+        <SegmentedControl
+          aria-label="건의 보기"
+          value={filter}
+          onChange={setFilter}
+          items={[
+            { value: 'all', label: `전체 ${suggestions.length}` },
+            { value: 'open', label: `처리 중 ${open.length}` },
+            { value: 'done', label: `끝난 건의 ${done.length}` },
+          ]}
+        />
+        <Link className="btn btn--primary" to="/suggestions/new">
+          <PlusIcon />새 건의
+        </Link>
+      </div>
 
       <div className="suggestion-list">
         {visible.length > 0 ? (

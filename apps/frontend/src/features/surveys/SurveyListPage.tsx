@@ -106,10 +106,7 @@ export function SurveyListPage() {
 
   return (
     <>
-      <PageHeader
-        title="설문"
-        description="학생회가 진행하는 설문입니다. 마감 전까지는 응답을 고칠 수 있습니다."
-      />
+      <PageHeader title="설문" visuallyHidden />
 
       <Tabs
         aria-label="설문 보기"
