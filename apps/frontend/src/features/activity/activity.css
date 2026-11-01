@@ -1,0 +1,98 @@
+/* 학생회 활동: 공개 안건 목록 · 공개 안건 상세 */
+
+.tag--mine {
+  border-color: transparent;
+  background: var(--color-status-warn-bg);
+  color: var(--color-status-warn-ink);
+  font-weight: 700;
+}
+
+/* 목록 */
+.agenda-list {
+  margin: 16px 0 0;
+}
+.agenda-row {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.agenda-row__summary {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-ink-2);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+/* 상세 */
+.agenda-summary {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 14px 24px;
+  margin: 0;
+  padding: 20px 18px;
+  font-size: var(--text-md);
+  line-height: 1.7;
+}
+.agenda-summary dt {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+.agenda-summary dd {
+  margin: 0;
+  color: var(--color-ink);
+}
+@media (max-width: 520px) {
+  .agenda-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .agenda-summary dd + dt {
+    margin-top: 12px;
+  }
+}
+
+.hidden-records {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 18px 18px;
+  padding: 12px 14px;
+  border: 1px dashed var(--color-line-strong);
+  border-radius: var(--radius-2);
+  color: var(--color-ink-3);
+  font-size: var(--text-xs);
+}
+.hidden-records svg {
+  flex: none;
+}
+
+.related-list {
+  margin: 0;
+  padding: 0 18px;
+  list-style: none;
+}
+.related-list li {
+  display: grid;
+  gap: 4px;
+  padding: 14px 0;
+}
+.related-list li + li {
+  border-top: 1px solid var(--color-line);
+}
+.related-list .meta-row {
+  font-size: var(--text-xs);
+}
+.related-list__title {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+a.related-list__title:hover {
+  text-decoration: underline;
+}
+a.related-list__title:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-1);
+}

@@ -1,0 +1,37 @@
+/* KitPreview 전용 (개발 서버 /kit). KitPreview와 함께 지연 로드되므로 배포 빌드에는 들어가지 않는다. */
+.kit-preview {
+  display: grid;
+  gap: 40px;
+  width: min(100% - 32px, 960px);
+  margin: 48px auto;
+}
+.kit-preview h1 {
+  margin: 0;
+  font-size: var(--text-3xl);
+  line-height: 1.16;
+  letter-spacing: -0.055em;
+}
+.kit-preview h2 {
+  margin: 0 0 16px;
+  font-size: var(--text-lg);
+}
+.kit-preview__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.kit-preview__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.kit-preview__stack {
+  display: grid;
+  gap: 8px;
+}
+.kit-preview__dday {
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+}
