@@ -13,6 +13,8 @@ Run `npm install` from the repository root. Copy `.env.template` to `.env` in th
 - `GOOGLE_SIGNUP_REDIRECT_URI` and `GOOGLE_LOGIN_REDIRECT_URI`: frontend callback URLs; register both exact URLs as authorized redirect URIs for that Google client. For local development, use the `http://localhost:5173` values in `.env.template`.
 - `GMAIL_SMTP_USER` and `GMAIL_APP_PASSWORD`: the sending Google account address and its app password. The server connects to `smtp.gmail.com` on port 465 using TLS.
 
+Run `sh apps/backend/scripts/generate-secrets.sh` from the repository root to generate independent values for `ACCESS_TOKEN_SECRET` and `EMAIL_CODE_SECRET`, then paste them into `apps/backend/.env`.
+
 The sender uses [Gmail SMTP](https://support.google.com/mail/answer/7104828?hl=en-GB) with [Google's app password](https://support.google.com/accounts/answer/185833?hl=en). Keep the app password and both application secrets out of Git.
 
 Apply migrations with `npm --workspace @dimigo-council/backend run db:migrate`, then start the API with `npm --workspace @dimigo-council/backend run dev`. Migration `0001` removes password hashes and revokes existing sessions as part of the switch to email codes and JWT access tokens.
