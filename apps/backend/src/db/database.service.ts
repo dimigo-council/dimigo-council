@@ -1,8 +1,13 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from './schema.ts';
+import * as schema from './schema/index.ts';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
@@ -14,7 +19,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const connectionString = config.getOrThrow<string>('DATABASE_URL');
     this.pool = new Pool({ connectionString });
     this.pool.on('error', (error: Error) => {
-      this.logger.error('Unexpected PostgreSQL error on an idle connection', error.stack);
+      this.logger.error(
+        'Unexpected PostgreSQL error on an idle connection',
+        error.stack,
+      );
     });
     this.db = drizzle({ client: this.pool, schema });
   }

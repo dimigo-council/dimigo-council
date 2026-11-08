@@ -12,9 +12,13 @@ describe('DatabaseService', () => {
 
     try {
       const pool = Reflect.get(service, 'pool') as Pool;
-      const query = vi.spyOn(pool, 'query').mockRejectedValue(new Error('connection refused'));
+      const query = vi
+        .spyOn(pool, 'query')
+        .mockRejectedValue(new Error('connection refused'));
 
-      await expect(service.onModuleInit()).rejects.toThrow('connection refused');
+      await expect(service.onModuleInit()).rejects.toThrow(
+        'connection refused',
+      );
       expect(query).toHaveBeenCalledWith('SELECT 1');
     } finally {
       await service.onModuleDestroy();
@@ -22,7 +26,9 @@ describe('DatabaseService', () => {
   });
 
   it('handles an idle pool error without throwing', async () => {
-    const logError = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const logError = vi
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
     const config = new ConfigService({
       DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/test',
     });
@@ -30,7 +36,9 @@ describe('DatabaseService', () => {
 
     try {
       const pool = Reflect.get(service, 'pool') as Pool;
-      expect(() => pool.emit('error', new Error('connection lost'))).not.toThrow();
+      expect(() =>
+        pool.emit('error', new Error('connection lost')),
+      ).not.toThrow();
       expect(logError).toHaveBeenCalledWith(
         'Unexpected PostgreSQL error on an idle connection',
         expect.stringContaining('connection lost'),
