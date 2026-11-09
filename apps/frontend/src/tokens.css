@@ -1,0 +1,104 @@
+/*
+ * DIMI UI KIT 토큰 (학생회 인트라넷 적용)
+ * 출처: documents/test_UI/컴포넌트 시트 — Global Local, 다크 모드 — 업무 시안.
+ * 값은 시안 PNG에서 픽셀로 추출했으므로, 원본 KIT 파일의 값이 나오면 그 값으로 교체한다.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surface · Ink */
+  --color-bg: #f2f3f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f8f9;
+  --color-line: #e7e9ed;
+  --color-line-strong: #b9c0c9;
+  --color-ink: #0c0e11;
+  --color-ink-2: #383f49;
+  --color-ink-3: #575f6b;
+  --color-on-ink: #ffffff;
+  --color-accent: #1754c4;
+
+  /* Status: 색 + 점 + 글자 */
+  --color-status-default-bg: #e9ecef;
+  --color-status-default-ink: #2e343c;
+  --color-status-info-bg: #e3ecfb;
+  --color-status-info-ink: #123f96;
+  --color-status-warn-bg: #fcebd9;
+  --color-status-warn-ink: #7a3a00;
+  --color-status-success-bg: #e2f1e5;
+  --color-status-success-ink: #1d5a2c;
+  --color-status-danger-bg: #f9e3e3;
+  --color-status-danger-ink: #8e1f1f;
+  --color-count-bg: #b54a00;
+  --color-count-ink: #ffffff;
+
+  /* Type: Pretendard, 배율 100% */
+  --font-sans:
+    'Pretendard Variable', Pretendard, 'Noto Sans KR', system-ui, sans-serif;
+  --text-4xl: 1.875rem; /* 30 / 800 */
+  --text-3xl: 1.5rem; /* 24 / 800 */
+  --text-xl: 1.0625rem; /* 17 / 700 */
+  --text-lg: 0.9375rem; /* 15 / 700 */
+  --text-md: 0.875rem; /* 14 / 400 */
+  --text-sm: 0.8125rem; /* 13 / 400 */
+  --text-xs: 0.75rem; /* 12 / 400 */
+
+  /* Radius: 2px · 4px만 사용 */
+  --radius-1: 2px; /* 배지·체크박스·태그 */
+  --radius-2: 4px; /* 버튼·입력·컨테이너 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-bg: #0d0f12;
+    --color-surface: #15181c;
+    --color-surface-2: #1b1f24;
+    --color-line: #262b32;
+    --color-line-strong: #3f464f;
+    --color-ink: #f2f4f6;
+    --color-ink-2: #c5cbd3;
+    --color-ink-3: #9da5b0;
+    --color-on-ink: #0d0f12;
+    --color-accent: #a9c6ff;
+    --color-status-default-bg: #262b32;
+    --color-status-default-ink: #d3d8de;
+    --color-status-info-bg: #182844;
+    --color-status-info-ink: #a9c6ff;
+    --color-status-warn-bg: #3a2614;
+    --color-status-warn-ink: #ffc48a;
+    --color-status-success-bg: #16301e;
+    --color-status-success-ink: #9fd9ae;
+    --color-status-danger-bg: #3a1a1a;
+    --color-status-danger-ink: #ffadad;
+    --color-count-bg: #e98a3c;
+    --color-count-ink: #0d0f12;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #0d0f12;
+  --color-surface: #15181c;
+  --color-surface-2: #1b1f24;
+  --color-line: #262b32;
+  --color-line-strong: #3f464f;
+  --color-ink: #f2f4f6;
+  --color-ink-2: #c5cbd3;
+  --color-ink-3: #9da5b0;
+  --color-on-ink: #0d0f12;
+  --color-accent: #a9c6ff;
+  --color-status-default-bg: #262b32;
+  --color-status-default-ink: #d3d8de;
+  --color-status-info-bg: #182844;
+  --color-status-info-ink: #a9c6ff;
+  --color-status-warn-bg: #3a2614;
+  --color-status-warn-ink: #ffc48a;
+  --color-status-success-bg: #16301e;
+  --color-status-success-ink: #9fd9ae;
+  --color-status-danger-bg: #3a1a1a;
+  --color-status-danger-ink: #ffadad;
+  --color-count-bg: #e98a3c;
+  --color-count-ink: #0d0f12;
+}

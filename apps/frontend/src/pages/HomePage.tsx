@@ -1,57 +1,73 @@
+import { Link } from 'react-router';
+import { useSession } from '../app/session.ts';
+import './HomePage.css';
+
 const features = [
   {
+    to: '/surveys',
     title: '설문',
     description: '진행 중인 설문을 확인하고 의견을 전할 수 있습니다.',
   },
   {
+    to: '/suggestions',
     title: '건의',
     description: '학교생활에 관한 생각을 언제든 제안할 수 있습니다.',
   },
   {
+    to: '/activity',
     title: '활동 기록',
     description: '학생회의 안건과 활동 과정을 한곳에서 살펴볼 수 있습니다.',
   },
 ];
 
-function App() {
+export function HomePage() {
+  const session = useSession();
+
   return (
     <div className="site-shell">
       <header className="site-header">
         <div className="container header-content">
-          <span className="brand">
+          <Link className="brand" to="/">
             DIMIGO <strong>COUNCIL</strong>
-          </span>
-          <span className="header-label">한국디지털미디어고등학교 학생회</span>
+          </Link>
+          <nav className="header-nav" aria-label="주요 메뉴">
+            {features.map((feature) => (
+              <Link
+                key={feature.to}
+                className="header-nav__link"
+                to={feature.to}
+              >
+                {feature.title}
+              </Link>
+            ))}
+            {session.councilRole && (
+              <Link className="btn btn--secondary btn--sm" to="/work/tasks">
+                업무공간
+              </Link>
+            )}
+          </nav>
         </div>
       </header>
 
       <main>
-        <section className="hero container" aria-labelledby="hero-title">
-          <p className="eyebrow">학생회 인트라넷</p>
-          <h1 id="hero-title">
-            우리의 의견이
-            <br />
-            학교의 변화로
-          </h1>
-          <p className="hero-description">
-            설문과 건의, 학생회의 활동을 한곳에서 이어갑니다.
-          </p>
-        </section>
-
         <section
           className="features container"
           aria-labelledby="features-title"
         >
           <div className="section-heading">
             <h2 id="features-title">함께 만들어갈 공간</h2>
-            <p>서비스를 준비하고 있습니다.</p>
           </div>
           <div className="feature-grid">
             {features.map((feature) => (
-              <article className="feature-card" key={feature.title}>
-                <h3>{feature.title}</h3>
+              <Link className="feature-card" key={feature.to} to={feature.to}>
+                <h3>
+                  {feature.title}
+                  <span className="feature-card__arrow" aria-hidden="true">
+                    →
+                  </span>
+                </h3>
                 <p>{feature.description}</p>
-              </article>
+              </Link>
             ))}
           </div>
         </section>
@@ -65,5 +81,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
