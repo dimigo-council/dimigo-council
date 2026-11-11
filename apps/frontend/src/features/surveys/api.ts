@@ -1,4 +1,5 @@
-import { mockMyResponses, mockSurveys } from './mockData.ts';
+import { listPublishedSurveys } from '../survey-admin/api.ts';
+import { mockMyResponses } from './mockData.ts';
 import type {
   Answers,
   Survey,
@@ -9,6 +10,7 @@ import type {
 /**
  * 설문 API.
  * TODO: 백엔드 설문 API가 생기면 아래 함수 본문만 fetch 호출로 바꾼다. 화면은 이 함수들만 쓴다.
+ * 설문 자체는 업무공간 설문 관리(features/survey-admin)에서 공개한 것을 받는다.
  * 지금은 메모리에만 저장하므로 새로고침하면 응답이 처음 상태로 돌아간다.
  */
 export const isMockApi = true;
@@ -20,7 +22,8 @@ function isClosed(survey: Pick<Survey, 'closesAt'>, now = new Date()) {
 }
 
 export async function listSurveys(): Promise<SurveySummary[]> {
-  return mockSurveys.map(({ questions, ...survey }) => ({
+  const surveys = await listPublishedSurveys();
+  return surveys.map(({ questions, ...survey }) => ({
     ...survey,
     questionCount: questions.length,
     isClosed: isClosed(survey),
@@ -29,7 +32,7 @@ export async function listSurveys(): Promise<SurveySummary[]> {
 }
 
 export async function getSurvey(id: string): Promise<SurveyWithResponse> {
-  const survey = mockSurveys.find((item) => item.id === id);
+  const survey = (await listPublishedSurveys()).find((item) => item.id === id);
   if (!survey) {
     throw new Response('설문을 찾을 수 없습니다.', { status: 404 });
   }

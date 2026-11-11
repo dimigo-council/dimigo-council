@@ -1,0 +1,31 @@
+/* 업무공간 공개 검토 */
+
+.publish-panel {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+.publish-panel__note {
+  margin: -8px 0 0;
+  color: var(--color-ink-3);
+  font-size: var(--text-xs);
+}
+.publish-preview {
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+}
+.publish-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-status-danger-ink);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+.publish-note strong {
+  margin-right: 4px;
+}
+.publish-revise {
+  display: grid;
+  flex-basis: 100%;
+  gap: 8px;
+}

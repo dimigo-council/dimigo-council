@@ -1,0 +1,36 @@
+/* 업무공간 보고서 */
+
+.report-panel {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* 보고서 쓰기 */
+.report-form {
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+  margin-top: 24px;
+}
+.report-form__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 4px 12px;
+}
+@media (max-width: 600px) {
+  .report-form__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 검토 */
+.split-layout__aside .field__foot:empty {
+  display: none;
+}
+.report-review__hint {
+  margin: 0;
+  color: var(--color-ink-2);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}

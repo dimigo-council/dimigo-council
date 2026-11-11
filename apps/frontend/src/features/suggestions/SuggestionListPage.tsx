@@ -9,7 +9,7 @@ import {
 } from '../../components/kit/index.ts';
 import { formatRelative, formatShortDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
-import { isMockApi, listMySuggestions } from './api.ts';
+import { listMySuggestions } from './api.ts';
 import { openStatuses, type Suggestion } from './types.ts';
 import './suggestions.css';
 
@@ -76,7 +76,7 @@ export function SuggestionListPage() {
     <>
       <PageHeader title="내 건의" visuallyHidden />
 
-      <div className="suggestion-toolbar">
+      <div className="page-toolbar">
         <SegmentedControl
           aria-label="건의 보기"
           value={filter}
@@ -107,12 +107,6 @@ export function SuggestionListPage() {
           </p>
         )}
       </div>
-
-      {import.meta.env.DEV && isMockApi && (
-        <p className="dev-note">
-          개발용 예시 데이터입니다. 새로고침하면 처음 상태로 돌아갑니다.
-        </p>
-      )}
     </>
   );
 }

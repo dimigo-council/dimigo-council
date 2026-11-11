@@ -57,6 +57,11 @@ export const statusTone = {
     예약: 'warn',
     마감: 'success',
   },
+  report: {
+    '작성 중': 'default',
+    '검토 요청': 'warn',
+    완료: 'success',
+  },
   visibility: {
     '학생회 내부': 'default',
     '전체 공개': 'info',

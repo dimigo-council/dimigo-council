@@ -118,3 +118,11 @@ export function LockIcon() {
     </Icon>
   );
 }
+
+export function CloseIcon() {
+  return (
+    <Icon>
+      <path d="m4 4 8 8M12 4l-8 8" />
+    </Icon>
+  );
+}

@@ -8,7 +8,7 @@ import {
 } from '../../components/kit/index.ts';
 import { formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
-import { isMockApi, listPublicAgendas } from './api.ts';
+import { listPublicAgendas } from './api.ts';
 import { originLabel } from '../agendas/format.ts';
 import { finishedStatuses } from '../agendas/types.ts';
 import type { PublicAgenda } from './types.ts';
@@ -85,13 +85,6 @@ export function ActivityListPage() {
           </p>
         )}
       </div>
-
-      {import.meta.env.DEV && isMockApi && (
-        <p className="dev-note">
-          개발용 예시 데이터입니다. 안건은 업무공간에서 공개로 표시한 것만
-          보입니다.
-        </p>
-      )}
     </>
   );
 }

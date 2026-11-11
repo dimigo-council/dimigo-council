@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
-import { Link, NavLink, Outlet } from 'react-router';
-import { Avatar } from '../components/kit/index.ts';
+import { Link, NavLink, Outlet, useLoaderData } from 'react-router';
+import { Avatar, Count } from '../components/kit/index.ts';
+import { listAgendas } from '../features/agendas/api.ts';
+import { finishedStatuses } from '../features/agendas/types.ts';
+import { listInbox } from '../features/inbox/api.ts';
+import { listPublishItems } from '../features/publish/api.ts';
+import { listTasks } from '../features/tasks/api.ts';
 import { BrandMark } from './BrandMark.tsx';
 import {
   AgendaIcon,
@@ -12,7 +17,45 @@ import {
   SurveyIcon,
   TaskIcon,
 } from './icons.tsx';
-import { useSession } from './session.ts';
+import { getSession, useSession } from './session.ts';
+
+interface NavCount {
+  value: number;
+  alert?: boolean;
+}
+
+/** 사이드바 숫자. 회색은 진행 중인 개수, 주황(alert)은 누군가 처리해야 하는 개수. */
+export async function workLayoutLoader() {
+  const session = getSession();
+  const [tasks, agendas, inbox, publish] = await Promise.all([
+    listTasks(),
+    listAgendas(),
+    listInbox(),
+    listPublishItems(),
+  ]);
+  const counts: Partial<Record<string, NavCount>> = {
+    '/work/tasks': {
+      value: tasks.filter(
+        (task) =>
+          task.assignees.includes(session.name) && task.status !== '완료',
+      ).length,
+    },
+    '/work/agendas': {
+      value: agendas.filter(
+        (agenda) => !finishedStatuses.includes(agenda.status),
+      ).length,
+    },
+    '/work/suggestions': {
+      value: inbox.filter((item) => item.status === '접수 대기').length,
+      alert: true,
+    },
+    '/work/publish': {
+      value: publish.filter((item) => item.status === '공개 검토 중').length,
+      alert: true,
+    },
+  };
+  return counts;
+}
 
 interface WorkNavItem {
   to: string;
@@ -34,16 +77,23 @@ const manageNav: WorkNavItem[] = [
 ];
 
 function SideNavList({ items }: { items: WorkNavItem[] }) {
+  const counts = useLoaderData<typeof workLayoutLoader>();
   return (
     <ul className="sidenav__list">
-      {items.map((item) => (
-        <li key={item.to}>
-          <NavLink className="sidenav__link" to={item.to}>
-            {item.icon}
-            <span>{item.label}</span>
-          </NavLink>
-        </li>
-      ))}
+      {items.map((item) => {
+        const count = counts[item.to];
+        return (
+          <li key={item.to}>
+            <NavLink className="sidenav__link" to={item.to}>
+              {item.icon}
+              <span>{item.label}</span>
+              {count && count.value > 0 && (
+                <Count value={count.value} alert={count.alert} />
+              )}
+            </NavLink>
+          </li>
+        );
+      })}
     </ul>
   );
 }

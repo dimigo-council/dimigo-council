@@ -116,6 +116,69 @@ textarea.field__control {
 select.field__control {
   cursor: pointer;
 }
+/* 펼친 목록의 선택지. 시스템 색(어두운 바탕 등)에 묻히지 않게 직접 칠한다. */
+select.field__control option {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-weight: 400;
+}
+/* 꾸밀 수 있는 select를 지원하는 브라우저는 펼친 목록도 KIT 색으로 그린다 (마우스를 올리면 파란 대신 회색, 고른 항목은 검정). */
+@supports (appearance: base-select) {
+  select.field__control,
+  select.field__control::picker(select) {
+    appearance: base-select;
+  }
+  select.field__control {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding-right: 12px;
+  }
+  select.field__control::picker-icon {
+    content: '';
+    flex: none;
+    width: 6px;
+    height: 6px;
+    margin: -3px 2px 0 auto;
+    border: solid var(--color-ink-2);
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+    transition: transform 120ms ease-out;
+  }
+  select.field__control:open::picker-icon {
+    margin-top: 3px;
+    transform: rotate(225deg);
+  }
+  select.field__control::picker(select) {
+    max-height: min(320px, 50dvh);
+    margin-block: 4px;
+    padding: 4px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-2);
+    background: var(--color-surface);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+  }
+  select.field__control option {
+    min-height: 34px;
+    padding: 6px 10px;
+    border-radius: var(--radius-1);
+    font-size: var(--text-md);
+    cursor: pointer;
+  }
+  select.field__control option::checkmark {
+    display: none;
+  }
+  select.field__control option:hover,
+  select.field__control option:focus-visible {
+    outline: none;
+    background-color: var(--color-surface-2);
+  }
+  select.field__control option:checked {
+    background-color: var(--color-ink);
+    color: var(--color-on-ink);
+    font-weight: 700;
+  }
+}
 .field__control::placeholder {
   color: var(--color-ink-3);
 }

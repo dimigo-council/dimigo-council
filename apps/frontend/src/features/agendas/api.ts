@@ -69,3 +69,33 @@ export async function advanceStage(id: string, author: string): Promise<void> {
     visibility: 'internal',
   });
 }
+
+/** 공개 범위를 바꾼다. 공개 검토(features/publish)에서 게시할 때 쓴다. */
+export async function setAgendaVisibility(
+  id: string,
+  visibility: Agenda['visibility'],
+): Promise<void> {
+  const agenda = find(id);
+  agenda.visibility = visibility;
+  agenda.updatedAt = new Date().toISOString();
+}
+
+/** 건의 접수함에서 건의를 이 안건에 묶는다. */
+export async function linkSuggestion(id: string): Promise<void> {
+  const agenda = find(id);
+  agenda.suggestionCount += 1;
+  if (!agenda.origins.includes('건의')) agenda.origins.push('건의');
+  agenda.updatedAt = new Date().toISOString();
+}
+
+/** 업무·보고서 화면에서 바뀐 수를 안건에 반영한다. */
+export async function adjustAgendaCounts(
+  id: string,
+  change: { tasks?: number; tasksDone?: number; reports?: number },
+): Promise<void> {
+  const agenda = agendas.find((item) => item.id === id);
+  if (!agenda) return;
+  agenda.tasks.total += change.tasks ?? 0;
+  agenda.tasks.done += change.tasksDone ?? 0;
+  agenda.reportCount += change.reports ?? 0;
+}

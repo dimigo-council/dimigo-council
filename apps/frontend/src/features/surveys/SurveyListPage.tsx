@@ -1,15 +1,9 @@
 import { Link, useLoaderData } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
-import {
-  Badge,
-  ListGroup,
-  ListRow,
-  Notice,
-  Tabs,
-} from '../../components/kit/index.ts';
+import { Badge, ListGroup, ListRow, Tabs } from '../../components/kit/index.ts';
 import { formatDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
-import { isMockApi, listSurveys } from './api.ts';
+import { listSurveys } from './api.ts';
 import {
   daysLeft,
   estimatedMinutes,
@@ -144,21 +138,6 @@ export function SurveyListPage() {
           <p className="empty-state">{emptyText[tab]}</p>
         )}
       </div>
-
-      <Notice tone="neutral" className="survey-cta">
-        <span>
-          설문에 없는 이야기가 있나요? 건의는 기간 상관없이 언제든 받습니다.
-        </span>
-        <Link className="text-link" to="/suggestions/new">
-          건의하기
-        </Link>
-      </Notice>
-
-      {import.meta.env.DEV && isMockApi && (
-        <p className="dev-note">
-          개발용 예시 데이터입니다. 새로고침하면 응답이 처음 상태로 돌아갑니다.
-        </p>
-      )}
     </>
   );
 }

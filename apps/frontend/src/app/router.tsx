@@ -16,6 +16,42 @@ import {
   AgendaDetailPage,
   agendaLoader,
 } from '../features/activity/AgendaDetailPage.tsx';
+import { InboxPage, inboxLoader } from '../features/inbox/InboxPage.tsx';
+import {
+  MemberListPage,
+  memberListLoader,
+} from '../features/members/MemberListPage.tsx';
+import {
+  PublishReviewPage,
+  publishLoader,
+} from '../features/publish/PublishReviewPage.tsx';
+import {
+  NewReportPage,
+  newReportLoader,
+} from '../features/reports/NewReportPage.tsx';
+import {
+  ReportDetailPage,
+  reportLoader,
+} from '../features/reports/ReportDetailPage.tsx';
+import {
+  ReportListPage,
+  reportListLoader,
+} from '../features/reports/ReportListPage.tsx';
+import {
+  SurveyAdminListPage,
+  surveyAdminListLoader,
+} from '../features/survey-admin/SurveyAdminListPage.tsx';
+import {
+  SurveyEditPage,
+  surveyEditLoader,
+} from '../features/survey-admin/SurveyEditPage.tsx';
+import { SurveyResultsQuestionPage } from '../features/survey-admin/SurveyResultsQuestionPage.tsx';
+import { SurveyResultsResponsePage } from '../features/survey-admin/SurveyResultsResponsePage.tsx';
+import {
+  SurveyResultsLayout,
+  surveyResultsLoader,
+} from '../features/survey-admin/SurveyResultsLayout.tsx';
+import { SurveyResultsSummaryPage } from '../features/survey-admin/SurveyResultsSummaryPage.tsx';
 import {
   SurveyListPage,
   surveyListLoader,
@@ -36,50 +72,20 @@ import {
   SuggestionListPage,
   suggestionListLoader,
 } from '../features/suggestions/SuggestionListPage.tsx';
+import {
+  TaskDetailPage,
+  taskLoader,
+} from '../features/tasks/TaskDetailPage.tsx';
+import {
+  TaskListPage,
+  taskListLoader,
+} from '../features/tasks/TaskListPage.tsx';
 import { HomePage } from '../pages/HomePage.tsx';
 import { NotFoundPage } from '../pages/NotFoundPage.tsx';
-import {
-  PlaceholderPage,
-  type PlaceholderPageProps,
-} from '../pages/PlaceholderPage.tsx';
+import { PlaceholderPage } from '../pages/PlaceholderPage.tsx';
 import { RouteErrorPage } from '../pages/RouteErrorPage.tsx';
 import { StudentLayout } from './StudentLayout.tsx';
-import { WorkLayout } from './WorkLayout.tsx';
-
-type PlaceholderRoute = PlaceholderPageProps & { path: string };
-
-function toRoutes(items: PlaceholderRoute[]): RouteObject[] {
-  return items.map(({ path, ...page }) => ({
-    path,
-    element: <PlaceholderPage {...page} />,
-  }));
-}
-
-// 화면 제목·설명은 documents/test_UI 시안의 문구를 따른다.
-const workPages: PlaceholderRoute[] = [
-  {
-    path: 'tasks',
-    title: '업무',
-    description:
-      '안건과 학생회 활동에 필요한 일을 나누고 진행 상황을 관리합니다.',
-    design: '업무 · work tasks',
-  },
-  {
-    path: 'tasks/:taskId',
-    title: '업무 상세',
-    design: '업무 상세 · work tasks id',
-  },
-  { path: 'suggestions', title: '건의 접수함' },
-  { path: 'surveys', title: '설문 관리' },
-  {
-    path: 'surveys/:surveyId/edit',
-    title: '설문 편집',
-    design: '설문 편집 · work surveys id edit',
-  },
-  { path: 'reports', title: '보고서' },
-  { path: 'publish', title: '공개 검토' },
-  { path: 'members', title: '구성원·권한' },
-];
+import { WorkLayout, workLayoutLoader } from './WorkLayout.tsx';
 
 const devRoutes: RouteObject[] = [];
 if (import.meta.env.DEV) {
@@ -152,6 +158,7 @@ export const router = createBrowserRouter([
   },
   {
     path: 'work',
+    loader: workLayoutLoader,
     element: <WorkLayout />,
     HydrateFallback: () => null,
     children: [
@@ -159,6 +166,16 @@ export const router = createBrowserRouter([
       {
         errorElement: <RouteErrorPage />,
         children: [
+          {
+            path: 'tasks',
+            loader: taskListLoader,
+            element: <TaskListPage />,
+          },
+          {
+            path: 'tasks/:taskId',
+            loader: taskLoader,
+            element: <TaskDetailPage />,
+          },
           {
             path: 'agendas',
             loader: agendaListLoader,
@@ -169,7 +186,56 @@ export const router = createBrowserRouter([
             loader: agendaWorkLoader,
             element: <AgendaWorkPage />,
           },
-          ...toRoutes(workPages),
+          {
+            path: 'suggestions',
+            loader: inboxLoader,
+            element: <InboxPage />,
+          },
+          {
+            path: 'surveys',
+            loader: surveyAdminListLoader,
+            element: <SurveyAdminListPage />,
+          },
+          {
+            path: 'surveys/:surveyId/edit',
+            loader: surveyEditLoader,
+            element: <SurveyEditPage />,
+          },
+          {
+            path: 'surveys/:surveyId/results',
+            loader: surveyResultsLoader,
+            element: <SurveyResultsLayout />,
+            children: [
+              { index: true, element: <SurveyResultsSummaryPage /> },
+              { path: 'questions', element: <SurveyResultsQuestionPage /> },
+              { path: 'responses', element: <SurveyResultsResponsePage /> },
+            ],
+          },
+          {
+            path: 'reports',
+            loader: reportListLoader,
+            element: <ReportListPage />,
+          },
+          {
+            path: 'reports/new',
+            loader: newReportLoader,
+            element: <NewReportPage />,
+          },
+          {
+            path: 'reports/:reportId',
+            loader: reportLoader,
+            element: <ReportDetailPage />,
+          },
+          {
+            path: 'publish',
+            loader: publishLoader,
+            element: <PublishReviewPage />,
+          },
+          {
+            path: 'members',
+            loader: memberListLoader,
+            element: <MemberListPage />,
+          },
         ],
       },
     ],

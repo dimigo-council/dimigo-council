@@ -1,13 +1,6 @@
 /* 건의: 내 건의 · 새 건의 · 건의 상세 */
 
 /* 내 건의 */
-.suggestion-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
 .suggestion-list {
   margin: 16px 0 0;
 }
@@ -75,11 +68,6 @@
   justify-content: space-between;
   gap: 8px;
   overflow-wrap: anywhere;
-}
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 .similar-list {
   display: grid;
@@ -192,12 +180,6 @@
   font-size: var(--text-md);
   line-height: 1.7;
   white-space: pre-wrap;
-}
-.comment-input {
-  min-height: 96px;
-  padding: 10px 12px;
-  line-height: 1.6;
-  resize: vertical;
 }
 .comment-actions {
   display: flex;

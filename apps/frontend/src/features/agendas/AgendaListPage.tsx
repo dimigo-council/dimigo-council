@@ -1,11 +1,12 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Link, useLoaderData } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
+import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
 import { Avatar, Badge, statusTone, Tabs } from '../../components/kit/index.ts';
 import { formatShortDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
-import { isMockApi, listAgendas } from './api.ts';
+import { listAgendas } from './api.ts';
 import { originLabel, reachedStage } from './format.ts';
 import {
   agendaOrigins,
@@ -61,33 +62,6 @@ function StageBar({ agenda }: { agenda: Agenda }) {
   );
 }
 
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  children,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-}) {
-  const id = useId();
-  return (
-    <span className="filter-select">
-      <label htmlFor={id}>{label}</label>
-      <select
-        id={id}
-        className="field__control"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {children}
-      </select>
-    </span>
-  );
-}
-
 export function AgendaListPage() {
   const agendas = useLoaderData<typeof agendaListLoader>();
   const [tab, setTab] = useSearchParamOption('tab', tabs, 'open');
@@ -111,10 +85,7 @@ export function AgendaListPage() {
 
   return (
     <>
-      <PageHeader
-        title="안건"
-        description="건의와 설문에서 올라온 문제를 등록부터 완료까지 추적합니다. 공개로 표시한 기록만 학생 화면에 나갑니다."
-      />
+      <PageHeader title="안건" visuallyHidden />
 
       <Tabs
         aria-label="안건 보기"
@@ -259,12 +230,6 @@ export function AgendaListPage() {
           멈춘 단계까지 회색으로 표시합니다.
         </p>
       </div>
-
-      {import.meta.env.DEV && isMockApi && (
-        <p className="dev-note">
-          개발용 예시 데이터입니다. 새로고침하면 처음 상태로 돌아갑니다.
-        </p>
-      )}
     </>
   );
 }

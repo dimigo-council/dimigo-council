@@ -10,9 +10,8 @@ import { PageHeader } from '../../app/PageHeader.tsx';
 import {
   Badge,
   Button,
+  Checkbox,
   Notice,
-  OptionCard,
-  OptionCardGroup,
   SegmentedControl,
   statusTone,
   TextArea,
@@ -25,7 +24,6 @@ import {
   suggestionCategories,
   type AgendaRef,
   type SuggestionCategory,
-  type SuggestionIdentity,
 } from './types.ts';
 import './suggestions.css';
 
@@ -49,25 +47,6 @@ const TITLE_MAX = 60;
 const BODY_MAX = 2000;
 
 type FieldName = 'category' | 'title' | 'body' | 'photos';
-
-const identityOptions: {
-  value: SuggestionIdentity;
-  title: string;
-  description: string;
-}[] = [
-  {
-    value: 'named',
-    title: '실명으로 보내기',
-    description:
-      '담당 학생회 구성원에게만 이름과 학번이 보입니다. 추가로 물어볼 게 있으면 연락받을 수 있습니다.',
-  },
-  {
-    value: 'anonymous',
-    title: '익명으로 보내기',
-    description:
-      '학생회에도 이름이 보이지 않습니다. 처리 상황과 답변은 내 건의에서 똑같이 확인할 수 있습니다.',
-  },
-];
 
 function useSimilarAgendas(title: string) {
   const [similar, setSimilar] = useState<PublicAgenda[]>([]);
@@ -93,7 +72,7 @@ export function NewSuggestionPage() {
   const [category, setCategory] = useState<SuggestionCategory | null>(null);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [identity, setIdentity] = useState<SuggestionIdentity>('anonymous');
+  const [isAnonymous, setIsAnonymous] = useState(true);
   const [photos, setPhotos] = useState<File[]>([]);
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle');
@@ -151,7 +130,7 @@ export function NewSuggestionPage() {
         category: category!,
         title,
         body,
-        identity,
+        identity: isAnonymous ? 'anonymous' : 'named',
         photos: photos.map((file) => file.name),
         ...(aboutAgenda && { aboutAgenda }),
       });
@@ -166,10 +145,7 @@ export function NewSuggestionPage() {
       <Link className="back-link" to="/suggestions">
         <ChevronLeftIcon />내 건의
       </Link>
-      <PageHeader
-        title="새 건의"
-        description="학교생활에서 바뀌었으면 하는 점을 알려주세요. 기간 제한 없이 받습니다."
-      />
+      <PageHeader title="새 건의" />
 
       <div className="split-layout">
         <form
@@ -181,7 +157,7 @@ export function NewSuggestionPage() {
           {aboutAgenda && (
             <Notice tone="info">
               <strong>{aboutAgenda.title}</strong> 안건에 보태는 의견으로
-              보냅니다. 담당 부서가 안건 기록과 함께 확인합니다.
+              보냅니다.
             </Notice>
           )}
 
@@ -233,7 +209,6 @@ export function NewSuggestionPage() {
             maxLength={BODY_MAX}
             showCount
             rows={7}
-            hint="구체적인 시간·장소를 적어주면 담당 부서가 확인하기 쉽습니다."
             error={errors.body}
             onChange={(event) => {
               setBody(event.target.value);
@@ -295,24 +270,12 @@ export function NewSuggestionPage() {
             </div>
           </div>
 
-          <OptionCardGroup legend="이름 공개">
-            {identityOptions.map((option) => (
-              <OptionCard
-                key={option.value}
-                name="identity"
-                value={option.value}
-                title={option.title}
-                description={option.description}
-                checked={identity === option.value}
-                onChange={() => setIdentity(option.value)}
-              />
-            ))}
-          </OptionCardGroup>
-
-          <Notice tone="neutral">
-            건의가 안건으로 채택되면 내용이 요약돼 학생회 활동에 공개될 수
-            있습니다. 이름은 어떤 경우에도 공개되지 않습니다.
-          </Notice>
+          <Checkbox
+            name="identity"
+            label="익명으로 표시하기"
+            checked={isAnonymous}
+            onChange={(event) => setIsAnonymous(event.target.checked)}
+          />
 
           {status === 'error' && (
             <Notice tone="warn" role="alert">

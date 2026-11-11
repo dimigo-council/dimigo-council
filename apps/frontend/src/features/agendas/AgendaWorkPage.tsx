@@ -13,13 +13,23 @@ import {
   Avatar,
   Badge,
   Button,
-  Notice,
+  ListGroup,
+  ListRow,
   SegmentedControl,
   statusTone,
   Tabs,
+  Tag,
 } from '../../components/kit/index.ts';
-import { formatFullDate, formatShortDate } from '../../lib/date.ts';
+import {
+  formatFullDate,
+  formatRelative,
+  formatShortDate,
+} from '../../lib/date.ts';
 import { withRo } from '../../lib/korean.ts';
+import { listInbox } from '../inbox/api.ts';
+import { listReports } from '../reports/api.ts';
+import { listTasks } from '../tasks/api.ts';
+import { TaskRow } from '../tasks/TaskListPage.tsx';
 import { addRecord, advanceStage, getAgenda } from './api.ts';
 import { agendaSteps, originLabel } from './format.ts';
 import {
@@ -31,18 +41,32 @@ import {
 import './agendas.css';
 
 export async function agendaWorkLoader({ params }: LoaderFunctionArgs) {
-  return getAgenda(params.agendaId ?? '');
+  const id = params.agendaId ?? '';
+  const [agenda, tasks, inbox, reports] = await Promise.all([
+    getAgenda(id),
+    listTasks(),
+    listInbox(),
+    listReports(),
+  ]);
+  return {
+    agenda,
+    tasks: tasks.filter((task) => task.agenda?.id === id),
+    suggestions: inbox.filter((item) => item.agenda?.id === id),
+    reports: reports.filter((report) => report.agenda?.id === id),
+  };
 }
+
+type Linked = Omit<Awaited<ReturnType<typeof agendaWorkLoader>>, 'agenda'>;
 
 type Tab = 'records' | 'tasks' | 'suggestions' | 'reports';
 type RecordVisibility = AgendaRecord['visibility'];
 
 export function AgendaWorkPage() {
-  const agenda = useLoaderData<typeof agendaWorkLoader>();
-  return <AgendaWork key={agenda.id} agenda={agenda} />;
+  const { agenda, ...linked } = useLoaderData<typeof agendaWorkLoader>();
+  return <AgendaWork key={agenda.id} agenda={agenda} linked={linked} />;
 }
 
-function AgendaWork({ agenda }: { agenda: Agenda }) {
+function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
   const [tab, setTab] = useState<Tab>('records');
   const isPublic = agenda.visibility === '전체 공개';
 
@@ -167,15 +191,7 @@ function AgendaWork({ agenda }: { agenda: Agenda }) {
               </section>
             </>
           ) : (
-            <Notice tone="neutral">
-              {
-                {
-                  tasks: `업무 화면을 만들면 이 안건의 업무 ${agenda.tasks.total}건이 여기에 나옵니다.`,
-                  suggestions: `건의 접수함을 만들면 연결된 건의 ${agenda.suggestionCount}건이 여기에 나옵니다.`,
-                  reports: `보고서 화면을 만들면 이 안건의 보고서 ${agenda.reportCount}건이 여기에 나옵니다.`,
-                }[tab]
-              }
-            </Notice>
+            <LinkedList tab={tab} agenda={agenda} linked={linked} />
           )}
         </div>
 
@@ -373,5 +389,124 @@ function RecordComposer({ agenda }: { agenda: Agenda }) {
         </Button>
       </div>
     </form>
+  );
+}
+
+/** 업무·연결된 건의·보고서 탭 */
+function LinkedList({
+  tab,
+  agenda,
+  linked,
+}: {
+  tab: Exclude<Tab, 'records'>;
+  agenda: Agenda;
+  linked: Linked;
+}) {
+  const open = !finishedStatuses.includes(agenda.status);
+
+  let list;
+  if (tab === 'tasks') {
+    list = linked.tasks.length > 0 && (
+      <div className="task-board">
+        <ul className="list-group" aria-label="이 안건의 업무">
+          {linked.tasks.map((task) => (
+            <TaskRow key={task.id} task={task} />
+          ))}
+        </ul>
+      </div>
+    );
+  } else if (tab === 'suggestions') {
+    list = linked.suggestions.length > 0 && (
+      <ListGroup aria-label="연결된 건의">
+        {linked.suggestions.map((item) => (
+          <ListRow
+            key={item.id}
+            title={item.title}
+            meta={[
+              item.id,
+              <Tag key="category">{item.category}</Tag>,
+              item.author ?? '익명',
+            ]}
+            aside={
+              <>
+                <Badge tone={statusTone.suggestion[item.status]}>
+                  {item.status}
+                </Badge>
+                <span>{formatRelative(item.receivedAt)} 접수</span>
+              </>
+            }
+          />
+        ))}
+      </ListGroup>
+    );
+  } else {
+    list = linked.reports.length > 0 && (
+      <ListGroup aria-label="이 안건의 보고서">
+        {linked.reports.map((report) => (
+          <ListRow
+            key={report.id}
+            title={
+              <Link
+                className="list-row__link"
+                to={`/work/reports/${report.id}`}
+              >
+                {report.title}
+              </Link>
+            }
+            meta={[
+              report.id,
+              <Tag key="kind">{report.kind}</Tag>,
+              report.author,
+            ]}
+            aside={
+              <>
+                <Badge tone={statusTone.report[report.status]}>
+                  {report.status}
+                </Badge>
+                <span>{formatRelative(report.updatedAt)}</span>
+              </>
+            }
+          />
+        ))}
+      </ListGroup>
+    );
+  }
+
+  const emptyText = {
+    tasks: '이 안건에 묶인 업무가 없습니다.',
+    suggestions: '이 안건에 묶인 건의가 없습니다.',
+    reports: '이 안건의 보고서가 없습니다.',
+  }[tab];
+  const action =
+    open &&
+    {
+      tasks: (
+        <Link
+          className="btn btn--secondary btn--sm"
+          to={`/work/tasks?new&agenda=${agenda.id}`}
+        >
+          업무 만들기
+        </Link>
+      ),
+      suggestions: (
+        <Link
+          className="btn btn--secondary btn--sm"
+          to="/work/suggestions?tab=reviewing"
+        >
+          건의 접수함에서 묶기
+        </Link>
+      ),
+      reports: (
+        <Link className="btn btn--secondary btn--sm" to="/work/reports/new">
+          보고서 쓰기
+        </Link>
+      ),
+    }[tab];
+
+  return (
+    <div className="agenda-linked">
+      {list || <p className="empty-state">{emptyText}</p>}
+      {action && <div className="agenda-linked__action">{action}</div>}
+    </div>
   );
 }

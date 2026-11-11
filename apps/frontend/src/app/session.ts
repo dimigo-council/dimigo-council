@@ -16,6 +16,11 @@ const devSession: Session = {
   councilRole: '회장단',
 };
 
-export function useSession(): Session {
+/** 로더처럼 컴포넌트 밖에서 쓸 때 */
+export function getSession(): Session {
   return devSession;
+}
+
+export function useSession(): Session {
+  return getSession();
 }

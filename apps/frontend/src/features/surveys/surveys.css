@@ -11,14 +11,6 @@
 .survey-dday--soon {
   color: var(--color-status-warn-ink);
 }
-.survey-cta .notice__body {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-}
 
 /* 응답 화면 */
 .survey-page {
