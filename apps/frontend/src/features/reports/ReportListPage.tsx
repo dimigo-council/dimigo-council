@@ -4,18 +4,14 @@ import { PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
-import {
-  Badge,
-  Button,
-  statusTone,
-  Tabs,
-  Tag,
-} from '../../components/kit/index.ts';
+import { Badge, Button, Input } from '../../dimi-ui-kit/index.ts';
+import { statusTone, Tabs, buttonLook } from '../../components/ui/index.ts';
 import { formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { approveReport, listReports } from './api.ts';
 import { reportKinds, type Report } from './types.ts';
 import './reports.css';
+import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function reportListLoader() {
   return listReports();
@@ -57,7 +53,7 @@ function ReportRow({
         </h3>
         <div className="list-row__meta">
           <span>{report.id}</span>
-          <Tag>{report.kind}</Tag>
+          <Badge>{report.kind}</Badge>
           <span>
             {report.department}, {report.author}
           </span>
@@ -72,7 +68,7 @@ function ReportRow({
         </div>
       </div>
       <div className="list-row__aside">
-        <Badge tone={statusTone.report[report.status]}>{report.status}</Badge>
+        <Badge theme={statusTone.report[report.status]}>{report.status}</Badge>
         <span>
           {report.status === '검토 요청' && report.reviewer
             ? `${report.reviewer} 검토`
@@ -81,7 +77,7 @@ function ReportRow({
       </div>
       {canApprove && (
         <div className="list-row__actions">
-          <Button size="sm" disabled={busy} onClick={onApprove}>
+          <Button size="small" disabled={busy} onClick={onApprove}>
             확인 완료
           </Button>
         </div>
@@ -153,16 +149,20 @@ export function ReportListPage() {
                 <option key={item}>{item}</option>
               ))}
             </FilterSelect>
-            <input
+            <Input
               type="search"
-              className="field__control filter-bar__search"
+              containerClassName="filter-bar__search"
+              leadingIcon={iconSearch}
               aria-label="보고서 찾기"
               placeholder="번호, 제목, 안건 번호로 찾기"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
-          <Link className="btn btn--primary" to="/work/reports/new">
+          <Link
+            {...buttonLook({ theme: 'accent', variant: 'primary' })}
+            to="/work/reports/new"
+          >
             <PlusIcon />
             보고서 쓰기
           </Link>

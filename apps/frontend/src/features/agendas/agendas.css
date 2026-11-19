@@ -8,8 +8,8 @@
 }
 .agenda-board__note {
   margin: -8px 0 0;
-  color: var(--color-ink-3);
-  font-size: var(--text-xs);
+  color: var(--kit-core-glyph-tertiary);
+  font-size: var(--kit-size-footnote);
 }
 
 /* 단계 막대 */
@@ -26,13 +26,13 @@
   width: 10px;
   height: 3px;
   border-radius: 1px;
-  background: var(--color-line);
+  background: var(--kit-core-outline);
 }
 .stage-bar__track > span[data-on] {
-  background: var(--color-ink);
+  background: var(--kit-components-fill-inverted-primary);
 }
 .stage-bar__track[data-stopped] > span[data-on] {
-  background: var(--color-line-strong);
+  background: var(--kit-core-line);
 }
 .stage-bar__label {
   display: inline-flex;
@@ -40,7 +40,7 @@
   font-weight: 700;
 }
 .stage-bar__note {
-  color: var(--color-ink-3);
+  color: var(--kit-core-glyph-tertiary);
   font-weight: 400;
 }
 
@@ -51,13 +51,13 @@
   align-items: center;
   gap: 8px;
   padding: 8px 8px 8px 14px;
-  border: 1px solid var(--color-line-strong);
-  border-radius: var(--radius-2);
-  background: var(--color-surface);
+  border: 1px solid var(--kit-core-line);
+  border-radius: var(--kit-radius-m);
+  background: var(--kit-background-primary);
 }
 .advance-confirm p {
   margin: 0 8px 0 0;
-  font-size: var(--text-sm);
+  font-size: var(--kit-size-callout);
 }
 .agenda-tabs {
   margin-top: 24px;
@@ -75,20 +75,20 @@
   min-height: 84px;
   padding: 14px 16px;
   border: 0;
-  border-bottom: 1px solid var(--color-line);
-  border-radius: var(--radius-2) var(--radius-2) 0 0;
+  border-bottom: 1px solid var(--kit-core-outline);
+  border-radius: var(--kit-radius-m) var(--kit-radius-m) 0 0;
   background: transparent;
-  color: var(--color-ink);
+  color: var(--kit-core-glyph-primary);
   font: inherit;
-  font-size: var(--text-md);
+  font-size: var(--kit-size-callout);
   line-height: 1.6;
   resize: vertical;
 }
 .record-composer__input::placeholder {
-  color: var(--color-ink-3);
+  color: var(--kit-core-glyph-tertiary);
 }
 .record-composer__input:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--kit-core-status-accent);
   outline-offset: -2px;
 }
 .record-composer__bar {
@@ -101,8 +101,8 @@
 .record-composer__hint {
   flex: 1 1 200px;
   margin: 0;
-  color: var(--color-ink-3);
-  font-size: var(--text-xs);
+  color: var(--kit-core-glyph-tertiary);
+  font-size: var(--kit-size-footnote);
   line-height: 1.5;
 }
 
@@ -112,8 +112,8 @@
   margin: 0;
   padding: 16px 18px;
   list-style: none;
-  color: var(--color-ink);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-primary);
+  font-size: var(--kit-size-callout);
   line-height: 1.6;
 }
 .decision-list li {
@@ -127,7 +127,7 @@
   left: 0;
   width: 8px;
   height: 2px;
-  background: var(--color-ink);
+  background: var(--kit-components-fill-inverted-primary);
 }
 
 /* 업무·연결된 건의·보고서 탭 */

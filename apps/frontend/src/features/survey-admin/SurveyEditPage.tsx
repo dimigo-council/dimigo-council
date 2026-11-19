@@ -8,19 +8,19 @@ import {
 import { CloseIcon, PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
+import { Badge, Button, TextButton, Input } from '../../dimi-ui-kit/index.ts';
 import {
-  Badge,
-  Button,
+  ChoiceGroup,
+  ControlMark,
   Notice,
-  SegmentedControl,
   Select,
   statusTone,
   Switch,
   Tabs,
-  Tag,
   TextArea,
   TextField,
-} from '../../components/kit/index.ts';
+  buttonLook,
+} from '../../components/ui/index.ts';
 import { formatDate, formatDateTime } from '../../lib/date.ts';
 import { identityLabel, identityNotice } from '../surveys/format.ts';
 import { QuestionCard } from '../surveys/QuestionCard.tsx';
@@ -166,7 +166,7 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
         title={draft.title || '제목 없는 설문'}
         description={
           <span className="meta-row">
-            <Badge tone={statusTone.survey[status]}>{status}</Badge>
+            <Badge theme={statusTone.survey[status]}>{status}</Badge>
             <span>
               {survey.owner} · {survey.department}
             </span>
@@ -182,11 +182,11 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
         actions={
           readOnly ? (
             <>
-              <Link className="btn btn--secondary" to={`/surveys/${survey.id}`}>
+              <Link {...buttonLook()} to={`/surveys/${survey.id}`}>
                 학생 화면 보기
               </Link>
               <Link
-                className="btn btn--primary"
+                {...buttonLook({ theme: 'accent', variant: 'primary' })}
                 to={`/work/surveys/${survey.id}/results`}
               >
                 결과 보기
@@ -202,6 +202,7 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
               </Button>
               {survey.stage === 'draft' && (
                 <Button
+                  theme="accent"
                   variant="primary"
                   disabled={!ready || busy}
                   onClick={() => void run(() => scheduleSurvey(survey.id))}
@@ -273,10 +274,7 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
                 <ul className="publish-checks">
                   {checks.map((check) => (
                     <li key={check.label} data-done={check.done}>
-                      <span
-                        className="choice__box choice__box--check"
-                        aria-hidden="true"
-                      />
+                      <ControlMark type="checkfill" checked={check.done} />
                       {check.label}
                       <span className="visually-hidden">
                         {check.done ? ', 완료' : ', 아직'}
@@ -287,7 +285,7 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
                 {!survey.reviewRequested && (
                   <div className="publish-checks__action">
                     <Button
-                      block
+                      fullWidth
                       disabled={busy}
                       onClick={() =>
                         void run(() => requestSurveyReview(survey.id))
@@ -425,8 +423,8 @@ function QuestionSummary({
         {question.title || '문항 제목을 적어주세요'}
       </span>
       <span className="q-card__tags">
-        <Tag>{questionTypeLabel[question.type]}</Tag>
-        {question.required && <Badge tone="warn">필수</Badge>}
+        <Badge>{questionTypeLabel[question.type]}</Badge>
+        {question.required && <Badge theme="accent">필수</Badge>}
       </span>
     </>
   );
@@ -473,7 +471,7 @@ function QuestionEditor({
             <span className="field__label" id={typeLabelId}>
               유형
             </span>
-            <SegmentedControl
+            <ChoiceGroup
               aria-labelledby={typeLabelId}
               value={question.type}
               onChange={(type) => onChange(changeType(question, type))}
@@ -492,12 +490,11 @@ function QuestionEditor({
               <ul className="q-options" aria-labelledby={optionsLabelId}>
                 {question.options.map((option, i) => (
                   <li key={i} className="q-option">
-                    <span
-                      className={`choice__box choice__box--${question.type === 'single' ? 'radio' : 'check'}`}
-                      aria-hidden="true"
+                    <ControlMark
+                      type={question.type === 'single' ? 'radio' : 'checkfill'}
+                      checked={false}
                     />
-                    <input
-                      className="field__control"
+                    <Input
                       aria-label={`선택지 ${i + 1}`}
                       maxLength={60}
                       placeholder={`선택지 ${i + 1}`}
@@ -529,9 +526,8 @@ function QuestionEditor({
                 ))}
               </ul>
               <div>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <TextButton
+                  size="small"
                   disabled={question.options.length >= 10}
                   onClick={() =>
                     onChange({
@@ -542,7 +538,7 @@ function QuestionEditor({
                 >
                   <PlusIcon />
                   선택지 추가
-                </Button>
+                </TextButton>
               </div>
               {question.type === 'multiple' && (
                 <div className="q-card__row">
@@ -633,18 +629,17 @@ function QuestionEditor({
                 onChange({ ...question, required: event.target.checked })
               }
             />
-            <Button variant="ghost" size="sm" onClick={onDuplicate}>
+            <TextButton size="small" onClick={onDuplicate}>
               복제
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
+            </TextButton>
+            <TextButton
+              size="small"
               className="q-card__delete"
               disabled={!onDelete}
               onClick={onDelete}
             >
               삭제
-            </Button>
+            </TextButton>
           </div>
         </div>
       )}
@@ -684,7 +679,7 @@ function SettingsEditor({
         <span className="field__label" id={identityLabelId}>
           응답자 정보
         </span>
-        <SegmentedControl
+        <ChoiceGroup
           aria-labelledby={identityLabelId}
           value={draft.identity}
           onChange={(identity) => update({ identity })}

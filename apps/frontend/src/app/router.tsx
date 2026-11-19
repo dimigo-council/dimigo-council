@@ -89,15 +89,20 @@ import { WorkLayout, workLayoutLoader } from './WorkLayout.tsx';
 
 const devRoutes: RouteObject[] = [];
 if (import.meta.env.DEV) {
-  const KitPreview = lazy(() => import('../components/kit/KitPreview.tsx'));
-  devRoutes.push({
-    path: 'kit',
-    element: (
-      <Suspense>
-        <KitPreview />
-      </Suspense>
-    ),
-  });
+  const DimiUiKitPreview = lazy(
+    () => import('../dimi-ui-kit/DimiUiKitPreview.tsx'),
+  );
+  // /kit was the old hand-made kit's preview; it now shows the real kit too.
+  for (const path of ['dimi-ui-kit', 'kit']) {
+    devRoutes.push({
+      path,
+      element: (
+        <Suspense>
+          <DimiUiKitPreview />
+        </Suspense>
+      ),
+    });
+  }
 }
 
 export const router = createBrowserRouter([

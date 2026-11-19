@@ -1,4 +1,4 @@
-import { Notice } from '../components/kit/index.ts';
+import { Notice } from '../components/ui/index.ts';
 import { PageHeader } from '../app/PageHeader.tsx';
 
 export interface PlaceholderPageProps {

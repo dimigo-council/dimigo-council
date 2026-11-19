@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { useSession } from '../app/session.ts';
 import './HomePage.css';
+import { buttonLook } from '../components/ui/index.ts';
 
 const features = [
   {
@@ -41,7 +42,7 @@ export function HomePage() {
               </Link>
             ))}
             {session.councilRole && (
-              <Link className="btn btn--secondary btn--sm" to="/work/tasks">
+              <Link {...buttonLook({ size: 'small' })} to="/work/tasks">
                 업무공간
               </Link>
             )}

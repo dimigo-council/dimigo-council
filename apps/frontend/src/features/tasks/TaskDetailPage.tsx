@@ -10,15 +10,22 @@ import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { Meter } from '../../components/intranet/Meter.tsx';
 import {
-  Avatar,
   Badge,
   Button,
+  TextButton,
+  Input,
+  TextArea as KitTextArea,
+} from '../../dimi-ui-kit/index.ts';
+import {
   Checkbox,
+  ChoiceGroup,
   Notice,
-  SegmentedControl,
+  PersonAvatar,
   statusTone,
   TextArea,
-} from '../../components/kit/index.ts';
+  buttonLook,
+  SelectControl,
+} from '../../components/ui/index.ts';
 import { formatDate, formatDateTime } from '../../lib/date.ts';
 import {
   addChecklistItem,
@@ -79,7 +86,7 @@ function TaskDetail({ task }: { task: Task }) {
           <span className="meta-row">
             <span>{task.department} 요청</span>
             {overdue ? (
-              <Badge tone="danger">마감 {dueLabel(task)}</Badge>
+              <Badge theme="negative">마감 {dueLabel(task)}</Badge>
             ) : (
               <span>
                 {task.status === '완료'
@@ -91,10 +98,7 @@ function TaskDetail({ task }: { task: Task }) {
         }
         actions={
           task.agenda && (
-            <Link
-              className="btn btn--secondary"
-              to={`/work/agendas/${task.agenda.id}`}
-            >
+            <Link {...buttonLook()} to={`/work/agendas/${task.agenda.id}`}>
               안건 보기
             </Link>
           )
@@ -111,7 +115,7 @@ function TaskDetail({ task }: { task: Task }) {
               <h2 className="field__label" id={statusLabelId}>
                 상태
               </h2>
-              <SegmentedControl
+              <ChoiceGroup
                 aria-labelledby={statusLabelId}
                 name="task-status"
                 value={task.status}
@@ -143,14 +147,14 @@ function TaskDetail({ task }: { task: Task }) {
               <dd className="info-list__inline">
                 {task.assignees.map((name) => (
                   <span key={name} className="owner">
-                    <Avatar name={name} aria-hidden="true" />
+                    <PersonAvatar name={name} aria-hidden="true" />
                     {name}
                   </span>
                 ))}
               </dd>
               <dt>요청</dt>
               <dd className="owner">
-                <Avatar name={task.requester} aria-hidden="true" />
+                <PersonAvatar name={task.requester} aria-hidden="true" />
                 {task.requester}
               </dd>
               <dt>마감</dt>
@@ -172,7 +176,7 @@ function TaskDetail({ task }: { task: Task }) {
               </dd>
               <dt>공개 범위</dt>
               <dd>
-                <Badge tone={statusTone.visibility[task.visibility]}>
+                <Badge theme={statusTone.visibility[task.visibility]}>
                   {task.visibility}
                 </Badge>
               </dd>
@@ -239,9 +243,8 @@ function BodyPanel({ task }: { task: Task }) {
           내용
         </h2>
         {!editing && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <TextButton
+            size="small"
             className="panel__action"
             onClick={() => {
               setDraft(task.body);
@@ -249,7 +252,7 @@ function BodyPanel({ task }: { task: Task }) {
             }}
           >
             {task.body ? '고치기' : '내용 쓰기'}
-          </Button>
+          </TextButton>
         )}
       </div>
       {editing ? (
@@ -270,11 +273,10 @@ function BodyPanel({ task }: { task: Task }) {
             </Notice>
           )}
           <div className="form-actions">
-            <Button variant="ghost" onClick={() => setEditing(false)}>
-              취소
-            </Button>
+            <TextButton onClick={() => setEditing(false)}>취소</TextButton>
             <Button
               type="submit"
+              theme="accent"
               variant="primary"
               disabled={status === 'saving'}
             >
@@ -365,9 +367,9 @@ function ChecklistPanel({ task }: { task: Task }) {
         <label className="visually-hidden" htmlFor={inputId}>
           새 항목
         </label>
-        <input
+        <Input
           id={inputId}
-          className="field__control"
+
           maxLength={80}
           placeholder="할 일 추가"
           value={text}
@@ -376,16 +378,16 @@ function ChecklistPanel({ task }: { task: Task }) {
         <label className="visually-hidden" htmlFor={ownerId}>
           맡을 사람
         </label>
-        <select
+        <SelectControl
           id={ownerId}
-          className="field__control task-checklist__owner-select"
+          containerClassName="task-checklist__owner-select"
           value={owner}
           onChange={(event) => setOwner(event.target.value)}
         >
           {task.assignees.map((name) => (
             <option key={name}>{name}</option>
           ))}
-        </select>
+        </SelectControl>
         <Button type="submit" disabled={saving || !text.trim()}>
           추가
         </Button>
@@ -427,7 +429,7 @@ function ActivityPanel({ task }: { task: Task }) {
             className="task-activity__item"
             data-kind={entry.kind}
           >
-            <Avatar name={entry.author} aria-hidden="true" />
+            <PersonAvatar name={entry.author} aria-hidden="true" />
             <div className="task-activity__body">
               {entry.kind === 'event' ? (
                 <p className="task-activity__line">
@@ -448,14 +450,14 @@ function ActivityPanel({ task }: { task: Task }) {
         ))}
       </ol>
       <form className="task-comment" onSubmit={onSubmit}>
-        <Avatar name={session.name} aria-hidden="true" />
+        <PersonAvatar name={session.name} aria-hidden="true" />
         <div className="task-comment__field">
           <label className="visually-hidden" htmlFor={commentId}>
             댓글
           </label>
-          <textarea
+          <KitTextArea
             id={commentId}
-            className="field__control comment-input"
+            containerClassName="comment-input"
             placeholder="댓글 남기기"
             maxLength={1000}
             value={comment}

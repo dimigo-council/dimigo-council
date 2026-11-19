@@ -2,13 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLoaderData, useNavigate } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
+import { Button } from '../../dimi-ui-kit/index.ts';
 import {
-  Button,
   Notice,
   Select,
   TextArea,
   TextField,
-} from '../../components/kit/index.ts';
+} from '../../components/ui/index.ts';
 import { listAgendas } from '../agendas/api.ts';
 import { finishedStatuses } from '../agendas/types.ts';
 import { listMembers } from '../members/api.ts';
@@ -132,11 +132,17 @@ export function NewReportPage() {
           </Notice>
         )}
         <div className="form-actions">
-          <Link className="btn btn--ghost" to="/work/reports">
+          <Link
+            className="kit-text-button kit-interactive"
+            data-size="medium"
+            data-theme="grayscale"
+            to="/work/reports"
+          >
             취소
           </Link>
           <Button
             type="submit"
+            theme="accent"
             variant="primary"
             disabled={status === 'saving'}
           >

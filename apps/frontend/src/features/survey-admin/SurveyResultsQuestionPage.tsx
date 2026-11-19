@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Meter } from '../../components/intranet/Meter.tsx';
-import { SegmentedControl, Tag } from '../../components/kit/index.ts';
+import { Badge, Input } from '../../dimi-ui-kit/index.ts';
+import { ChoiceGroup } from '../../components/ui/index.ts';
 import { formatDateTime } from '../../lib/date.ts';
 import { isAnswered } from '../surveys/format.ts';
 import type {
@@ -27,6 +28,7 @@ import {
 import { StepButton, wrapIndex } from './StepButton.tsx';
 import { surveyResultsPaths, useResults } from './SurveyResultsLayout.tsx';
 import type { SurveyResponse } from './types.ts';
+import { iconSearch } from '../../dimi-ui-kit/icons';
 
 /** 선택지나 점수로 셀 수 있는 문항 (주관식 제외) */
 type CountableQuestion = Exclude<Question, TextQuestion>;
@@ -411,7 +413,7 @@ function TextAnswers({
   return (
     <section aria-label="주관식 답">
       <div className="filter-bar result-text-bar">
-        <SegmentedControl
+        <ChoiceGroup
           aria-label="보기 방식"
           value={viewMode}
           onChange={setViewMode}
@@ -420,9 +422,10 @@ function TextAnswers({
             { value: 'raw', label: '하나씩 보기' },
           ]}
         />
-        <input
+        <Input
           type="search"
-          className="field__control filter-bar__search"
+          containerClassName="filter-bar__search"
+          leadingIcon={iconSearch}
           aria-label="답 찾기"
           placeholder="답에 들어간 말로 찾기"
           value={searchText}
@@ -577,7 +580,7 @@ export function SurveyResultsQuestionPage() {
         </div>
         <div className="result-question__content">
           <div className="result-question__title">
-            <Tag>{questionTypeLabel[question.type]}</Tag>
+            <Badge>{questionTypeLabel[question.type]}</Badge>
             <h2 id="q-title">{question.title}</h2>
           </div>
           <QuestionDetail

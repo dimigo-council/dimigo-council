@@ -3,7 +3,8 @@ import { ChevronLeftIcon, LockIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Steps } from '../../components/intranet/Steps.tsx';
 import { Timeline } from '../../components/intranet/Timeline.tsx';
-import { Badge, statusTone, Tag } from '../../components/kit/index.ts';
+import { Badge } from '../../dimi-ui-kit/index.ts';
+import { statusTone, buttonLook } from '../../components/ui/index.ts';
 import { formatFullDate, formatShortDate } from '../../lib/date.ts';
 import { getPublicAgenda } from './api.ts';
 import { agendaSteps, originLabel } from '../agendas/format.ts';
@@ -38,7 +39,9 @@ export function AgendaDetailPage() {
           </span>
         }
         actions={
-          <Badge tone={statusTone.agenda[agenda.status]}>{agenda.status}</Badge>
+          <Badge theme={statusTone.agenda[agenda.status]}>
+            {agenda.status}
+          </Badge>
         }
       />
 
@@ -119,7 +122,7 @@ export function AgendaDetailPage() {
               <dd className="info-list__inline">
                 {originLabel(agenda)}
                 {agenda.includesMine && (
-                  <Tag className="tag--mine">내 건의 포함</Tag>
+                  <Badge theme="accent">내 건의 포함</Badge>
                 )}
               </dd>
               {agenda.survey && (
@@ -164,7 +167,7 @@ export function AgendaDetailPage() {
 
           {agenda.status !== '완료' && agenda.status !== '부결' && (
             <Link
-              className="btn btn--secondary btn--block"
+              {...buttonLook({ fullWidth: true })}
               to={`/suggestions/new?agenda=${agenda.id}`}
             >
               이 안건에 의견 보태기

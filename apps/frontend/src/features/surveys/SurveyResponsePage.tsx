@@ -8,7 +8,8 @@ import {
 import { ChevronLeftIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
-import { Button, Notice } from '../../components/kit/index.ts';
+import { Button } from '../../dimi-ui-kit/index.ts';
+import { Notice } from '../../components/ui/index.ts';
 import { formatDate } from '../../lib/date.ts';
 import { getSurvey, saveDraft, submitResponse } from './api.ts';
 import { estimatedMinutes, identityNotice, isAnswered } from './format.ts';
@@ -135,6 +136,7 @@ function SurveyForm({ survey }: { survey: SurveyWithResponse }) {
             {!survey.isClosed && (
               <Button
                 type="submit"
+                theme="accent"
                 variant="primary"
                 disabled={!canSubmit || status === 'saving'}
               >

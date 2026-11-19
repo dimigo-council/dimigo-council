@@ -12,22 +12,22 @@
   min-width: 110px;
   min-height: 32px;
   padding: 0 28px 0 10px;
-  font-size: var(--text-sm);
+  font-size: var(--kit-size-callout);
 }
 .permission-notes {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 20px;
   margin: -8px 0 0;
-  color: var(--color-ink-3);
-  font-size: var(--text-xs);
+  color: var(--kit-core-glyph-tertiary);
+  font-size: var(--kit-size-footnote);
 }
 .permission-notes div {
   display: flex;
   gap: 6px;
 }
 .permission-notes dt {
-  color: var(--color-ink-2);
+  color: var(--kit-core-glyph-secondary);
   font-weight: 700;
 }
 .permission-notes dd {

@@ -26,9 +26,9 @@
 
 .task-board {
   overflow: hidden;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-2);
-  background: var(--color-surface);
+  border: 1px solid var(--kit-core-outline);
+  border-radius: var(--kit-radius-m);
+  background: var(--kit-background-primary);
 }
 .task-board .list-group {
   border: 0;
@@ -40,14 +40,14 @@
   gap: 6px;
   margin: 0;
   padding: 10px 18px;
-  border-bottom: 1px solid var(--color-line);
-  background: var(--color-surface-2);
-  color: var(--color-ink-2);
-  font-size: var(--text-xs);
+  border-bottom: 1px solid var(--kit-core-outline);
+  background: var(--kit-components-fill-primary);
+  color: var(--kit-core-glyph-secondary);
+  font-size: var(--kit-size-footnote);
   font-weight: 700;
 }
 .task-board > section + section .task-board__group {
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--kit-core-outline);
 }
 
 /* 상태 동그라미: 할 일 빈 원, 진행 중 반쯤 찬 원, 검토 요청 점선 원, 완료 찬 원 */
@@ -55,24 +55,24 @@
   flex: none;
   width: 16px;
   height: 16px;
-  border: 1.5px solid var(--color-line-strong);
+  border: 1.5px solid var(--kit-core-line);
   border-radius: 50%;
 }
 .task-status[data-status='진행 중'] {
-  border-color: var(--color-status-info-ink);
+  border-color: var(--kit-core-status-info);
   background: linear-gradient(
     90deg,
-    var(--color-status-info-ink) 50%,
+    var(--kit-core-status-info) 50%,
     transparent 50%
   );
 }
 .task-status[data-status='검토 요청'] {
   border-style: dashed;
-  border-color: var(--color-status-warn-ink);
+  border-color: var(--kit-core-glyph-accent);
 }
 .task-status[data-status='완료'] {
-  border-color: var(--color-status-success-ink);
-  background: var(--color-status-success-ink);
+  border-color: var(--kit-core-status-positive);
+  background: var(--kit-core-status-positive);
 }
 
 /* 업무 한 줄: 상태 · 담당자 · 마감을 고정 칸에 두어 줄마다 같은 자리에 오게 한다 */
@@ -80,15 +80,15 @@
   display: grid;
   grid-template-columns: 16px minmax(0, 1fr) 72px 70px 104px;
 }
-.task-row > .badge,
+.task-row > .kit-badge,
 .task-row > .avatar-group {
   justify-self: start;
 }
 
 .task-row__due,
 .task-due {
-  color: var(--color-ink-2);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-secondary);
+  font-size: var(--kit-size-callout);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -102,11 +102,11 @@
 }
 .task-row__due[data-tone='danger'],
 .task-due[data-tone='danger'] {
-  color: var(--color-status-danger-ink);
+  color: var(--kit-core-status-negative);
 }
 .task-row__due[data-tone='warn'],
 .task-due[data-tone='warn'] {
-  color: var(--color-status-warn-ink);
+  color: var(--kit-core-glyph-accent);
 }
 /* 좁은 화면: 제목 줄 아래에 상태 · 담당자 · 마감을 한 줄로 */
 @media (max-width: 600px) {
@@ -117,7 +117,7 @@
   .task-row .list-row__main {
     grid-column: 2 / -1;
   }
-  .task-row > .badge {
+  .task-row > .kit-badge {
     grid-column: 2;
   }
   .task-row__due {
@@ -146,10 +146,10 @@
   padding: 8px 0;
 }
 .task-checklist li + li {
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--kit-core-outline);
 }
-.task-checklist .choice:has(.choice__input:checked) .choice__label {
-  color: var(--color-ink-3);
+.task-checklist .ui-choice:has(.ui-choice__input:checked) .ui-choice__label {
+  color: var(--kit-core-glyph-tertiary);
   text-decoration: line-through;
 }
 .task-checklist__add {
@@ -158,9 +158,9 @@
   padding: 12px 18px 16px;
 }
 .task-checklist + .task-checklist__add {
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--kit-core-outline);
 }
-.task-checklist__add .field__control {
+.task-checklist__add > .kit-input {
   flex: 1;
   min-width: 0;
 }
@@ -169,8 +169,8 @@
 }
 .task-checklist__owner {
   flex: none;
-  color: var(--color-ink-3);
-  font-size: var(--text-xs);
+  color: var(--kit-core-glyph-tertiary);
+  font-size: var(--kit-size-footnote);
 }
 
 .task-activity {
@@ -193,24 +193,24 @@
 .task-activity__line {
   margin: 0;
   padding-top: 2px;
-  color: var(--color-ink-2);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-secondary);
+  font-size: var(--kit-size-callout);
 }
 .task-activity__line strong {
-  color: var(--color-ink);
+  color: var(--kit-core-glyph-primary);
 }
 .task-activity__line time {
   margin-left: 4px;
-  color: var(--color-ink-3);
+  color: var(--kit-core-glyph-tertiary);
   font-variant-numeric: tabular-nums;
 }
 .task-activity__comment {
   margin: 0;
   padding: 10px 12px;
-  border-radius: var(--radius-2);
-  background: var(--color-surface-2);
-  color: var(--color-ink);
-  font-size: var(--text-sm);
+  border-radius: var(--kit-radius-m);
+  background: var(--kit-components-fill-primary);
+  color: var(--kit-core-glyph-primary);
+  font-size: var(--kit-size-callout);
   line-height: 1.6;
   white-space: pre-wrap;
 }
@@ -238,9 +238,9 @@
   align-items: flex-start;
   gap: 10px;
   padding: 12px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-2);
-  color: var(--color-ink-2);
+  border: 1px solid var(--kit-core-outline);
+  border-radius: var(--kit-radius-m);
+  color: var(--kit-core-glyph-secondary);
 }
 .output-list svg {
   flex: none;
@@ -253,8 +253,8 @@
   overflow-wrap: anywhere;
 }
 .output-list__title {
-  color: var(--color-ink);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-primary);
+  font-size: var(--kit-size-callout);
   font-weight: 700;
   text-decoration: none;
 }
@@ -262,11 +262,11 @@ a.output-list__title:hover {
   text-decoration: underline;
 }
 a.output-list__title:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--kit-core-status-accent);
   outline-offset: 2px;
-  border-radius: var(--radius-1);
+  border-radius: var(--kit-radius-xs);
 }
 .output-list__meta {
-  color: var(--color-ink-3);
-  font-size: var(--text-xs);
+  color: var(--kit-core-glyph-tertiary);
+  font-size: var(--kit-size-footnote);
 }

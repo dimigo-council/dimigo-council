@@ -11,8 +11,8 @@
 }
 .survey-admin-row__date {
   min-width: 104px;
-  color: var(--color-ink-2);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-secondary);
+  font-size: var(--kit-size-callout);
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
@@ -38,20 +38,17 @@
 .survey-edit .field__foot:empty {
   display: none;
 }
-.survey-edit textarea.field__control {
+.survey-edit textarea.kit-input-field {
   min-height: 64px;
-  padding: 10px 12px;
-  line-height: 1.6;
-  resize: vertical;
 }
 .survey-edit__intro {
   margin: 0;
   padding: 14px 16px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-2);
-  background: var(--color-surface);
-  color: var(--color-ink-2);
-  font-size: var(--text-sm);
+  border: 1px solid var(--kit-core-outline);
+  border-radius: var(--kit-radius-m);
+  background: var(--kit-background-primary);
+  color: var(--kit-core-glyph-secondary);
+  font-size: var(--kit-size-callout);
   line-height: 1.6;
 }
 
@@ -64,13 +61,13 @@
   list-style: none;
 }
 .q-card {
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-2);
-  background: var(--color-surface);
+  border: 1px solid var(--kit-core-outline);
+  border-radius: var(--kit-radius-m);
+  background: var(--kit-background-primary);
 }
 .q-card[data-open='true'] {
-  border-color: var(--color-ink);
-  box-shadow: 0 0 0 1px var(--color-ink);
+  border-color: var(--kit-core-glyph-primary);
+  box-shadow: 0 0 0 1px var(--kit-core-glyph-primary);
 }
 .q-card__summary {
   display: flex;
@@ -81,7 +78,7 @@
   border: 0;
   border-radius: inherit;
   background: none;
-  color: var(--color-ink);
+  color: var(--kit-core-glyph-primary);
   font: inherit;
   text-align: left;
 }
@@ -89,32 +86,32 @@ button.q-card__summary {
   cursor: pointer;
 }
 button.q-card__summary:hover {
-  background: var(--color-surface-2);
+  background: var(--kit-components-fill-primary);
 }
 .q-card[data-open='true'] button.q-card__summary:hover {
   background: none;
 }
 button.q-card__summary:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--kit-core-status-accent);
   outline-offset: 2px;
 }
 .q-card__number {
   flex: none;
   min-width: 2em;
-  color: var(--color-ink-3);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-tertiary);
+  font-size: var(--kit-size-callout);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .q-card__title {
   flex: 1;
   min-width: 0;
-  font-size: var(--text-md);
+  font-size: var(--kit-size-callout);
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 .q-card__title--empty {
-  color: var(--color-ink-3);
+  color: var(--kit-core-glyph-tertiary);
   font-weight: 400;
 }
 .q-card__tags {
@@ -126,8 +123,8 @@ button.q-card__summary:focus-visible {
 .q-card__detail {
   margin: -6px 0 0;
   padding: 0 16px 14px calc(16px + 2em + 14px);
-  color: var(--color-ink-3);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-tertiary);
+  font-size: var(--kit-size-callout);
 }
 .q-card__body {
   display: grid;
@@ -144,13 +141,13 @@ button.q-card__summary:focus-visible {
   align-items: center;
   gap: 4px;
   padding-top: 14px;
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--kit-core-outline);
 }
-.q-card__foot .choice {
+.q-card__foot .ui-choice {
   margin-right: auto;
 }
 .q-card__delete {
-  color: var(--color-status-danger-ink);
+  color: var(--kit-core-status-negative);
 }
 @media (max-width: 600px) {
   .q-card__summary {
@@ -181,7 +178,7 @@ button.q-card__summary:focus-visible {
   align-items: center;
   gap: 10px;
 }
-.q-option .field__control {
+.q-option .kit-input {
   flex: 1;
   min-width: 0;
 }
@@ -192,21 +189,21 @@ button.q-card__summary:focus-visible {
   width: 32px;
   height: 32px;
   border: 0;
-  border-radius: var(--radius-1);
+  border-radius: var(--kit-radius-xs);
   background: none;
-  color: var(--color-ink-2);
+  color: var(--kit-core-glyph-secondary);
   cursor: pointer;
 }
 .icon-button:hover:not(:disabled) {
-  background: var(--color-surface-2);
-  color: var(--color-ink);
+  background: var(--kit-components-fill-primary);
+  color: var(--kit-core-glyph-primary);
 }
 .icon-button:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--kit-core-status-accent);
   outline-offset: 2px;
 }
 .icon-button:disabled {
-  color: var(--color-ink-3);
+  color: var(--kit-core-glyph-tertiary);
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -218,21 +215,21 @@ button.q-card__summary:focus-visible {
   gap: 6px;
   width: 100%;
   padding: 14px;
-  border: 1px dashed var(--color-line-strong);
-  border-radius: var(--radius-2);
+  border: 1px dashed var(--kit-core-line);
+  border-radius: var(--kit-radius-m);
   background: none;
-  color: var(--color-ink-2);
+  color: var(--kit-core-glyph-secondary);
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--kit-size-callout);
   cursor: pointer;
 }
 .q-add:hover {
-  border-color: var(--color-ink-3);
-  background: var(--color-surface);
-  color: var(--color-ink);
+  border-color: var(--kit-core-glyph-tertiary);
+  background: var(--kit-background-primary);
+  color: var(--kit-core-glyph-primary);
 }
 .q-add:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--kit-core-status-accent);
   outline-offset: 2px;
 }
 
@@ -248,8 +245,8 @@ button.q-card__summary:focus-visible {
   margin: 0;
   padding: 16px 18px;
   list-style: none;
-  color: var(--color-ink-2);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-secondary);
+  font-size: var(--kit-size-callout);
 }
 .publish-checks li {
   display: flex;
@@ -257,14 +254,7 @@ button.q-card__summary:focus-visible {
   gap: 10px;
 }
 .publish-checks li[data-done='true'] {
-  color: var(--color-ink);
-}
-.publish-checks li[data-done='true'] .choice__box--check {
-  border-color: var(--color-ink);
-  background: var(--color-ink);
-}
-.publish-checks li[data-done='true'] .choice__box--check::after {
-  opacity: 1;
+  color: var(--kit-core-glyph-primary);
 }
 .publish-checks__action {
   padding: 0 18px 16px;
@@ -281,13 +271,13 @@ button.q-card__summary:focus-visible {
 }
 .survey-preview__title {
   margin: 0;
-  color: var(--color-ink);
-  font-size: var(--text-3xl);
+  color: var(--kit-core-glyph-primary);
+  font-size: var(--kit-size-title);
   font-weight: 800;
 }
 .survey-preview__intro {
   margin: -12px 0 0;
-  color: var(--color-ink-2);
-  font-size: var(--text-md);
+  color: var(--kit-core-glyph-secondary);
+  font-size: var(--kit-size-callout);
   line-height: 1.6;
 }

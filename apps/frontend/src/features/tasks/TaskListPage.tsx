@@ -10,17 +10,21 @@ import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
 import {
-  AvatarGroup,
   Badge,
   Button,
   Chip,
+  TextButton,
+  Input,
+} from '../../dimi-ui-kit/index.ts';
+import {
+  AvatarGroup,
   Notice,
   Select,
   statusTone,
   Tabs,
   TextArea,
   TextField,
-} from '../../components/kit/index.ts';
+} from '../../components/ui/index.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listAgendas } from '../agendas/api.ts';
 import { finishedStatuses, type Agenda } from '../agendas/types.ts';
@@ -36,6 +40,7 @@ import {
 } from './format.ts';
 import type { Task } from './types.ts';
 import './tasks.css';
+import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function taskListLoader() {
   const [tasks, agendas, members] = await Promise.all([
@@ -79,7 +84,7 @@ export function TaskRow({ task }: { task: Task }) {
           )}
         </div>
       </div>
-      <Badge tone={statusTone.task[task.status]}>{task.status}</Badge>
+      <Badge theme={statusTone.task[task.status]}>{task.status}</Badge>
       <AvatarGroup names={task.assignees} />
       <span className="task-row__due" data-tone={dueTone(task)}>
         {dueLabel(task)}
@@ -214,10 +219,13 @@ function NewTaskForm({
         </Notice>
       )}
       <div className="form-actions">
-        <Button variant="ghost" onClick={onCancel}>
-          취소
-        </Button>
-        <Button type="submit" variant="primary" disabled={status === 'saving'}>
+        <TextButton onClick={onCancel}>취소</TextButton>
+        <Button
+          type="submit"
+          theme="accent"
+          variant="primary"
+          disabled={status === 'saving'}
+        >
           만들기
         </Button>
       </div>
@@ -317,9 +325,10 @@ export function TaskListPage() {
             <Chip selected={hideDone} onClick={() => setHideDone(!hideDone)}>
               완료 숨기기
             </Chip>
-            <input
+            <Input
               type="search"
-              className="field__control filter-bar__search"
+              containerClassName="filter-bar__search"
+              leadingIcon={iconSearch}
               aria-label="업무 찾기"
               placeholder="번호, 업무 이름으로 찾기"
               value={query}
@@ -327,6 +336,7 @@ export function TaskListPage() {
             />
           </div>
           <Button
+            theme="accent"
             variant="primary"
             aria-expanded={creating}
             onClick={() => setCreating(!creating)}

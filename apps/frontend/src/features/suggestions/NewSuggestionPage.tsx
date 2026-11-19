@@ -7,16 +7,16 @@ import {
 } from 'react-router';
 import { ChevronLeftIcon, PhotoIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
+import { Badge, Button, TextButton } from '../../dimi-ui-kit/index.ts';
 import {
-  Badge,
-  Button,
   Checkbox,
+  ChoiceGroup,
   Notice,
-  SegmentedControl,
   statusTone,
   TextArea,
   TextField,
-} from '../../components/kit/index.ts';
+  buttonLook,
+} from '../../components/ui/index.ts';
 import { findSimilarAgendas, getPublicAgenda } from '../activity/api.ts';
 import type { PublicAgenda } from '../activity/types.ts';
 import { createSuggestion } from './api.ts';
@@ -165,7 +165,7 @@ export function NewSuggestionPage() {
             <span className="field__label" id="category-label">
               분류
             </span>
-            <SegmentedControl
+            <ChoiceGroup
               variant="chips"
               name="category"
               aria-labelledby="category-label"
@@ -226,7 +226,12 @@ export function NewSuggestionPage() {
                 최대 {MAX_PHOTOS}장, 장당 10MB. 얼굴이 나온 사진은 올리지
                 말아주세요.
               </span>
-              <label className="btn btn--secondary btn--sm photo-picker__button">
+              <label
+                {...buttonLook({
+                  size: 'small',
+                  className: 'photo-picker__button',
+                })}
+              >
                 파일 선택
                 <input
                   type="file"
@@ -247,16 +252,15 @@ export function NewSuggestionPage() {
                 {photos.map((file, index) => (
                   <li key={`${file.name}-${index}`}>
                     <span>{file.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <TextButton
+                      size="small"
                       aria-label={`${file.name} 빼기`}
                       onClick={() =>
                         setPhotos((prev) => prev.filter((_, i) => i !== index))
                       }
                     >
                       빼기
-                    </Button>
+                    </TextButton>
                   </li>
                 ))}
               </ul>
@@ -284,11 +288,12 @@ export function NewSuggestionPage() {
           )}
 
           <div className="form-actions">
-            <Link className="btn btn--secondary" to="/suggestions">
+            <Link {...buttonLook()} to="/suggestions">
               취소
             </Link>
             <Button
               type="submit"
+              theme="accent"
               variant="primary"
               disabled={status === 'saving'}
             >
@@ -313,7 +318,7 @@ export function NewSuggestionPage() {
                       {agenda.title}
                     </Link>
                     <span className="similar-list__meta">
-                      <Badge tone={statusTone.agenda[agenda.status]}>
+                      <Badge theme={statusTone.agenda[agenda.status]}>
                         {agenda.status}
                       </Badge>
                       건의 {agenda.suggestionCount}건 연결

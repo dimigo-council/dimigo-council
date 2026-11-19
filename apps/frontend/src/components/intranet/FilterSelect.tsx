@@ -22,7 +22,7 @@ export function FilterSelect({
       <label htmlFor={id}>{label}</label>
       <select
         id={id}
-        className="field__control"
+        className="filter-select__control"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >

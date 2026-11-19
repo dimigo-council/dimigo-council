@@ -3,7 +3,7 @@ import { useLoaderData, useRevalidator } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
-import { Avatar } from '../../components/kit/index.ts';
+import { PersonAvatar, SelectControl } from '../../components/ui/index.ts';
 import { listMembers, updatePermission } from './api.ts';
 import {
   memberPermissions,
@@ -11,6 +11,8 @@ import {
   type MemberPermission,
 } from './types.ts';
 import './members.css';
+import { Input } from '../../dimi-ui-kit/index.ts';
+import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function memberListLoader() {
   return listMembers();
@@ -45,8 +47,8 @@ function PermissionCell({
   };
 
   return (
-    <select
-      className="field__control table-select"
+    <SelectControl
+      containerClassName="table-select"
       aria-label={`${member.name} 권한`}
       value={member.permission}
       disabled={saving}
@@ -58,7 +60,7 @@ function PermissionCell({
       {memberPermissions.map((permission) => (
         <option key={permission}>{permission}</option>
       ))}
-    </select>
+    </SelectControl>
   );
 }
 
@@ -106,9 +108,10 @@ export function MemberListPage() {
               <option key={item}>{item}</option>
             ))}
           </FilterSelect>
-          <input
+          <Input
             type="search"
-            className="field__control filter-bar__search"
+            containerClassName="filter-bar__search"
+            leadingIcon={iconSearch}
             aria-label="구성원 찾기"
             placeholder="이름으로 찾기"
             value={query}
@@ -133,7 +136,7 @@ export function MemberListPage() {
                   <tr key={member.id}>
                     <th scope="row">
                       <span className="owner">
-                        <Avatar name={member.name} aria-hidden="true" />
+                        <PersonAvatar name={member.name} aria-hidden="true" />
                         <strong>{member.name}</strong>
                         {member.name === session.name && (
                           <span className="data-table__muted">나</span>

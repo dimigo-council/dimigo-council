@@ -1,6 +1,7 @@
 import { useId } from 'react';
-import { OptionCard } from '../../components/kit/index.ts';
+import { OptionCard } from '../../components/ui/index.ts';
 import type { AnswerValue, Question } from './types.ts';
+import { TextArea } from '../../dimi-ui-kit/index.ts';
 
 interface QuestionCardProps {
   question: Question;
@@ -135,8 +136,7 @@ export function QuestionCard({
 
       {question.type === 'text' && (
         <div className="question__text">
-          <textarea
-            className="field__control"
+          <TextArea
             aria-labelledby={headingId}
             maxLength={question.maxLength}
             placeholder={question.placeholder}

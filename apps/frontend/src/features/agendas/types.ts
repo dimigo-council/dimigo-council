@@ -1,4 +1,4 @@
-import type { statusTone } from '../../components/kit/index.ts';
+import type { statusTone } from '../../components/ui/index.ts';
 
 /** 안건이 차례로 거치는 단계. 보류·부결은 단계가 아니라 멈춘 상태다. */
 export const agendaStages = ['등록', '검토', '결정', '추진', '완료'] as const;

@@ -1,11 +1,7 @@
 import { Link, useLoaderData } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
-import {
-  Badge,
-  SegmentedControl,
-  statusTone,
-  Tag,
-} from '../../components/kit/index.ts';
+import { Badge } from '../../dimi-ui-kit/index.ts';
+import { ChoiceGroup, statusTone } from '../../components/ui/index.ts';
 import { formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listPublicAgendas } from './api.ts';
@@ -35,11 +31,11 @@ function AgendaRow({ agenda }: { agenda: PublicAgenda }) {
           <span>{agenda.id}</span>
           <span>{agenda.department}</span>
           <span>{originLabel(agenda)}</span>
-          {agenda.includesMine && <Tag className="tag--mine">내 건의 포함</Tag>}
+          {agenda.includesMine && <Badge theme="accent">내 건의 포함</Badge>}
         </div>
       </div>
       <div className="list-row__aside">
-        <Badge tone={statusTone.agenda[agenda.status]}>{agenda.status}</Badge>
+        <Badge theme={statusTone.agenda[agenda.status]}>{agenda.status}</Badge>
         <span>{formatRelative(agenda.updatedAt)}</span>
       </div>
       <p className="agenda-row__summary">{now ?? decision ?? problem}</p>
@@ -59,7 +55,7 @@ export function ActivityListPage() {
     <>
       <PageHeader title="학생회 활동" visuallyHidden />
 
-      <SegmentedControl
+      <ChoiceGroup
         aria-label="안건 보기"
         value={filter}
         onChange={setFilter}

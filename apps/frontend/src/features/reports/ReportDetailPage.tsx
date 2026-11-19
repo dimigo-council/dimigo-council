@@ -7,16 +7,15 @@ import {
 } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
+import { Badge, Button, TextButton } from '../../dimi-ui-kit/index.ts';
 import {
-  Avatar,
-  Badge,
-  Button,
   Notice,
+  PersonAvatar,
   Select,
   statusTone,
-  Tag,
   TextArea,
-} from '../../components/kit/index.ts';
+  buttonLook,
+} from '../../components/ui/index.ts';
 import { formatDateTime } from '../../lib/date.ts';
 import { listMembers } from '../members/api.ts';
 import type { Member } from '../members/types.ts';
@@ -61,10 +60,10 @@ function ReportDetail({
         title={report.title}
         description={
           <span className="meta-row">
-            <Badge tone={statusTone.report[report.status]}>
+            <Badge theme={statusTone.report[report.status]}>
               {report.status}
             </Badge>
-            <Tag>{report.kind}</Tag>
+            <Badge>{report.kind}</Badge>
             <span>
               {report.department} · {report.author}
             </span>
@@ -73,10 +72,7 @@ function ReportDetail({
         }
         actions={
           report.agenda && (
-            <Link
-              className="btn btn--secondary"
-              to={`/work/agendas/${report.agenda.id}`}
-            >
+            <Link {...buttonLook()} to={`/work/agendas/${report.agenda.id}`}>
               안건 보기
             </Link>
           )
@@ -92,14 +88,14 @@ function ReportDetail({
             <dl className="info-list">
               <dt>작성</dt>
               <dd className="owner">
-                <Avatar name={report.author} aria-hidden="true" />
+                <PersonAvatar name={report.author} aria-hidden="true" />
                 {report.author}
               </dd>
               {report.reviewer && (
                 <>
                   <dt>검토</dt>
                   <dd className="owner">
-                    <Avatar name={report.reviewer} aria-hidden="true" />
+                    <PersonAvatar name={report.reviewer} aria-hidden="true" />
                     {report.reviewer}
                   </dd>
                 </>
@@ -154,9 +150,8 @@ function ReportBody({ report }: { report: Report }) {
           내용
         </h2>
         {editable && !editing && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <TextButton
+            size="small"
             className="panel__action"
             onClick={() => {
               setDraft(report.body);
@@ -164,7 +159,7 @@ function ReportBody({ report }: { report: Report }) {
             }}
           >
             고치기
-          </Button>
+          </TextButton>
         )}
       </div>
       {editing ? (
@@ -184,11 +179,10 @@ function ReportBody({ report }: { report: Report }) {
             </Notice>
           )}
           <div className="form-actions">
-            <Button variant="ghost" onClick={() => setEditing(false)}>
-              취소
-            </Button>
+            <TextButton onClick={() => setEditing(false)}>취소</TextButton>
             <Button
               type="submit"
+              theme="accent"
               variant="primary"
               disabled={status === 'saving'}
             >
@@ -261,8 +255,9 @@ function ReviewPanel({
               ))}
             </Select>
             <Button
+              theme="accent"
               variant="primary"
-              block
+              fullWidth
               disabled={busy || !reviewer || !report.body}
               onClick={() =>
                 void run(() => requestReportReview(report.id, reviewer))
@@ -284,15 +279,16 @@ function ReviewPanel({
                 {report.author}님이 검토를 요청했습니다.
               </p>
               <Button
+                theme="accent"
                 variant="primary"
-                block
+                fullWidth
                 disabled={busy}
                 onClick={() => void run(() => approveReport(report.id))}
               >
                 확인 완료
               </Button>
               <Button
-                block
+                fullWidth
                 disabled={busy}
                 onClick={() => void run(() => returnReport(report.id))}
               >
@@ -305,7 +301,7 @@ function ReviewPanel({
                 {report.reviewer}님이 검토하고 있습니다.
               </p>
               <Button
-                block
+                fullWidth
                 disabled={busy}
                 onClick={() => void run(() => returnReport(report.id))}
               >

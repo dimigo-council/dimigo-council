@@ -1,4 +1,4 @@
-import type { statusTone } from '../../components/kit/index.ts';
+import type { statusTone } from '../../components/ui/index.ts';
 import type { Answers, Survey } from '../surveys/types.ts';
 
 /** 작성 중 → 예약(공개일을 기다림) → 공개. 공개된 설문의 진행 중·마감은 마감일로 정해진다. */

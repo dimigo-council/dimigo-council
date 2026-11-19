@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { Badge, Button, Notice } from '../../components/kit/index.ts';
+import { Badge, Button } from '../../dimi-ui-kit/index.ts';
+import { ControlMark, Notice } from '../../components/ui/index.ts';
 import { formatDate } from '../../lib/date.ts';
 import { identityLabel, isAnswered } from '../surveys/format.ts';
 import type {
@@ -42,17 +43,14 @@ function ChoiceAnswer({
   question: SingleChoiceQuestion | MultipleChoiceQuestion;
   value: AnswerValue;
 }) {
-  const boxShape = question.type === 'single' ? 'radio' : 'check';
+  const boxShape = question.type === 'single' ? 'radio' : 'checkfill';
   return (
     <ul className="answer-view__options">
       {question.options.map((option) => {
         const isChosen = isOptionChosen(value, option);
         return (
           <li key={option} data-picked={isChosen}>
-            <span
-              className={`choice__box choice__box--${boxShape}`}
-              aria-hidden="true"
-            />
+            <ControlMark type={boxShape} checked={isChosen} />
             {option}
             {isChosen && <ChosenMark />}
           </li>
@@ -220,7 +218,7 @@ function ResponsePager({
           </Link>
         </span>
       )}
-      {response.excluded && <Badge tone="warn">분석에서 뺌</Badge>}
+      {response.excluded && <Badge theme="accent">분석에서 뺌</Badge>}
     </div>
   );
 }
@@ -270,12 +268,12 @@ function ResponseInfoPanel({
         <dd>{response.excluded ? '뺌' : '포함'}</dd>
       </dl>
       <div className="panel__body result-response-actions">
-        <Button block disabled={isBusy} onClick={onToggleExcluded}>
+        <Button fullWidth disabled={isBusy} onClick={onToggleExcluded}>
           {response.excluded ? '분석에 다시 넣기' : '분석에서 빼기'}
         </Button>
         <Button
-          variant="danger"
-          block
+          theme="negative"
+          fullWidth
           disabled={isBusy}
           onClick={onRequestDelete}
         >

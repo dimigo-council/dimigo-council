@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLoaderData } from 'react-router';
-import { Avatar, Count } from '../components/kit/index.ts';
+import { Count, PersonAvatar } from '../components/ui/index.ts';
 import { listAgendas } from '../features/agendas/api.ts';
 import { finishedStatuses } from '../features/agendas/types.ts';
 import { listInbox } from '../features/inbox/api.ts';
@@ -123,7 +123,7 @@ export function WorkLayout() {
             학생 화면으로
           </Link>
           <div className="sidenav__user">
-            <Avatar name={session.name} size="lg" />
+            <PersonAvatar name={session.name} size="medium" />
             <span>
               <strong>{session.name}</strong>
               {session.councilRole && <span>{session.councilRole}</span>}

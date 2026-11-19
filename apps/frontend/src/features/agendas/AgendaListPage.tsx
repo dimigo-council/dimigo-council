@@ -3,7 +3,8 @@ import { Link, useLoaderData } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
-import { Avatar, Badge, statusTone, Tabs } from '../../components/kit/index.ts';
+import { Badge, Input } from '../../dimi-ui-kit/index.ts';
+import { PersonAvatar, statusTone, Tabs } from '../../components/ui/index.ts';
 import { formatShortDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listAgendas } from './api.ts';
@@ -16,6 +17,7 @@ import {
   type AgendaVisibility,
 } from './types.ts';
 import './agendas.css';
+import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function agendaListLoader() {
   return listAgendas();
@@ -145,9 +147,10 @@ export function AgendaListPage() {
               <option key={item}>{item}</option>
             ))}
           </FilterSelect>
-          <input
+          <Input
             type="search"
-            className="field__control filter-bar__search"
+            containerClassName="filter-bar__search"
+            leadingIcon={iconSearch}
             aria-label="안건 찾기"
             placeholder="번호, 안건 이름으로 찾기"
             value={query}
@@ -187,7 +190,10 @@ export function AgendaListPage() {
                     <td className="data-table__muted">{originLabel(agenda)}</td>
                     <td>
                       <span className="owner">
-                        <Avatar name={agenda.department} aria-hidden="true" />
+                        <PersonAvatar
+                          name={agenda.department}
+                          aria-hidden="true"
+                        />
                         {agenda.department}
                       </span>
                     </td>
@@ -206,7 +212,7 @@ export function AgendaListPage() {
                       )}
                     </td>
                     <td>
-                      <Badge tone={statusTone.visibility[agenda.visibility]}>
+                      <Badge theme={statusTone.visibility[agenda.visibility]}>
                         {agenda.visibility}
                       </Badge>
                     </td>

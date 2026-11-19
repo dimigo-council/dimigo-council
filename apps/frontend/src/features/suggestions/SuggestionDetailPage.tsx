@@ -8,15 +8,14 @@ import {
 import { ChevronLeftIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Steps, type StepItem } from '../../components/intranet/Steps.tsx';
+import { Badge, Button, TextArea } from '../../dimi-ui-kit/index.ts';
 import {
-  Avatar,
-  Badge,
-  Button,
   Notice,
+  PersonAvatar,
   statusTone,
   Switch,
-  Tag,
-} from '../../components/kit/index.ts';
+  buttonLook,
+} from '../../components/ui/index.ts';
 import {
   formatDateTime,
   formatFullDate,
@@ -68,7 +67,7 @@ function Message({ message }: { message: SuggestionMessage }) {
   const mine = message.from === 'me';
   return (
     <li className="message">
-      <Avatar name={mine ? '나' : (message.department ?? '학생회')} />
+      <PersonAvatar name={mine ? '나' : (message.department ?? '학생회')} />
       <div className="message__body">
         <p className="message__head">
           <strong>
@@ -83,7 +82,7 @@ function Message({ message }: { message: SuggestionMessage }) {
         </p>
         <p className="message__text">{message.body}</p>
         {message.action && (
-          <Link className="btn btn--secondary btn--sm" to={message.action.to}>
+          <Link {...buttonLook({ size: 'small' })} to={message.action.to}>
             {message.action.label}
           </Link>
         )}
@@ -139,7 +138,7 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
           </span>
         }
         actions={
-          <Badge tone={statusTone.suggestion[suggestion.status]}>
+          <Badge theme={statusTone.suggestion[suggestion.status]}>
             {suggestion.status}
           </Badge>
         }
@@ -192,9 +191,9 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
               <label htmlFor={commentId}>추가 의견</label>
             </h2>
             <div className="panel__body">
-              <textarea
+              <TextArea
                 id={commentId}
-                className="field__control comment-input"
+                containerClassName="comment-input"
                 placeholder="덧붙일 내용이 있으면 남겨주세요. 담당자에게 전달됩니다."
                 maxLength={1000}
                 value={comment}
@@ -228,7 +227,7 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
             <dl className="info-list">
               <dt>분류</dt>
               <dd>
-                <Tag>{suggestion.category}</Tag>
+                <Badge>{suggestion.category}</Badge>
               </dd>
               <dt>담당 부서</dt>
               <dd>{suggestion.department ?? '배정 전'}</dd>

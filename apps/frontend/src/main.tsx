@@ -1,9 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
-import './tokens.css';
+import './dimi-ui-kit/tokens.css';
+import './dimi-ui-kit/kit.css';
 import './style.css';
-import './components/kit/kit.css';
+import './components/ui/ui.css';
 import './app/shell.css';
 import { router } from './app/router.tsx';
 

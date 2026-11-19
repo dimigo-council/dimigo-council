@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router';
 import { BrandMark } from './BrandMark.tsx';
 import { useSession } from './session.ts';
+import { buttonLook } from '../components/ui/index.ts';
 
 const studentNav = [
   { to: '/surveys', label: '설문' },
@@ -35,7 +36,7 @@ export function StudentLayout() {
               {session.affiliation} {session.name}
             </span>
             {session.councilRole && (
-              <Link className="btn btn--secondary btn--sm" to="/work/tasks">
+              <Link {...buttonLook({ size: 'small' })} to="/work/tasks">
                 업무공간
               </Link>
             )}

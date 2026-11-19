@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
-import { Button } from '../../components/kit/index.ts';
+import { Button } from '../../dimi-ui-kit/index.ts';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -46,7 +46,7 @@ export function ConfirmDialog({
         <Button onClick={onClose} disabled={busy} autoFocus>
           취소
         </Button>
-        <Button variant="danger" onClick={onConfirm} disabled={busy}>
+        <Button theme="negative" onClick={onConfirm} disabled={busy}>
           {confirmLabel}
         </Button>
       </div>

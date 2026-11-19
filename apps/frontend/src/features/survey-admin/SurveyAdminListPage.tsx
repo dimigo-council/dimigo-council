@@ -5,13 +5,8 @@ import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
-import {
-  Badge,
-  Button,
-  ListGroup,
-  statusTone,
-  Tabs,
-} from '../../components/kit/index.ts';
+import { Badge, Button, Input } from '../../dimi-ui-kit/index.ts';
+import { ListGroup, statusTone, Tabs } from '../../components/ui/index.ts';
 import { formatDate, formatDateTime } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listMembers } from '../members/api.ts';
@@ -20,6 +15,7 @@ import { createSurveyDraft, listAdminSurveys } from './api.ts';
 import { surveyStatus } from './format.ts';
 import type { AdminSurvey } from './types.ts';
 import './survey-admin.css';
+import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function surveyAdminListLoader() {
   const [surveys, members] = await Promise.all([
@@ -84,7 +80,7 @@ function SurveyRow({ survey }: { survey: AdminSurvey }) {
           />
         </span>
       )}
-      <Badge tone={statusTone.survey[status]}>{status}</Badge>
+      <Badge theme={statusTone.survey[status]}>{status}</Badge>
       <span className="survey-admin-row__date">{date}</span>
     </li>
   );
@@ -164,9 +160,10 @@ export function SurveyAdminListPage() {
                 <option key={item}>{item}</option>
               ))}
             </FilterSelect>
-            <input
+            <Input
               type="search"
-              className="field__control filter-bar__search"
+              containerClassName="filter-bar__search"
+              leadingIcon={iconSearch}
               aria-label="설문 찾기"
               placeholder="설문 제목으로 찾기"
               value={query}
@@ -174,6 +171,7 @@ export function SurveyAdminListPage() {
             />
           </div>
           <Button
+            theme="accent"
             variant="primary"
             disabled={creating}
             onClick={() => void onCreate()}

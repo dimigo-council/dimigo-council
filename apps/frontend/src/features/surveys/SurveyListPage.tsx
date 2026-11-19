@@ -1,6 +1,12 @@
 import { Link, useLoaderData } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
-import { Badge, ListGroup, ListRow, Tabs } from '../../components/kit/index.ts';
+import { Badge } from '../../dimi-ui-kit/index.ts';
+import {
+  ListGroup,
+  ListRow,
+  Tabs,
+  buttonLook,
+} from '../../components/ui/index.ts';
 import { formatDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listSurveys } from './api.ts';
@@ -32,15 +38,15 @@ function SurveyActions({ survey }: { survey: SurveySummary }) {
   if (survey.myStatus === 'submitted') {
     return (
       <>
-        <Badge tone="success">응답 완료</Badge>
-        <Link className="btn btn--secondary btn--sm" to={to}>
+        <Badge theme="grayscale">응답 완료</Badge>
+        <Link {...buttonLook({ size: 'small' })} to={to}>
           응답 수정
         </Link>
       </>
     );
   }
   return (
-    <Link className="btn btn--primary" to={to}>
+    <Link {...buttonLook({ theme: 'accent', variant: 'primary' })} to={to}>
       {survey.myStatus === 'draft' ? '이어서 응답' : '응답하기'}
     </Link>
   );
@@ -64,7 +70,7 @@ function SurveyRow({ survey }: { survey: SurveySummary }) {
       aside={
         survey.isClosed ? (
           <>
-            <Badge tone="success">마감</Badge>
+            <Badge theme="grayscale">마감</Badge>
             <span>{formatDate(survey.closesAt)} 마감</span>
           </>
         ) : (

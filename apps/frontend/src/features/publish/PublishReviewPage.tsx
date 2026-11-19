@@ -2,13 +2,8 @@ import { useId, useState, type FormEvent } from 'react';
 import { Link, useLoaderData, useRevalidator } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
-import {
-  Badge,
-  Button,
-  statusTone,
-  Tabs,
-  Tag,
-} from '../../components/kit/index.ts';
+import { Badge, Button, TextArea } from '../../dimi-ui-kit/index.ts';
+import { statusTone, Tabs } from '../../components/ui/index.ts';
 import { formatDateTime, formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listPublishItems, publishItem, requestRevision } from './api.ts';
@@ -53,7 +48,7 @@ function PublishRow({ item }: { item: PublishItem }) {
       <div className="list-row__main">
         <h3 className="list-row__title">{item.title}</h3>
         <div className="list-row__meta">
-          <Tag>{item.kind}</Tag>
+          <Badge>{item.kind}</Badge>
           <span>
             {item.department}, {item.requester}
           </span>
@@ -65,7 +60,7 @@ function PublishRow({ item }: { item: PublishItem }) {
         </div>
       </div>
       <div className="list-row__aside">
-        <Badge tone={statusTone.visibility[item.status]}>{item.status}</Badge>
+        <Badge theme={statusTone.visibility[item.status]}>{item.status}</Badge>
         <span>
           {pending
             ? `${formatRelative(item.requestedAt)} 요청`
@@ -75,12 +70,17 @@ function PublishRow({ item }: { item: PublishItem }) {
       </div>
       {pending && !revising && (
         <div className="list-row__actions">
-          <Button size="sm" disabled={busy} onClick={() => setRevising(true)}>
+          <Button
+            size="small"
+            disabled={busy}
+            onClick={() => setRevising(true)}
+          >
             수정 요청
           </Button>
           <Button
+            theme="accent"
             variant="primary"
-            size="sm"
+            size="small"
             disabled={busy}
             onClick={() => void run(() => publishItem(item.id, session.name))}
           >
@@ -99,9 +99,9 @@ function PublishRow({ item }: { item: PublishItem }) {
           <label className="field__label" htmlFor={noteId}>
             무엇을 고쳐야 하나요?
           </label>
-          <textarea
+          <TextArea
             id={noteId}
-            className="field__control comment-input"
+            containerClassName="comment-input"
             maxLength={300}
             placeholder="요청한 사람에게 그대로 전달됩니다."
             value={note}
@@ -113,6 +113,7 @@ function PublishRow({ item }: { item: PublishItem }) {
             </Button>
             <Button
               type="submit"
+              theme="accent"
               variant="primary"
               disabled={busy || !note.trim()}
             >

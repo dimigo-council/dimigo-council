@@ -9,17 +9,16 @@ import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { Steps } from '../../components/intranet/Steps.tsx';
 import { Timeline } from '../../components/intranet/Timeline.tsx';
+import { Badge, Button, TextButton } from '../../dimi-ui-kit/index.ts';
 import {
-  Avatar,
-  Badge,
-  Button,
+  ChoiceGroup,
   ListGroup,
   ListRow,
-  SegmentedControl,
+  PersonAvatar,
   statusTone,
   Tabs,
-  Tag,
-} from '../../components/kit/index.ts';
+  buttonLook,
+} from '../../components/ui/index.ts';
 import {
   formatFullDate,
   formatRelative,
@@ -88,7 +87,7 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
                 ? `건의 ${agenda.suggestionCount}건에서 시작`
                 : originLabel(agenda)}
             </span>
-            <Badge tone={statusTone.visibility[agenda.visibility]}>
+            <Badge theme={statusTone.visibility[agenda.visibility]}>
               {agenda.visibility}
             </Badge>
           </span>
@@ -96,10 +95,7 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
         actions={
           <>
             {isPublic && (
-              <Link
-                className="btn btn--secondary"
-                to={`/activity/${agenda.id}`}
-              >
+              <Link {...buttonLook()} to={`/activity/${agenda.id}`}>
                 학생 화면에서 보기
               </Link>
             )}
@@ -169,8 +165,8 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
                       record.visibility === 'public' ? 'filled' : 'hollow',
                     badge: (
                       <Badge
-                        tone={
-                          record.visibility === 'public' ? 'info' : 'default'
+                        theme={
+                          record.visibility === 'public' ? 'solid' : 'grayscale'
                         }
                       >
                         {record.visibility === 'public' ? '공개' : '내부'}
@@ -205,7 +201,7 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
               <dd>{agenda.id}</dd>
               <dt>담당</dt>
               <dd className="owner">
-                <Avatar name={agenda.owner} aria-hidden="true" />
+                <PersonAvatar name={agenda.owner} aria-hidden="true" />
                 {agenda.department}, {agenda.owner}
               </dd>
               <dt>출처</dt>
@@ -222,7 +218,7 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
               )}
               <dt>공개 범위</dt>
               <dd>
-                <Badge tone={statusTone.visibility[agenda.visibility]}>
+                <Badge theme={statusTone.visibility[agenda.visibility]}>
                   {agenda.visibility}
                 </Badge>
               </dd>
@@ -284,7 +280,11 @@ function AdvanceStage({ agenda }: { agenda: Agenda }) {
 
   if (!confirming) {
     return (
-      <Button variant="primary" onClick={() => setConfirming(true)}>
+      <Button
+        theme="accent"
+        variant="primary"
+        onClick={() => setConfirming(true)}
+      >
         다음 단계로
       </Button>
     );
@@ -296,12 +296,13 @@ function AdvanceStage({ agenda }: { agenda: Agenda }) {
         넘깁니다.
         {status === 'error' && ' 넘기지 못했습니다. 다시 시도해주세요.'}
       </p>
-      <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+      <TextButton size="small" onClick={() => setConfirming(false)}>
         취소
-      </Button>
+      </TextButton>
       <Button
+        theme="accent"
         variant="primary"
-        size="sm"
+        size="small"
         disabled={status === 'saving'}
         onClick={() => void onAdvance()}
       >
@@ -365,7 +366,7 @@ function RecordComposer({ agenda }: { agenda: Agenda }) {
         onChange={(event) => setText(event.target.value)}
       />
       <div className="record-composer__bar">
-        <SegmentedControl
+        <ChoiceGroup
           aria-label="기록 공개 범위"
           name="record-visibility"
           value={visibility}
@@ -382,6 +383,7 @@ function RecordComposer({ agenda }: { agenda: Agenda }) {
         </p>
         <Button
           type="submit"
+          theme="accent"
           variant="primary"
           disabled={!text.trim() || status === 'saving'}
         >
@@ -424,12 +426,12 @@ function LinkedList({
             title={item.title}
             meta={[
               item.id,
-              <Tag key="category">{item.category}</Tag>,
+              <Badge key="category">{item.category}</Badge>,
               item.author ?? '익명',
             ]}
             aside={
               <>
-                <Badge tone={statusTone.suggestion[item.status]}>
+                <Badge theme={statusTone.suggestion[item.status]}>
                   {item.status}
                 </Badge>
                 <span>{formatRelative(item.receivedAt)} 접수</span>
@@ -455,12 +457,12 @@ function LinkedList({
             }
             meta={[
               report.id,
-              <Tag key="kind">{report.kind}</Tag>,
+              <Badge key="kind">{report.kind}</Badge>,
               report.author,
             ]}
             aside={
               <>
-                <Badge tone={statusTone.report[report.status]}>
+                <Badge theme={statusTone.report[report.status]}>
                   {report.status}
                 </Badge>
                 <span>{formatRelative(report.updatedAt)}</span>
@@ -482,7 +484,7 @@ function LinkedList({
     {
       tasks: (
         <Link
-          className="btn btn--secondary btn--sm"
+          {...buttonLook({ size: 'small' })}
           to={`/work/tasks?new&agenda=${agenda.id}`}
         >
           업무 만들기
@@ -490,14 +492,14 @@ function LinkedList({
       ),
       suggestions: (
         <Link
-          className="btn btn--secondary btn--sm"
+          {...buttonLook({ size: 'small' })}
           to="/work/suggestions?tab=reviewing"
         >
           건의 접수함에서 묶기
         </Link>
       ),
       reports: (
-        <Link className="btn btn--secondary btn--sm" to="/work/reports/new">
+        <Link {...buttonLook({ size: 'small' })} to="/work/reports/new">
           보고서 쓰기
         </Link>
       ),

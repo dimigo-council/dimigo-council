@@ -1,12 +1,5 @@
 /* 학생회 활동: 공개 안건 목록 · 공개 안건 상세 */
 
-.tag--mine {
-  border-color: transparent;
-  background: var(--color-status-warn-bg);
-  color: var(--color-status-warn-ink);
-  font-weight: 700;
-}
-
 /* 목록 */
 .agenda-list {
   margin: 16px 0 0;
@@ -18,8 +11,8 @@
 .agenda-row__summary {
   flex-basis: 100%;
   margin: 0;
-  color: var(--color-ink-2);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-secondary);
+  font-size: var(--kit-size-callout);
   line-height: 1.6;
 }
 
@@ -30,16 +23,16 @@
   gap: 14px 24px;
   margin: 0;
   padding: 20px 18px;
-  font-size: var(--text-md);
+  font-size: var(--kit-size-callout);
   line-height: 1.7;
 }
 .agenda-summary dt {
-  color: var(--color-ink);
+  color: var(--kit-core-glyph-primary);
   font-weight: 700;
 }
 .agenda-summary dd {
   margin: 0;
-  color: var(--color-ink);
+  color: var(--kit-core-glyph-primary);
 }
 @media (max-width: 520px) {
   .agenda-summary {
@@ -57,10 +50,10 @@
   gap: 8px;
   margin: 0 18px 18px;
   padding: 12px 14px;
-  border: 1px dashed var(--color-line-strong);
-  border-radius: var(--radius-2);
-  color: var(--color-ink-3);
-  font-size: var(--text-xs);
+  border: 1px dashed var(--kit-core-line);
+  border-radius: var(--kit-radius-m);
+  color: var(--kit-core-glyph-tertiary);
+  font-size: var(--kit-size-footnote);
 }
 .hidden-records svg {
   flex: none;
@@ -77,14 +70,14 @@
   padding: 14px 0;
 }
 .related-list li + li {
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--kit-core-outline);
 }
 .related-list .meta-row {
-  font-size: var(--text-xs);
+  font-size: var(--kit-size-footnote);
 }
 .related-list__title {
-  color: var(--color-ink);
-  font-size: var(--text-sm);
+  color: var(--kit-core-glyph-primary);
+  font-size: var(--kit-size-callout);
   font-weight: 700;
   text-decoration: none;
 }
@@ -92,7 +85,7 @@ a.related-list__title:hover {
   text-decoration: underline;
 }
 a.related-list__title:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--kit-core-status-accent);
   outline-offset: 2px;
-  border-radius: var(--radius-1);
+  border-radius: var(--kit-radius-xs);
 }

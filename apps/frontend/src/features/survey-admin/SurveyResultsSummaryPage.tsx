@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
-import { Button, Notice, Tag } from '../../components/kit/index.ts';
+import { Badge, Button, TextButton } from '../../dimi-ui-kit/index.ts';
+import { Notice } from '../../components/ui/index.ts';
 import { formatShortDate } from '../../lib/date.ts';
 import { identityNotice } from '../surveys/format.ts';
 import type {
@@ -60,15 +61,14 @@ function TableViewButton({
   className?: string;
 }) {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
+    <TextButton
+      size="small"
       className={className}
       aria-pressed={showsTable}
       onClick={onToggle}
     >
       {showsTable ? '차트로 보기' : '표로 보기'}
-    </Button>
+    </TextButton>
   );
 }
 
@@ -138,7 +138,7 @@ function QuestionResultCard({
             {question.title}
           </h2>
           <p className="result-card__meta">
-            <Tag>{questionTypeLabel[question.type]}</Tag>
+            <Badge>{questionTypeLabel[question.type]}</Badge>
             <span>
               {answeredCount}개 응답
               {skippedCount > 0 && ` · ${skippedCount}명 건너뜀`}
@@ -525,7 +525,7 @@ function ResponseManagementPanel({
         <p className="result-manage__text">
           응답을 모두 지우면 되돌릴 수 없습니다. 먼저 CSV로 내려받아 두세요.
         </p>
-        <Button variant="danger" block onClick={onRequestDeleteAll}>
+        <Button theme="negative" fullWidth onClick={onRequestDeleteAll}>
           모든 응답 삭제
         </Button>
       </div>

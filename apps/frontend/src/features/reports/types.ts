@@ -1,4 +1,4 @@
-import type { statusTone } from '../../components/kit/index.ts';
+import type { statusTone } from '../../components/ui/index.ts';
 
 /** KIT 상태 매핑의 보고서 상태 */
 export type ReportStatus = keyof typeof statusTone.report;

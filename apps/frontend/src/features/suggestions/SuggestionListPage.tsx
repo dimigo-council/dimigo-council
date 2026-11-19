@@ -1,12 +1,12 @@
 import { Link, useLoaderData } from 'react-router';
 import { PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
+import { Badge } from '../../dimi-ui-kit/index.ts';
 import {
-  Badge,
-  SegmentedControl,
+  ChoiceGroup,
   statusTone,
-  Tag,
-} from '../../components/kit/index.ts';
+  buttonLook,
+} from '../../components/ui/index.ts';
 import { formatRelative, formatShortDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listMySuggestions } from './api.ts';
@@ -37,13 +37,13 @@ function SuggestionRow({ suggestion }: { suggestion: Suggestion }) {
           </Link>
         </h2>
         <div className="list-row__meta">
-          <Tag>{suggestion.category}</Tag>
+          <Badge>{suggestion.category}</Badge>
           <span>{formatShortDate(suggestion.submittedAt)} 제출</span>
           <span>{suggestion.identity === 'anonymous' ? '익명' : '실명'}</span>
         </div>
       </div>
       <div className="list-row__aside">
-        <Badge tone={statusTone.suggestion[suggestion.status]}>
+        <Badge theme={statusTone.suggestion[suggestion.status]}>
           {suggestion.status}
         </Badge>
         <span>{formatRelative(suggestion.updatedAt)}</span>
@@ -77,7 +77,7 @@ export function SuggestionListPage() {
       <PageHeader title="내 건의" visuallyHidden />
 
       <div className="page-toolbar">
-        <SegmentedControl
+        <ChoiceGroup
           aria-label="건의 보기"
           value={filter}
           onChange={setFilter}
@@ -87,7 +87,10 @@ export function SuggestionListPage() {
             { value: 'done', label: `끝난 건의 ${done.length}` },
           ]}
         />
-        <Link className="btn btn--primary" to="/suggestions/new">
+        <Link
+          {...buttonLook({ theme: 'accent', variant: 'primary' })}
+          to="/suggestions/new"
+        >
           <PlusIcon />새 건의
         </Link>
       </div>

@@ -3,17 +3,15 @@ import { Link, useLoaderData, useRevalidator } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
+import { Badge, Button, TextButton, Input } from '../../dimi-ui-kit/index.ts';
 import {
-  Badge,
-  Button,
+  ChoiceGroup,
   Notice,
-  SegmentedControl,
   Select,
   statusTone,
   Tabs,
-  Tag,
   TextArea,
-} from '../../components/kit/index.ts';
+} from '../../components/ui/index.ts';
 import { formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listAgendas } from '../agendas/api.ts';
@@ -23,6 +21,7 @@ import { suggestionCategories } from '../suggestions/types.ts';
 import { listInbox, resolveSuggestion, startReview } from './api.ts';
 import type { InboxResult, InboxSuggestion } from './types.ts';
 import './inbox.css';
+import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function inboxLoader() {
   const [items, members, agendas] = await Promise.all([
@@ -121,7 +120,7 @@ function ResolveForm({
         <span className="field__label" id={resultLabelId}>
           처리 결과
         </span>
-        <SegmentedControl
+        <ChoiceGroup
           aria-labelledby={resultLabelId}
           value={result}
           onChange={setResult}
@@ -165,10 +164,13 @@ function ResolveForm({
         </Notice>
       )}
       <div className="form-actions">
-        <Button variant="ghost" onClick={onClose}>
-          취소
-        </Button>
-        <Button type="submit" variant="primary" disabled={status === 'saving'}>
+        <TextButton onClick={onClose}>취소</TextButton>
+        <Button
+          type="submit"
+          theme="accent"
+          variant="primary"
+          disabled={status === 'saving'}
+        >
           {result === '반려' ? '반려하기' : '처리 완료'}
         </Button>
       </div>
@@ -195,7 +197,7 @@ function InboxRow({
         <h3 className="list-row__title">{item.title}</h3>
         <div className="list-row__meta">
           <span>{item.id}</span>
-          <Tag>{item.category}</Tag>
+          <Badge>{item.category}</Badge>
           <span>{item.author ?? '익명'}</span>
           <span>
             {item.department
@@ -210,19 +212,19 @@ function InboxRow({
         </div>
       </div>
       <div className="list-row__aside">
-        <Badge tone={statusTone.suggestion[item.status]}>{item.status}</Badge>
+        <Badge theme={statusTone.suggestion[item.status]}>{item.status}</Badge>
         <span>{formatRelative(item.updatedAt)}</span>
       </div>
       {item.status === '접수 대기' && (
         <div className="list-row__actions">
-          <Button size="sm" disabled={busy} onClick={onStart}>
+          <Button size="small" disabled={busy} onClick={onStart}>
             내가 검토하기
           </Button>
         </div>
       )}
       {item.status === '검토 중' && !resolving && (
         <div className="list-row__actions">
-          <Button size="sm" onClick={() => setResolving(true)}>
+          <Button size="small" onClick={() => setResolving(true)}>
             처리하기
           </Button>
         </div>
@@ -309,9 +311,10 @@ export function InboxPage() {
               <option key={item}>{item}</option>
             ))}
           </FilterSelect>
-          <input
+          <Input
             type="search"
-            className="field__control filter-bar__search"
+            containerClassName="filter-bar__search"
+            leadingIcon={iconSearch}
             aria-label="건의 찾기"
             placeholder="번호, 제목, 내용으로 찾기"
             value={query}

@@ -9,13 +9,13 @@ import {
   type LoaderFunctionArgs,
 } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
+import { Badge, Button } from '../../dimi-ui-kit/index.ts';
 import {
-  Badge,
-  Button,
   Notice,
   statusTone,
   Switch,
-} from '../../components/kit/index.ts';
+  buttonLook,
+} from '../../components/ui/index.ts';
 import { formatDate } from '../../lib/date.ts';
 import { daysLeft, identityLabel } from '../surveys/format.ts';
 import { getSurveyResults, setAcceptingResponses } from './api.ts';
@@ -113,7 +113,7 @@ function SurveyMeta({ survey }: { survey: AdminSurvey }) {
   const status = surveyStatus(survey);
   return (
     <span className="meta-row">
-      <Badge tone={statusTone.survey[status]}>{status}</Badge>
+      <Badge theme={statusTone.survey[status]}>{status}</Badge>
       <span>{closingDescription(survey)}</span>
       <span>
         {survey.department}, {survey.owner}
@@ -209,14 +209,17 @@ function ResultTabs({
 }) {
   const paths = surveyResultsPaths(surveyId);
   return (
-    <nav className="tabs result-tabs" aria-label="응답 보기 방식">
-      <NavLink className="tabs__tab" to={paths.summary} end>
+    <nav
+      className="ui-tabs kit-segmented-control-track result-tabs"
+      aria-label="응답 보기 방식"
+    >
+      <NavLink className="kit-segment kit-interactive" to={paths.summary} end>
         요약
       </NavLink>
-      <NavLink className="tabs__tab" to={paths.questions}>
+      <NavLink className="kit-segment kit-interactive" to={paths.questions}>
         질문
       </NavLink>
-      <NavLink className="tabs__tab" to={paths.responses}>
+      <NavLink className="kit-segment kit-interactive" to={paths.responses}>
         개별 보기
         <span className="count">{responseCount}</span>
       </NavLink>
@@ -268,7 +271,10 @@ export function SurveyResultsLayout() {
               CSV 내려받기
             </Button>
             <Button onClick={() => window.print()}>인쇄</Button>
-            <Link className="btn btn--primary" to="/work/reports/new">
+            <Link
+              {...buttonLook({ theme: 'accent', variant: 'primary' })}
+              to="/work/reports/new"
+            >
               결과로 보고서 쓰기
             </Link>
           </>
