@@ -11,10 +11,13 @@ import {
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Badge, Button } from '../../dimi-ui-kit/index.ts';
 import {
+  Breadcrumb,
+  ButtonLink,
+  CountText,
+  MetaRow,
   Notice,
   statusTone,
-  Switch,
-  buttonLook,
+  TabSegment,
 } from '../../components/ui/index.ts';
 import { formatDate } from '../../lib/date.ts';
 import { daysLeft, identityLabel } from '../surveys/format.ts';
@@ -28,9 +31,7 @@ import {
   responsesIncludedInAnalysis,
 } from './results.ts';
 import type { AdminSurvey, SurveyResponse, SurveyResults } from './types.ts';
-import '../surveys/surveys.css';
-import './survey-admin.css';
-import './survey-results.css';
+import * as S from './styles.ts';
 
 export async function surveyResultsLoader({ params }: LoaderFunctionArgs) {
   return getSurveyResults(params.surveyId ?? '');
@@ -112,7 +113,7 @@ function closingDescription(survey: AdminSurvey) {
 function SurveyMeta({ survey }: { survey: AdminSurvey }) {
   const status = surveyStatus(survey);
   return (
-    <span className="meta-row">
+    <MetaRow>
       <Badge theme={statusTone.survey[status]}>{status}</Badge>
       <span>{closingDescription(survey)}</span>
       <span>
@@ -121,7 +122,7 @@ function SurveyMeta({ survey }: { survey: AdminSurvey }) {
       <span>
         {survey.audience} · {identityLabel[survey.identity]}
       </span>
-    </span>
+    </MetaRow>
   );
 }
 
@@ -171,7 +172,7 @@ function ResultFacts({
     : undefined;
 
   return (
-    <dl className="result-facts">
+    <S.ResultFacts>
       <div>
         <dt>응답</dt>
         <dd>
@@ -196,7 +197,7 @@ function ResultFacts({
         <dt>응답 시간 (중앙값)</dt>
         <dd>{medianDurationText(includedResponses)}</dd>
       </div>
-    </dl>
+    </S.ResultFacts>
   );
 }
 
@@ -209,21 +210,18 @@ function ResultTabs({
 }) {
   const paths = surveyResultsPaths(surveyId);
   return (
-    <nav
-      className="ui-tabs kit-segmented-control-track result-tabs"
-      aria-label="응답 보기 방식"
-    >
-      <NavLink className="kit-segment kit-interactive" to={paths.summary} end>
+    <S.ResultTabs as="nav" aria-label="응답 보기 방식">
+      <TabSegment as={NavLink} to={paths.summary} end>
         요약
-      </NavLink>
-      <NavLink className="kit-segment kit-interactive" to={paths.questions}>
+      </TabSegment>
+      <TabSegment as={NavLink} to={paths.questions}>
         질문
-      </NavLink>
-      <NavLink className="kit-segment kit-interactive" to={paths.responses}>
+      </TabSegment>
+      <TabSegment as={NavLink} to={paths.responses}>
         개별 보기
-        <span className="count">{responseCount}</span>
-      </NavLink>
-    </nav>
+        <CountText>{responseCount}</CountText>
+      </TabSegment>
+    </S.ResultTabs>
   );
 }
 
@@ -247,18 +245,17 @@ export function SurveyResultsLayout() {
 
   return (
     <>
-      <nav className="breadcrumb" aria-label="경로">
+      <Breadcrumb aria-label="경로">
         <Link to="/work/surveys">설문</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">결과</span>
-      </nav>
+      </Breadcrumb>
       <PageHeader
         title={survey.title}
         description={<SurveyMeta survey={survey} />}
         actions={
           <>
-            <Switch
-              className="result-accepting"
+            <S.ResultAccepting
               label="응답 받기"
               checked={isAccepting}
               disabled={isSaving || cannotReopenAfterDeadline}
@@ -271,12 +268,9 @@ export function SurveyResultsLayout() {
               CSV 내려받기
             </Button>
             <Button onClick={() => window.print()}>인쇄</Button>
-            <Link
-              {...buttonLook({ theme: 'accent', variant: 'primary' })}
-              to="/work/reports/new"
-            >
+            <ButtonLink theme="accent" variant="primary" to="/work/reports/new">
               결과로 보고서 쓰기
-            </Link>
+            </ButtonLink>
           </>
         }
       />
@@ -287,11 +281,11 @@ export function SurveyResultsLayout() {
         </Notice>
       )}
       {closedBeforeDeadline && (
-        <Notice tone="neutral" className="result-closed">
+        <S.ResultClosed tone="neutral">
           응답을 받지 않고 있습니다. 학생 화면에는 마감으로 보입니다. 마감일(
           {survey.closesAt && formatDate(survey.closesAt)}) 전까지는 다시 켤 수
           있습니다.
-        </Notice>
+        </S.ResultClosed>
       )}
 
       <ResultFacts
@@ -304,7 +298,7 @@ export function SurveyResultsLayout() {
       {hasResponses ? (
         <Outlet context={{ ...results, reload } satisfies ResultsContext} />
       ) : (
-        <p className="empty-state result-empty">아직 들어온 응답이 없습니다.</p>
+        <S.ResultEmpty>아직 들어온 응답이 없습니다.</S.ResultEmpty>
       )}
     </>
   );

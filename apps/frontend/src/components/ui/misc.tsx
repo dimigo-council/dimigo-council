@@ -1,8 +1,15 @@
-import type { HTMLAttributes } from 'react';
+import type { HTMLAttributes, LabelHTMLAttributes } from 'react';
+import { Link, type LinkProps } from 'react-router';
+import styled, { css } from 'styled-components';
 import {
   Avatar,
+  AvatarRoot,
+  ButtonRoot,
   type AvatarProps,
   type BadgeProps,
+  textButtonStyles,
+  type ButtonLook,
+  type TextButtonLook,
 } from '../../dimi-ui-kit/index.ts';
 
 /** 상태 배지의 kit Badge 테마. */
@@ -62,21 +69,37 @@ export interface CountProps extends HTMLAttributes<HTMLSpanElement> {
   alert?: boolean;
 }
 
-export function Count({
-  value,
-  alert = false,
-  className,
-  ...rest
-}: CountProps) {
+/** 숫자 글자 (Count의 모양). 선택자로도 쓴다 (`${CountText}`). */
+export const CountText = styled.span<{ $alert?: boolean }>`
+  ${({ theme: t, $alert }) => css`
+    color: ${t.colors.core.glyph.tertiary};
+    font-size: ${t.font.size.footnote};
+    font-weight: ${t.font.weight.weak};
+    font-variant-numeric: tabular-nums;
+    ${
+      $alert &&
+      css`
+        display: inline-grid;
+        place-items: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 ${t.spacing[100]};
+        border-radius: ${t.radius.circle};
+        background: ${t.colors.core.status.accent};
+        color: ${t.colors.core.onColor.primary};
+        font-size: ${t.font.size.caption};
+        line-height: ${t.font.lineHeight.caption};
+        font-weight: ${t.font.weight.strong};
+      `
+    }
+  `}
+`;
+
+export function Count({ value, alert = false, ...rest }: CountProps) {
   return (
-    <span
-      className={['count', alert && 'count--alert', className]
-        .filter(Boolean)
-        .join(' ')}
-      {...rest}
-    >
+    <CountText $alert={alert} {...rest}>
       {value}
-    </span>
+    </CountText>
   );
 }
 
@@ -98,44 +121,85 @@ export function PersonAvatar({
   );
 }
 
+/** 겹쳐 놓은 아바타 묶음. 선택자로 쓴다 (`${AvatarGroupRoot}`). */
+export const AvatarGroupRoot = styled.span`
+  display: inline-flex;
+
+  > ${AvatarRoot} + ${AvatarRoot} {
+    margin-left: calc(${({ theme }) => theme.spacing[150]} * -1);
+    outline: 2px solid ${({ theme }) => theme.colors.background.primary};
+  }
+`;
+
 export function AvatarGroup({ names }: { names: string[] }) {
   return (
-    <span className="avatar-group">
+    <AvatarGroupRoot>
       {names.map((name) => (
         <PersonAvatar key={name} name={name} />
       ))}
-    </span>
+    </AvatarGroupRoot>
   );
 }
 
-type ButtonLook = {
-  size?: 'small' | 'medium' | 'large';
-  theme?: 'grayscale' | 'accent' | 'negative';
-  variant?: 'primary' | 'secondary';
-  fullWidth?: boolean;
-  className?: string;
-};
-
-/**
- * kit Button 모양을 링크(<Link>)나 label에 입힐 때 펼쳐 넣는 속성.
- * 예: <Link {...buttonLook({ theme: 'accent', variant: 'primary' })} to="…">
- */
-export function buttonLook({
+const lookProps = ({
   size = 'medium',
   theme = 'grayscale',
   variant = 'secondary',
   fullWidth,
-  className,
-}: ButtonLook = {}) {
-  return {
-    className: ['kit-button kit-interactive', className]
-      .filter(Boolean)
-      .join(' '),
-    'data-size': size,
-    'data-theme': theme,
-    'data-style': variant,
-    'data-inverted':
-      theme === 'grayscale' && variant === 'primary' ? '' : undefined,
-    'data-full-width': fullWidth ? '' : undefined,
-  };
+}: ButtonLook) => ({
+  $size: size,
+  $theme: theme,
+  $variant: variant,
+  $fullWidth: fullWidth,
+});
+
+/** kit Button 모양의 라우터 링크. 예: <ButtonLink theme="accent" variant="primary" to="…"> */
+export function ButtonLink({
+  size,
+  theme,
+  variant,
+  fullWidth,
+  ...rest
+}: ButtonLook & LinkProps) {
+  return (
+    <ButtonRoot
+      as={Link}
+      {...lookProps({ size, theme, variant, fullWidth })}
+      {...rest}
+    />
+  );
+}
+
+/** kit Button 모양의 label (파일 고르기처럼 숨긴 input을 여는 버튼). */
+export function ButtonLabel({
+  size,
+  theme,
+  variant,
+  fullWidth,
+  ...rest
+}: ButtonLook & LabelHTMLAttributes<HTMLLabelElement>) {
+  return (
+    <ButtonRoot
+      as="label"
+      {...lookProps({ size, theme, variant, fullWidth })}
+      {...rest}
+    />
+  );
+}
+
+const TextButtonLinkRoot = styled(Link)<{
+  $size: NonNullable<TextButtonLook['size']>;
+  $theme: NonNullable<TextButtonLook['theme']>;
+}>`
+  ${({ theme: t, $size, $theme }) =>
+    textButtonStyles(t, { size: $size, theme: $theme })}
+`;
+
+/** kit TextButton 모양의 라우터 링크 (폼의 "취소" 등). */
+export function TextButtonLink({
+  size = 'medium',
+  theme = 'grayscale',
+  ...rest
+}: Omit<TextButtonLook, 'weight'> & LinkProps) {
+  return <TextButtonLinkRoot $size={size} $theme={theme} {...rest} />;
 }

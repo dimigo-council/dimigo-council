@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
-  Link,
   useLoaderData,
   useNavigate,
   type LoaderFunctionArgs,
@@ -15,7 +14,20 @@ import {
   statusTone,
   TextArea,
   TextField,
-  buttonLook,
+  BackLink,
+  ButtonLink,
+  SplitLayout,
+  SplitAside,
+  FieldRoot,
+  FieldLabel,
+  FieldOptional,
+  FieldFoot,
+  FieldError,
+  FormActions,
+  Panel,
+  PanelTitle,
+  PanelNote,
+  VisuallyHidden,
 } from '../../components/ui/index.ts';
 import { findSimilarAgendas, getPublicAgenda } from '../activity/api.ts';
 import type { PublicAgenda } from '../activity/types.ts';
@@ -25,7 +37,7 @@ import {
   type AgendaRef,
   type SuggestionCategory,
 } from './types.ts';
-import './suggestions.css';
+import * as S from './styles.ts';
 
 /** 공개 안건의 "이 안건에 의견 보태기"로 오면 ?agenda=안건번호가 붙는다. */
 export async function newSuggestionLoader({
@@ -142,15 +154,15 @@ export function NewSuggestionPage() {
 
   return (
     <>
-      <Link className="back-link" to="/suggestions">
+      <BackLink to="/suggestions">
         <ChevronLeftIcon />내 건의
-      </Link>
+      </BackLink>
       <PageHeader title="새 건의" />
 
-      <div className="split-layout">
-        <form
+      <SplitLayout>
+        <S.SuggestionForm
+          as="form"
           ref={formRef}
-          className="panel suggestion-form"
           onSubmit={onSubmit}
           noValidate
         >
@@ -161,10 +173,10 @@ export function NewSuggestionPage() {
             </Notice>
           )}
 
-          <div className="field">
-            <span className="field__label" id="category-label">
+          <FieldRoot>
+            <FieldLabel as="span" id="category-label">
               분류
-            </span>
+            </FieldLabel>
             <ChoiceGroup
               variant="chips"
               name="category"
@@ -181,14 +193,12 @@ export function NewSuggestionPage() {
                 label: item,
               }))}
             />
-            <div className="field__foot">
+            <FieldFoot>
               {errors.category && (
-                <span className="field__error" id="category-error">
-                  {errors.category}
-                </span>
+                <FieldError id="category-error">{errors.category}</FieldError>
               )}
-            </div>
-          </div>
+            </FieldFoot>
+          </FieldRoot>
 
           <TextField
             label="제목"
@@ -216,28 +226,23 @@ export function NewSuggestionPage() {
             }}
           />
 
-          <div className="field">
-            <span className="field__label" id="photo-label">
-              사진<span className="field__optional">선택</span>
-            </span>
-            <div className="photo-picker">
+          <FieldRoot>
+            <FieldLabel as="span" id="photo-label">
+              사진<FieldOptional>선택</FieldOptional>
+            </FieldLabel>
+            <S.PhotoPicker>
               <PhotoIcon />
-              <span className="photo-picker__text">
+              <S.PhotoPickerText>
                 최대 {MAX_PHOTOS}장, 장당 10MB. 얼굴이 나온 사진은 올리지
                 말아주세요.
-              </span>
-              <label
-                {...buttonLook({
-                  size: 'small',
-                  className: 'photo-picker__button',
-                })}
-              >
+              </S.PhotoPickerText>
+              <S.PhotoPickerButton size="small">
                 파일 선택
-                <input
+                <VisuallyHidden
+                  as="input"
                   type="file"
                   accept="image/*"
                   multiple
-                  className="visually-hidden"
                   aria-labelledby="photo-label"
                   disabled={photos.length >= MAX_PHOTOS}
                   onChange={(event) => {
@@ -245,10 +250,10 @@ export function NewSuggestionPage() {
                     event.target.value = '';
                   }}
                 />
-              </label>
-            </div>
+              </S.PhotoPickerButton>
+            </S.PhotoPicker>
             {photos.length > 0 && (
-              <ul className="photo-list">
+              <S.PhotoList>
                 {photos.map((file, index) => (
                   <li key={`${file.name}-${index}`}>
                     <span>{file.name}</span>
@@ -263,16 +268,14 @@ export function NewSuggestionPage() {
                     </TextButton>
                   </li>
                 ))}
-              </ul>
+              </S.PhotoList>
             )}
-            <div className="field__foot">
+            <FieldFoot>
               {errors.photos && (
-                <span className="field__error" role="status">
-                  {errors.photos}
-                </span>
+                <FieldError role="status">{errors.photos}</FieldError>
               )}
-            </div>
-          </div>
+            </FieldFoot>
+          </FieldRoot>
 
           <Checkbox
             name="identity"
@@ -287,10 +290,8 @@ export function NewSuggestionPage() {
             </Notice>
           )}
 
-          <div className="form-actions">
-            <Link {...buttonLook()} to="/suggestions">
-              취소
-            </Link>
+          <FormActions>
+            <ButtonLink to="/suggestions">취소</ButtonLink>
             <Button
               type="submit"
               theme="accent"
@@ -299,44 +300,39 @@ export function NewSuggestionPage() {
             >
               건의 보내기
             </Button>
-          </div>
-        </form>
+          </FormActions>
+        </S.SuggestionForm>
 
-        <aside className="split-layout__aside">
+        <SplitAside>
           {similar.length > 0 && (
-            <section className="panel" aria-labelledby="similar-title">
-              <h2 className="panel__title" id="similar-title">
+            <Panel aria-labelledby="similar-title">
+              <PanelTitle id="similar-title">
                 비슷한 내용이 이미 있어요
-              </h2>
-              <ul className="similar-list">
+              </PanelTitle>
+              <S.SimilarList>
                 {similar.map((agenda) => (
                   <li key={agenda.id}>
-                    <Link
-                      className="similar-list__title"
-                      to={`/activity/${agenda.id}`}
-                    >
+                    <S.SimilarTitle to={`/activity/${agenda.id}`}>
                       {agenda.title}
-                    </Link>
-                    <span className="similar-list__meta">
+                    </S.SimilarTitle>
+                    <S.SimilarMeta>
                       <Badge theme={statusTone.agenda[agenda.status]}>
                         {agenda.status}
                       </Badge>
                       건의 {agenda.suggestionCount}건 연결
-                    </span>
+                    </S.SimilarMeta>
                   </li>
                 ))}
-              </ul>
-              <p className="panel__note">
+              </S.SimilarList>
+              <PanelNote>
                 같은 안건이라도 새 건의는 근거로 함께 반영됩니다.
-              </p>
-            </section>
+              </PanelNote>
+            </Panel>
           )}
 
-          <section className="panel" aria-labelledby="after-title">
-            <h2 className="panel__title" id="after-title">
-              보낸 다음에는
-            </h2>
-            <ol className="after-steps">
+          <Panel aria-labelledby="after-title">
+            <PanelTitle id="after-title">보낸 다음에는</PanelTitle>
+            <S.AfterSteps>
               <li>
                 담당 부서가 3일 안에 확인하고 <strong>검토 중</strong>으로
                 바꿉니다.
@@ -348,10 +344,10 @@ export function NewSuggestionPage() {
               <li>
                 상태가 바뀔 때마다 알림을 보내고, 반려할 때는 이유를 적습니다.
               </li>
-            </ol>
-          </section>
-        </aside>
-      </div>
+            </S.AfterSteps>
+          </Panel>
+        </SplitAside>
+      </SplitLayout>
     </>
   );
 }

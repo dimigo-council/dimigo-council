@@ -1,14 +1,24 @@
 import { Link, useLoaderData } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Badge } from '../../dimi-ui-kit/index.ts';
-import { ChoiceGroup, statusTone } from '../../components/ui/index.ts';
+import {
+  ChoiceGroup,
+  EmptyState,
+  ListGroupRoot,
+  ListRowAside,
+  ListRowLink,
+  ListRowMain,
+  ListRowMeta,
+  ListRowTitle,
+  statusTone,
+} from '../../components/ui/index.ts';
 import { formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listPublicAgendas } from './api.ts';
 import { originLabel } from '../agendas/format.ts';
 import { finishedStatuses } from '../agendas/types.ts';
 import type { PublicAgenda } from './types.ts';
-import './activity.css';
+import * as S from './styles.ts';
 
 export async function activityListLoader() {
   return listPublicAgendas();
@@ -20,26 +30,26 @@ const filters: Filter[] = ['all', 'open', 'done'];
 function AgendaRow({ agenda }: { agenda: PublicAgenda }) {
   const { problem, decision, now } = agenda.summary;
   return (
-    <li className="list-row agenda-row">
-      <div className="list-row__main">
-        <h2 className="list-row__title">
-          <Link className="list-row__link" to={`/activity/${agenda.id}`}>
+    <S.AgendaRow>
+      <ListRowMain>
+        <ListRowTitle as="h2">
+          <ListRowLink as={Link} to={`/activity/${agenda.id}`}>
             {agenda.title}
-          </Link>
-        </h2>
-        <div className="list-row__meta">
+          </ListRowLink>
+        </ListRowTitle>
+        <ListRowMeta>
           <span>{agenda.id}</span>
           <span>{agenda.department}</span>
           <span>{originLabel(agenda)}</span>
           {agenda.includesMine && <Badge theme="accent">내 건의 포함</Badge>}
-        </div>
-      </div>
-      <div className="list-row__aside">
+        </ListRowMeta>
+      </ListRowMain>
+      <ListRowAside>
         <Badge theme={statusTone.agenda[agenda.status]}>{agenda.status}</Badge>
         <span>{formatRelative(agenda.updatedAt)}</span>
-      </div>
-      <p className="agenda-row__summary">{now ?? decision ?? problem}</p>
-    </li>
+      </ListRowAside>
+      <S.AgendaRowSummary>{now ?? decision ?? problem}</S.AgendaRowSummary>
+    </S.AgendaRow>
   );
 }
 
@@ -66,21 +76,21 @@ export function ActivityListPage() {
         ]}
       />
 
-      <div className="agenda-list">
+      <S.AgendaList>
         {visible.length > 0 ? (
-          <ul className="list-group" aria-label="공개 안건 목록">
+          <ListGroupRoot aria-label="공개 안건 목록">
             {visible.map((agenda) => (
               <AgendaRow key={agenda.id} agenda={agenda} />
             ))}
-          </ul>
+          </ListGroupRoot>
         ) : (
-          <p className="empty-state">
+          <EmptyState>
             {agendas.length === 0
               ? '아직 공개된 안건이 없습니다.'
               : '이 보기에 해당하는 안건이 없습니다.'}
-          </p>
+          </EmptyState>
         )}
-      </div>
+      </S.AgendaList>
     </>
   );
 }

@@ -1,14 +1,28 @@
-import { Link, useLoaderData, type LoaderFunctionArgs } from 'react-router';
+import { useLoaderData, type LoaderFunctionArgs } from 'react-router';
 import { ChevronLeftIcon, LockIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Steps } from '../../components/intranet/Steps.tsx';
 import { Timeline } from '../../components/intranet/Timeline.tsx';
 import { Badge } from '../../dimi-ui-kit/index.ts';
-import { statusTone, buttonLook } from '../../components/ui/index.ts';
+import {
+  statusTone,
+  BackLink,
+  ButtonLink,
+  MetaRow,
+  Panel,
+  PanelTitle,
+  PanelAside,
+  SplitLayout,
+  SplitMain,
+  SplitAside,
+  InfoList,
+  InfoListInline,
+  TextLink,
+} from '../../components/ui/index.ts';
 import { formatFullDate, formatShortDate } from '../../lib/date.ts';
 import { getPublicAgenda } from './api.ts';
 import { agendaSteps, originLabel } from '../agendas/format.ts';
-import './activity.css';
+import * as S from './styles.ts';
 
 export async function agendaLoader({ params }: LoaderFunctionArgs) {
   return getPublicAgenda(params.agendaId ?? '');
@@ -20,14 +34,14 @@ export function AgendaDetailPage() {
 
   return (
     <>
-      <Link className="back-link" to="/activity">
+      <BackLink to="/activity">
         <ChevronLeftIcon />
         학생회 활동
-      </Link>
+      </BackLink>
       <PageHeader
         title={agenda.title}
         description={
-          <span className="meta-row">
+          <MetaRow>
             <span>{agenda.id}</span>
             <span>{agenda.department}</span>
             <span>
@@ -36,7 +50,7 @@ export function AgendaDetailPage() {
                 : originLabel(agenda)}
             </span>
             <span>{formatShortDate(agenda.updatedAt)} 업데이트</span>
-          </span>
+          </MetaRow>
         }
         actions={
           <Badge theme={statusTone.agenda[agenda.status]}>
@@ -45,7 +59,7 @@ export function AgendaDetailPage() {
         }
       />
 
-      <section className="panel panel--padded" aria-label="진행 단계">
+      <Panel $padded aria-label="진행 단계">
         <Steps
           aria-label="진행 단계"
           items={agendaSteps(agenda, {
@@ -53,15 +67,13 @@ export function AgendaDetailPage() {
             expectedSuffix: '예정',
           })}
         />
-      </section>
+      </Panel>
 
-      <div className="split-layout">
-        <div className="split-layout__main">
-          <section className="panel" aria-labelledby="summary-title">
-            <h2 className="panel__title" id="summary-title">
-              한눈에 보기
-            </h2>
-            <dl className="agenda-summary">
+      <SplitLayout>
+        <SplitMain>
+          <Panel aria-labelledby="summary-title">
+            <PanelTitle id="summary-title">한눈에 보기</PanelTitle>
+            <S.AgendaSummary>
               <dt>문제</dt>
               <dd>{problem}</dd>
               {decision && (
@@ -76,16 +88,14 @@ export function AgendaDetailPage() {
                   <dd>{now}</dd>
                 </>
               )}
-            </dl>
-          </section>
+            </S.AgendaSummary>
+          </Panel>
 
-          <section className="panel" aria-labelledby="records-title">
-            <h2 className="panel__title panel__title--split" id="records-title">
+          <Panel aria-labelledby="records-title">
+            <PanelTitle $split id="records-title">
               진행 기록
-              <span className="panel__aside">
-                공개 기록 {agenda.records.length}건
-              </span>
-            </h2>
+              <PanelAside>공개 기록 {agenda.records.length}건</PanelAside>
+            </PanelTitle>
             <Timeline
               items={agenda.records.map((record) => ({
                 id: record.id,
@@ -94,87 +104,78 @@ export function AgendaDetailPage() {
                 title: record.title,
                 body: record.body,
                 foot: record.link && (
-                  <Link className="text-link" to={record.link.to}>
-                    {record.link.label}
-                  </Link>
+                  <TextLink to={record.link.to}>{record.link.label}</TextLink>
                 ),
               }))}
             />
             {agenda.hiddenRecordCount > 0 && (
-              <p className="hidden-records">
+              <S.HiddenRecords>
                 <LockIcon />
                 학생회 내부 기록 {agenda.hiddenRecordCount}건은 공개 범위에 따라
                 표시되지 않습니다.
-              </p>
+              </S.HiddenRecords>
             )}
-          </section>
-        </div>
+          </Panel>
+        </SplitMain>
 
-        <aside className="split-layout__aside">
-          <section className="panel" aria-labelledby="agenda-info-title">
-            <h2 className="panel__title" id="agenda-info-title">
-              안건 정보
-            </h2>
-            <dl className="info-list">
+        <SplitAside>
+          <Panel aria-labelledby="agenda-info-title">
+            <PanelTitle id="agenda-info-title">안건 정보</PanelTitle>
+            <InfoList>
               <dt>담당</dt>
               <dd>{agenda.department}</dd>
               <dt>시작</dt>
-              <dd className="info-list__inline">
+              <InfoListInline>
                 {originLabel(agenda)}
                 {agenda.includesMine && (
                   <Badge theme="accent">내 건의 포함</Badge>
                 )}
-              </dd>
+              </InfoListInline>
               {agenda.survey && (
                 <>
                   <dt>관련 설문</dt>
                   <dd>
-                    <Link className="text-link" to={agenda.survey.to}>
+                    <TextLink to={agenda.survey.to}>
                       {agenda.survey.title}
-                    </Link>
+                    </TextLink>
                   </dd>
                 </>
               )}
               <dt>등록일</dt>
               <dd>{formatFullDate(agenda.registeredAt)}</dd>
-            </dl>
-          </section>
+            </InfoList>
+          </Panel>
 
           {agenda.related.length > 0 && (
-            <section className="panel" aria-labelledby="related-title">
-              <h2 className="panel__title" id="related-title">
-                관련 기록
-              </h2>
-              <ul className="related-list">
+            <Panel aria-labelledby="related-title">
+              <PanelTitle id="related-title">관련 기록</PanelTitle>
+              <S.RelatedList>
                 {agenda.related.map((item) => (
                   <li key={item.title}>
                     {item.to ? (
-                      <Link className="related-list__title" to={item.to}>
+                      <S.RelatedTitleLink to={item.to}>
                         {item.title}
-                      </Link>
+                      </S.RelatedTitleLink>
                     ) : (
-                      <span className="related-list__title">{item.title}</span>
+                      <S.RelatedTitle>{item.title}</S.RelatedTitle>
                     )}
-                    <span className="meta-row">
+                    <MetaRow>
                       <span>{item.kind}</span>
                       <span>{formatShortDate(item.at)}</span>
-                    </span>
+                    </MetaRow>
                   </li>
                 ))}
-              </ul>
-            </section>
+              </S.RelatedList>
+            </Panel>
           )}
 
           {agenda.status !== '완료' && agenda.status !== '부결' && (
-            <Link
-              {...buttonLook({ fullWidth: true })}
-              to={`/suggestions/new?agenda=${agenda.id}`}
-            >
+            <ButtonLink fullWidth to={`/suggestions/new?agenda=${agenda.id}`}>
               이 안건에 의견 보태기
-            </Link>
+            </ButtonLink>
           )}
-        </aside>
-      </div>
+        </SplitAside>
+      </SplitLayout>
     </>
   );
 }

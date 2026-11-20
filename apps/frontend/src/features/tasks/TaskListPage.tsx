@@ -8,7 +8,10 @@ import {
 import { PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
-import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
+import {
+  FilterBar,
+  FilterSelect,
+} from '../../components/intranet/FilterSelect.tsx';
 import {
   Badge,
   Button,
@@ -18,7 +21,16 @@ import {
 } from '../../dimi-ui-kit/index.ts';
 import {
   AvatarGroup,
+  CountText,
+  EmptyState,
+  FormActions,
+  ListGroupRoot,
+  ListRowLink,
+  ListRowMain,
+  ListRowMeta,
+  ListRowTitle,
   Notice,
+  PageToolbar,
   Select,
   statusTone,
   Tabs,
@@ -39,7 +51,7 @@ import {
   taskGroups,
 } from './format.ts';
 import type { Task } from './types.ts';
-import './tasks.css';
+import * as S from './styles.ts';
 import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function taskListLoader() {
@@ -58,22 +70,20 @@ const tabs: Tab[] = ['mine', 'council', 'all', 'requested'];
 const NO_AGENDA = '-';
 
 export function TaskStatusIcon({ status }: { status: Task['status'] }) {
-  return (
-    <span className="task-status" data-status={status} aria-hidden="true" />
-  );
+  return <S.TaskStatusMark $status={status} aria-hidden="true" />;
 }
 
 export function TaskRow({ task }: { task: Task }) {
   return (
-    <li className="list-row task-row">
+    <S.TaskRowItem>
       <TaskStatusIcon status={task.status} />
-      <div className="list-row__main">
-        <h3 className="list-row__title">
-          <Link className="list-row__link" to={`/work/tasks/${task.id}`}>
+      <ListRowMain>
+        <ListRowTitle>
+          <ListRowLink as={Link} to={`/work/tasks/${task.id}`}>
             {task.title}
-          </Link>
-        </h3>
-        <div className="list-row__meta">
+          </ListRowLink>
+        </ListRowTitle>
+        <ListRowMeta>
           {task.agenda ? (
             <>
               <span>{task.agenda.id}</span>
@@ -82,14 +92,12 @@ export function TaskRow({ task }: { task: Task }) {
           ) : (
             <span>{task.group}</span>
           )}
-        </div>
-      </div>
+        </ListRowMeta>
+      </ListRowMain>
       <Badge theme={statusTone.task[task.status]}>{task.status}</Badge>
       <AvatarGroup names={task.assignees} />
-      <span className="task-row__due" data-tone={dueTone(task)}>
-        {dueLabel(task)}
-      </span>
-    </li>
+      <S.TaskRowDue $tone={dueTone(task)}>{dueLabel(task)}</S.TaskRowDue>
+    </S.TaskRowItem>
   );
 }
 
@@ -154,13 +162,14 @@ function NewTaskForm({
   };
 
   return (
-    <form
-      className="panel panel--padded new-task"
+    <S.NewTaskForm
+      as="form"
+      $padded
       aria-label="새 업무"
       onSubmit={onSubmit}
       noValidate
     >
-      <div className="new-task__fields">
+      <S.NewTaskFields>
         <TextField
           label="업무 이름"
           value={title}
@@ -202,7 +211,7 @@ function NewTaskForm({
           required
           onChange={(event) => setDue(event.target.value)}
         />
-      </div>
+      </S.NewTaskFields>
       <TextArea
         label="내용"
         optional
@@ -218,7 +227,7 @@ function NewTaskForm({
           만들지 못했습니다. 잠시 후 다시 시도해주세요.
         </Notice>
       )}
-      <div className="form-actions">
+      <FormActions>
         <TextButton onClick={onCancel}>취소</TextButton>
         <Button
           type="submit"
@@ -228,8 +237,8 @@ function NewTaskForm({
         >
           만들기
         </Button>
-      </div>
-    </form>
+      </FormActions>
+    </S.NewTaskForm>
   );
 }
 
@@ -301,14 +310,13 @@ export function TaskListPage() {
         ]}
       />
 
-      <div
-        className="task-panel"
+      <S.TaskPanel
         role="tabpanel"
         id={`tasks-panel-${tab}`}
         aria-labelledby={`tasks-tab-${tab}`}
       >
-        <div className="page-toolbar">
-          <div className="filter-bar">
+        <PageToolbar>
+          <FilterBar>
             <FilterSelect
               label="안건"
               value={agendaFilter}
@@ -327,14 +335,13 @@ export function TaskListPage() {
             </Chip>
             <Input
               type="search"
-              containerClassName="filter-bar__search"
               leadingIcon={iconSearch}
               aria-label="업무 찾기"
               placeholder="번호, 업무 이름으로 찾기"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
-          </div>
+          </FilterBar>
           <Button
             theme="accent"
             variant="primary"
@@ -344,7 +351,7 @@ export function TaskListPage() {
             <PlusIcon />
             업무 만들기
           </Button>
-        </div>
+        </PageToolbar>
 
         {creating && (
           <NewTaskForm
@@ -358,29 +365,29 @@ export function TaskListPage() {
         )}
 
         {grouped.length > 0 ? (
-          <div className="task-board">
+          <S.TaskBoard>
             {grouped.map(({ group, items }) => (
               <section key={group} aria-labelledby={`task-group-${group}`}>
-                <h2 className="task-board__group" id={`task-group-${group}`}>
+                <S.TaskBoardGroup id={`task-group-${group}`}>
                   {taskGroupLabel[group]}
-                  <span className="count">{items.length}</span>
-                </h2>
-                <ul className="list-group">
+                  <CountText>{items.length}</CountText>
+                </S.TaskBoardGroup>
+                <ListGroupRoot>
                   {items.map((task) => (
                     <TaskRow key={task.id} task={task} />
                   ))}
-                </ul>
+                </ListGroupRoot>
               </section>
             ))}
-          </div>
+          </S.TaskBoard>
         ) : (
-          <p className="empty-state">
+          <EmptyState>
             {keyword || agendaFilter || hideDone
               ? '조건에 맞는 업무가 없습니다.'
               : '이 보기에 해당하는 업무가 없습니다.'}
-          </p>
+          </EmptyState>
         )}
-      </div>
+      </S.TaskPanel>
     </>
   );
 }

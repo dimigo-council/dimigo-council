@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Button } from '../../dimi-ui-kit/index.ts';
+import * as S from './styles.ts';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -32,24 +33,17 @@ export function ConfirmDialog({
   }, [open]);
 
   return (
-    <dialog
-      ref={ref}
-      className="confirm-dialog"
-      aria-labelledby={titleId}
-      onClose={onClose}
-    >
-      <h2 className="confirm-dialog__title" id={titleId}>
-        {title}
-      </h2>
-      <div className="confirm-dialog__body">{children}</div>
-      <div className="confirm-dialog__actions">
+    <S.ConfirmDialogRoot ref={ref} aria-labelledby={titleId} onClose={onClose}>
+      <S.ConfirmDialogTitle id={titleId}>{title}</S.ConfirmDialogTitle>
+      <S.ConfirmDialogBody>{children}</S.ConfirmDialogBody>
+      <S.ConfirmDialogActions>
         <Button onClick={onClose} disabled={busy} autoFocus>
           취소
         </Button>
         <Button theme="negative" onClick={onConfirm} disabled={busy}>
           {confirmLabel}
         </Button>
-      </div>
-    </dialog>
+      </S.ConfirmDialogActions>
+    </S.ConfirmDialogRoot>
   );
 }

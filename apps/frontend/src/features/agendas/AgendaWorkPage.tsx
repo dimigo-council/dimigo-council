@@ -17,7 +17,21 @@ import {
   PersonAvatar,
   statusTone,
   Tabs,
-  buttonLook,
+  ButtonLink,
+  Breadcrumb,
+  MetaRow,
+  Panel,
+  PanelTitle,
+  PanelAside,
+  SplitMain,
+  SplitAside,
+  InfoList,
+  Owner,
+  TextLink,
+  EmptyState,
+  ListRowLink,
+  ListGroupRoot,
+  VisuallyHidden,
 } from '../../components/ui/index.ts';
 import {
   formatFullDate,
@@ -29,6 +43,7 @@ import { listInbox } from '../inbox/api.ts';
 import { listReports } from '../reports/api.ts';
 import { listTasks } from '../tasks/api.ts';
 import { TaskRow } from '../tasks/TaskListPage.tsx';
+import { TaskBoard } from '../tasks/styles.ts';
 import { addRecord, advanceStage, getAgenda } from './api.ts';
 import { agendaSteps, originLabel } from './format.ts';
 import {
@@ -37,7 +52,7 @@ import {
   type Agenda,
   type AgendaRecord,
 } from './types.ts';
-import './agendas.css';
+import * as S from './styles.ts';
 
 export async function agendaWorkLoader({ params }: LoaderFunctionArgs) {
   const id = params.agendaId ?? '';
@@ -71,15 +86,15 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
 
   return (
     <>
-      <nav className="breadcrumb" aria-label="경로">
+      <Breadcrumb aria-label="경로">
         <Link to="/work/agendas">안건</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">{agenda.id}</span>
-      </nav>
+      </Breadcrumb>
       <PageHeader
         title={agenda.title}
         description={
-          <span className="meta-row">
+          <MetaRow>
             <span>{agenda.department}</span>
             <span>담당 {agenda.owner}</span>
             <span>
@@ -90,21 +105,21 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
             <Badge theme={statusTone.visibility[agenda.visibility]}>
               {agenda.visibility}
             </Badge>
-          </span>
+          </MetaRow>
         }
         actions={
           <>
             {isPublic && (
-              <Link {...buttonLook()} to={`/activity/${agenda.id}`}>
+              <ButtonLink to={`/activity/${agenda.id}`}>
                 학생 화면에서 보기
-              </Link>
+              </ButtonLink>
             )}
             <AdvanceStage agenda={agenda} />
           </>
         }
       />
 
-      <section className="panel panel--padded" aria-label="진행 단계">
+      <Panel $padded aria-label="진행 단계">
         <Steps
           aria-label="진행 단계"
           items={agendaSteps(agenda, {
@@ -115,9 +130,9 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
             expectedSuffix: '목표',
           })}
         />
-      </section>
+      </Panel>
 
-      <div className="agenda-tabs">
+      <S.AgendaTabs>
         <Tabs
           aria-label="안건 내용"
           idPrefix="agenda"
@@ -138,11 +153,10 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
             { value: 'reports', label: '보고서', count: agenda.reportCount },
           ]}
         />
-      </div>
+      </S.AgendaTabs>
 
-      <div className="split-layout">
-        <div
-          className="split-layout__main"
+      <S.AgendaSplit>
+        <SplitMain
           role="tabpanel"
           id={`agenda-panel-${tab}`}
           aria-labelledby={`agenda-tab-${tab}`}
@@ -152,7 +166,7 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
               {!finishedStatuses.includes(agenda.status) && (
                 <RecordComposer agenda={agenda} />
               )}
-              <section className="panel" aria-label="진행 기록">
+              <Panel aria-label="진행 기록">
                 <Timeline
                   headingLevel={2}
                   items={agenda.records.map((record) => ({
@@ -176,43 +190,41 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
                       <>
                         <span>{record.author}</span>
                         {record.link && (
-                          <Link className="text-link" to={record.link.to}>
+                          <TextLink to={record.link.to}>
                             {record.link.label}
-                          </Link>
+                          </TextLink>
                         )}
                       </>
                     ),
                   }))}
                 />
-              </section>
+              </Panel>
             </>
           ) : (
             <LinkedList tab={tab} agenda={agenda} linked={linked} />
           )}
-        </div>
+        </SplitMain>
 
-        <aside className="split-layout__aside">
-          <section className="panel" aria-labelledby="agenda-info-title">
-            <h2 className="panel__title" id="agenda-info-title">
-              안건 정보
-            </h2>
-            <dl className="info-list">
+        <SplitAside>
+          <Panel aria-labelledby="agenda-info-title">
+            <PanelTitle id="agenda-info-title">안건 정보</PanelTitle>
+            <InfoList>
               <dt>번호</dt>
               <dd>{agenda.id}</dd>
               <dt>담당</dt>
-              <dd className="owner">
+              <Owner as="dd">
                 <PersonAvatar name={agenda.owner} aria-hidden="true" />
                 {agenda.department}, {agenda.owner}
-              </dd>
+              </Owner>
               <dt>출처</dt>
               <dd>{originLabel(agenda)}</dd>
               {agenda.survey && (
                 <>
                   <dt>관련 설문</dt>
                   <dd>
-                    <Link className="text-link" to={agenda.survey.to}>
+                    <TextLink to={agenda.survey.to}>
                       {agenda.survey.title}
-                    </Link>
+                    </TextLink>
                   </dd>
                 </>
               )}
@@ -226,31 +238,28 @@ function AgendaWork({ agenda, linked }: { agenda: Agenda; linked: Linked }) {
               <dd>
                 {formatFullDate(agenda.registeredAt)}, {agenda.registeredBy}
               </dd>
-            </dl>
-          </section>
+            </InfoList>
+          </Panel>
 
           {agenda.decisions && agenda.decisions.length > 0 && (
-            <section className="panel" aria-labelledby="decisions-title">
-              <h2
-                className="panel__title panel__title--split"
-                id="decisions-title"
-              >
+            <Panel aria-labelledby="decisions-title">
+              <PanelTitle $split id="decisions-title">
                 결정 사항
                 {agenda.stageDates.결정 && (
-                  <span className="panel__aside">
+                  <PanelAside>
                     {formatShortDate(agenda.stageDates.결정)}
-                  </span>
+                  </PanelAside>
                 )}
-              </h2>
-              <ul className="decision-list">
+              </PanelTitle>
+              <S.DecisionList>
                 {agenda.decisions.map((decision) => (
                   <li key={decision}>{decision}</li>
                 ))}
-              </ul>
-            </section>
+              </S.DecisionList>
+            </Panel>
           )}
-        </aside>
-      </div>
+        </SplitAside>
+      </S.AgendaSplit>
     </>
   );
 }
@@ -290,7 +299,7 @@ function AdvanceStage({ agenda }: { agenda: Agenda }) {
     );
   }
   return (
-    <div className="advance-confirm" role="group" aria-label="단계 넘기기 확인">
+    <S.AdvanceConfirm role="group" aria-label="단계 넘기기 확인">
       <p>
         <strong>{agenda.status}</strong>에서 <strong>{withRo(next)}</strong>{' '}
         넘깁니다.
@@ -308,7 +317,7 @@ function AdvanceStage({ agenda }: { agenda: Agenda }) {
       >
         넘기기
       </Button>
-    </div>
+    </S.AdvanceConfirm>
   );
 }
 
@@ -352,20 +361,19 @@ function RecordComposer({ agenda }: { agenda: Agenda }) {
   };
 
   return (
-    <form className="panel record-composer" onSubmit={onSubmit}>
-      <label className="visually-hidden" htmlFor={inputId}>
+    <Panel as="form" onSubmit={onSubmit}>
+      <VisuallyHidden as="label" htmlFor={inputId}>
         진행 기록
-      </label>
-      <textarea
+      </VisuallyHidden>
+      <S.RecordComposerInput
         id={inputId}
-        className="record-composer__input"
         placeholder="무엇이 진행됐는지 남겨주세요. 첫 줄이 제목이 됩니다. 회의, 면담, 결정 사항 등"
         aria-describedby={hintId}
         maxLength={1000}
         value={text}
         onChange={(event) => setText(event.target.value)}
       />
-      <div className="record-composer__bar">
+      <S.RecordComposerBar>
         <ChoiceGroup
           aria-label="기록 공개 범위"
           name="record-visibility"
@@ -376,11 +384,11 @@ function RecordComposer({ agenda }: { agenda: Agenda }) {
             { value: 'public', label: '공개 기록' },
           ]}
         />
-        <p className="record-composer__hint" id={hintId}>
+        <S.RecordComposerHint id={hintId}>
           {status === 'error'
             ? '남기지 못했습니다. 잠시 후 다시 시도해주세요.'
             : hint}
-        </p>
+        </S.RecordComposerHint>
         <Button
           type="submit"
           theme="accent"
@@ -389,8 +397,8 @@ function RecordComposer({ agenda }: { agenda: Agenda }) {
         >
           기록 남기기
         </Button>
-      </div>
-    </form>
+      </S.RecordComposerBar>
+    </Panel>
   );
 }
 
@@ -409,13 +417,13 @@ function LinkedList({
   let list;
   if (tab === 'tasks') {
     list = linked.tasks.length > 0 && (
-      <div className="task-board">
-        <ul className="list-group" aria-label="이 안건의 업무">
+      <TaskBoard>
+        <ListGroupRoot aria-label="이 안건의 업무">
           {linked.tasks.map((task) => (
             <TaskRow key={task.id} task={task} />
           ))}
-        </ul>
-      </div>
+        </ListGroupRoot>
+      </TaskBoard>
     );
   } else if (tab === 'suggestions') {
     list = linked.suggestions.length > 0 && (
@@ -448,12 +456,9 @@ function LinkedList({
           <ListRow
             key={report.id}
             title={
-              <Link
-                className="list-row__link"
-                to={`/work/reports/${report.id}`}
-              >
+              <ListRowLink as={Link} to={`/work/reports/${report.id}`}>
                 {report.title}
-              </Link>
+              </ListRowLink>
             }
             meta={[
               report.id,
@@ -483,32 +488,26 @@ function LinkedList({
     open &&
     {
       tasks: (
-        <Link
-          {...buttonLook({ size: 'small' })}
-          to={`/work/tasks?new&agenda=${agenda.id}`}
-        >
+        <ButtonLink size="small" to={`/work/tasks?new&agenda=${agenda.id}`}>
           업무 만들기
-        </Link>
+        </ButtonLink>
       ),
       suggestions: (
-        <Link
-          {...buttonLook({ size: 'small' })}
-          to="/work/suggestions?tab=reviewing"
-        >
+        <ButtonLink size="small" to="/work/suggestions?tab=reviewing">
           건의 접수함에서 묶기
-        </Link>
+        </ButtonLink>
       ),
       reports: (
-        <Link {...buttonLook({ size: 'small' })} to="/work/reports/new">
+        <ButtonLink size="small" to="/work/reports/new">
           보고서 쓰기
-        </Link>
+        </ButtonLink>
       ),
     }[tab];
 
   return (
-    <div className="agenda-linked">
-      {list || <p className="empty-state">{emptyText}</p>}
-      {action && <div className="agenda-linked__action">{action}</div>}
-    </div>
+    <S.AgendaLinked>
+      {list || <EmptyState>{emptyText}</EmptyState>}
+      {action && <S.AgendaLinkedAction>{action}</S.AgendaLinkedAction>}
+    </S.AgendaLinked>
   );
 }

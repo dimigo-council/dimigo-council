@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from 'react';
 import brandIndex from './brand/index.json';
-import { cx } from './cx';
+import styled from 'styled-components';
 
 // Every Logo/Symbol variant exported from the kit, inlined so it renders crisp at its drawn size.
 const files = import.meta.glob<string>('./brand/*.svg', {
@@ -36,20 +36,29 @@ function pick(set: BrandSet, variant: string, size: number) {
   return (bigger[0] ?? entries.sort((a, b) => b.drawn - a.drawn)[0]).file;
 }
 
+const BrandRoot = styled.span`
+  display: inline-flex;
+  flex: none;
+
+  > svg {
+    display: block;
+    width: auto;
+    height: 100%;
+  }
+`;
+
 /** A DIMI UI KIT brand mark (Logo/COUNCIL, Symbol/COUNCIL, Symbol/DIMIGO, Symbol/DIMIGOIN). */
 export function BrandMark({
   set,
   variant = 'color',
   size,
   label,
-  className,
   style,
   ...rest
 }: BrandMarkProps) {
   const svg = files[`./brand/${pick(set, variant, size)}`];
   return (
-    <span
-      className={cx('kit-brand', className)}
+    <BrandRoot
       role={label ? 'img' : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}

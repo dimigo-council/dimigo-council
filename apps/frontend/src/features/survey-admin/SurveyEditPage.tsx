@@ -19,7 +19,22 @@ import {
   Tabs,
   TextArea,
   TextField,
-  buttonLook,
+  ButtonLink,
+  Breadcrumb,
+  MetaRow,
+  SplitMain,
+  SplitAside,
+  Panel,
+  PanelTitle,
+  PanelHeading,
+  PanelAside,
+  PanelBody,
+  InfoList,
+  FieldRoot,
+  FieldLabel,
+  FieldFoot,
+  FieldHint,
+  VisuallyHidden,
 } from '../../components/ui/index.ts';
 import { formatDate, formatDateTime } from '../../lib/date.ts';
 import { identityLabel, identityNotice } from '../surveys/format.ts';
@@ -43,8 +58,8 @@ import {
   toDateInput,
 } from './format.ts';
 import type { AdminSurvey, SurveyDraft } from './types.ts';
-import '../surveys/surveys.css';
-import './survey-admin.css';
+import { SurveyIntro, SurveyQuestions } from '../surveys/styles.ts';
+import * as S from './styles.ts';
 
 export async function surveyEditLoader({ params }: LoaderFunctionArgs) {
   return getAdminSurvey(params.surveyId ?? '');
@@ -157,15 +172,15 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
 
   return (
     <>
-      <nav className="breadcrumb" aria-label="경로">
+      <Breadcrumb aria-label="경로">
         <Link to="/work/surveys">설문</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">{status}</span>
-      </nav>
+      </Breadcrumb>
       <PageHeader
         title={draft.title || '제목 없는 설문'}
         description={
-          <span className="meta-row">
+          <MetaRow>
             <Badge theme={statusTone.survey[status]}>{status}</Badge>
             <span>
               {survey.owner} · {survey.department}
@@ -177,20 +192,21 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
             ) : (
               <span role="status">{saveText}</span>
             )}
-          </span>
+          </MetaRow>
         }
         actions={
           readOnly ? (
             <>
-              <Link {...buttonLook()} to={`/surveys/${survey.id}`}>
+              <ButtonLink to={`/surveys/${survey.id}`}>
                 학생 화면 보기
-              </Link>
-              <Link
-                {...buttonLook({ theme: 'accent', variant: 'primary' })}
+              </ButtonLink>
+              <ButtonLink
+                theme="accent"
+                variant="primary"
                 to={`/work/surveys/${survey.id}/results`}
               >
                 결과 보기
-              </Link>
+              </ButtonLink>
             </>
           ) : (
             <>
@@ -243,9 +259,8 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
               { value: 'settings', label: '응답 설정' },
             ]}
           />
-          <div className="split-layout survey-edit">
-            <div
-              className="split-layout__main"
+          <S.SurveyEdit>
+            <SplitMain
               role="tabpanel"
               id={`survey-edit-panel-${tab}`}
               aria-labelledby={`survey-edit-tab-${tab}`}
@@ -259,31 +274,29 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
                   scheduled={survey.stage === 'scheduled'}
                 />
               )}
-            </div>
-            <aside className="split-layout__aside">
-              <section className="panel" aria-labelledby="checks-title">
-                <div className="panel__title panel__title--split">
-                  <h2 className="panel__heading" id="checks-title">
-                    공개 전 확인
-                  </h2>
-                  <span className="panel__aside">
+            </SplitMain>
+            <SplitAside>
+              <Panel aria-labelledby="checks-title">
+                <PanelTitle as="div" $split>
+                  <PanelHeading id="checks-title">공개 전 확인</PanelHeading>
+                  <PanelAside>
                     {checks.filter((check) => check.done).length} /{' '}
                     {checks.length}
-                  </span>
-                </div>
-                <ul className="publish-checks">
+                  </PanelAside>
+                </PanelTitle>
+                <S.PublishChecks>
                   {checks.map((check) => (
-                    <li key={check.label} data-done={check.done}>
+                    <S.PublishCheck key={check.label} $done={check.done}>
                       <ControlMark type="checkfill" checked={check.done} />
                       {check.label}
-                      <span className="visually-hidden">
+                      <VisuallyHidden>
                         {check.done ? ', 완료' : ', 아직'}
-                      </span>
-                    </li>
+                      </VisuallyHidden>
+                    </S.PublishCheck>
                   ))}
-                </ul>
+                </S.PublishChecks>
                 {!survey.reviewRequested && (
-                  <div className="publish-checks__action">
+                  <S.PublishChecksAction>
                     <Button
                       fullWidth
                       disabled={busy}
@@ -293,9 +306,9 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
                     >
                       {reviewerLabel(survey.department)}에게 검토 요청
                     </Button>
-                  </div>
+                  </S.PublishChecksAction>
                 )}
-              </section>
+              </Panel>
               {survey.stage === 'scheduled' && survey.opensAt && (
                 <Notice tone="info">
                   {formatDate(survey.opensAt)}에 학생 화면에 공개됩니다. 그
@@ -306,8 +319,8 @@ function SurveyEditor({ survey }: { survey: AdminSurvey }) {
                 공개 후에는 문항을 바꿀 수 없습니다. 응답이 들어온 뒤 문항이
                 바뀌면 결과를 비교할 수 없기 때문입니다.
               </Notice>
-            </aside>
-          </div>
+            </SplitAside>
+          </S.SurveyEdit>
         </>
       )}
     </>
@@ -346,7 +359,7 @@ function QuestionsEditor({ draft, update }: EditorProps) {
         value={draft.intro}
         onChange={(event) => update({ intro: event.target.value })}
       />
-      <ol className="q-list" aria-label="문항">
+      <S.QList aria-label="문항">
         {questions.map((question, index) => (
           <QuestionEditor
             key={question.id}
@@ -372,10 +385,9 @@ function QuestionsEditor({ draft, update }: EditorProps) {
             }
           />
         ))}
-      </ol>
-      <button
+      </S.QList>
+      <S.QAdd
         type="button"
-        className="q-add"
         onClick={() =>
           insertAt(questions.length, {
             id: nextQuestionId(questions),
@@ -388,7 +400,7 @@ function QuestionsEditor({ draft, update }: EditorProps) {
       >
         <PlusIcon />
         문항 추가
-      </button>
+      </S.QAdd>
     </>
   );
 }
@@ -412,20 +424,14 @@ function QuestionSummary({
 }) {
   return (
     <>
-      <span className="q-card__number">Q{index + 1}</span>
-      <span
-        className={
-          question.title
-            ? 'q-card__title'
-            : 'q-card__title q-card__title--empty'
-        }
-      >
+      <S.QCardNumber>Q{index + 1}</S.QCardNumber>
+      <S.QCardTitle $empty={!question.title}>
         {question.title || '문항 제목을 적어주세요'}
-      </span>
-      <span className="q-card__tags">
+      </S.QCardTitle>
+      <S.QCardTags>
         <Badge>{questionTypeLabel[question.type]}</Badge>
         {question.required && <Badge theme="accent">필수</Badge>}
-      </span>
+      </S.QCardTags>
     </>
   );
 }
@@ -445,18 +451,16 @@ function QuestionEditor({
   const optionsLabelId = `${id}-options`;
 
   return (
-    <li className="q-card" data-open={open}>
-      <button
-        type="button"
-        className="q-card__summary"
+    <S.QCard $open={open}>
+      <S.QCardSummaryButton
         aria-expanded={open}
         aria-controls={bodyId}
         onClick={onToggle}
       >
         <QuestionSummary question={question} index={index} />
-      </button>
+      </S.QCardSummaryButton>
       {open && (
-        <div className="q-card__body" id={bodyId}>
+        <S.QCardBody id={bodyId}>
           <TextField
             label="문항"
             maxLength={100}
@@ -467,10 +471,10 @@ function QuestionEditor({
             }
           />
 
-          <div className="field">
-            <span className="field__label" id={typeLabelId}>
+          <FieldRoot>
+            <FieldLabel as="span" id={typeLabelId}>
               유형
-            </span>
+            </FieldLabel>
             <ChoiceGroup
               aria-labelledby={typeLabelId}
               value={question.type}
@@ -480,16 +484,16 @@ function QuestionEditor({
                 label: questionTypeLabel[type],
               }))}
             />
-          </div>
+          </FieldRoot>
 
           {hasChoices(question) && (
-            <div className="field">
-              <span className="field__label" id={optionsLabelId}>
+            <FieldRoot>
+              <FieldLabel as="span" id={optionsLabelId}>
                 선택지
-              </span>
-              <ul className="q-options" aria-labelledby={optionsLabelId}>
+              </FieldLabel>
+              <S.QOptions aria-labelledby={optionsLabelId}>
                 {question.options.map((option, i) => (
-                  <li key={i} className="q-option">
+                  <S.QOption key={i}>
                     <ControlMark
                       type={question.type === 'single' ? 'radio' : 'checkfill'}
                       checked={false}
@@ -508,9 +512,8 @@ function QuestionEditor({
                         })
                       }
                     />
-                    <button
+                    <S.PlainIconButton
                       type="button"
-                      className="icon-button"
                       aria-label={`선택지 ${i + 1} 지우기`}
                       disabled={question.options.length <= 2}
                       onClick={() =>
@@ -521,10 +524,10 @@ function QuestionEditor({
                       }
                     >
                       <CloseIcon />
-                    </button>
-                  </li>
+                    </S.PlainIconButton>
+                  </S.QOption>
                 ))}
-              </ul>
+              </S.QOptions>
               <div>
                 <TextButton
                   size="small"
@@ -541,7 +544,7 @@ function QuestionEditor({
                 </TextButton>
               </div>
               {question.type === 'multiple' && (
-                <div className="q-card__row">
+                <S.QCardRow>
                   <Select
                     label="최대 선택"
                     value={question.maxSelections ?? ''}
@@ -561,13 +564,13 @@ function QuestionEditor({
                       </option>
                     ))}
                   </Select>
-                </div>
+                </S.QCardRow>
               )}
-            </div>
+            </FieldRoot>
           )}
 
           {question.type === 'scale' && (
-            <div className="q-card__row">
+            <S.QCardRow>
               <Select
                 label="단계"
                 value={question.steps}
@@ -597,11 +600,11 @@ function QuestionEditor({
                   onChange({ ...question, maxLabel: event.target.value })
                 }
               />
-            </div>
+            </S.QCardRow>
           )}
 
           {question.type === 'text' && (
-            <div className="q-card__row">
+            <S.QCardRow>
               <Select
                 label="최대 글자 수"
                 value={question.maxLength}
@@ -618,10 +621,10 @@ function QuestionEditor({
                   </option>
                 ))}
               </Select>
-            </div>
+            </S.QCardRow>
           )}
 
-          <div className="q-card__foot">
+          <S.QCardFoot>
             <Switch
               label="필수 응답"
               checked={question.required}
@@ -632,18 +635,13 @@ function QuestionEditor({
             <TextButton size="small" onClick={onDuplicate}>
               복제
             </TextButton>
-            <TextButton
-              size="small"
-              className="q-card__delete"
-              disabled={!onDelete}
-              onClick={onDelete}
-            >
+            <TextButton size="small" disabled={!onDelete} onClick={onDelete}>
               삭제
             </TextButton>
-          </div>
-        </div>
+          </S.QCardFoot>
+        </S.QCardBody>
       )}
-    </li>
+    </S.QCard>
   );
 }
 
@@ -658,7 +656,7 @@ function SettingsEditor({
     : [draft.audience, ...audiences];
 
   return (
-    <section className="panel panel--padded survey-settings">
+    <S.SurveySettings $padded>
       <TextField
         label="설문 제목"
         maxLength={60}
@@ -675,10 +673,10 @@ function SettingsEditor({
           <option key={audience}>{audience}</option>
         ))}
       </Select>
-      <div className="field">
-        <span className="field__label" id={identityLabelId}>
+      <FieldRoot>
+        <FieldLabel as="span" id={identityLabelId}>
           응답자 정보
-        </span>
+        </FieldLabel>
         <ChoiceGroup
           aria-labelledby={identityLabelId}
           value={draft.identity}
@@ -688,11 +686,11 @@ function SettingsEditor({
             label: identityLabel[identity],
           }))}
         />
-        <div className="field__foot">
-          <span className="field__hint">{identityNotice[draft.identity]}</span>
-        </div>
-      </div>
-      <div className="q-card__row">
+        <FieldFoot>
+          <FieldHint>{identityNotice[draft.identity]}</FieldHint>
+        </FieldFoot>
+      </FieldRoot>
+      <S.QCardRow>
         <TextField
           type="date"
           label="공개일"
@@ -714,8 +712,8 @@ function SettingsEditor({
             update({ closesAt: fromDateInput(event.target.value, 'close') })
           }
         />
-      </div>
-    </section>
+      </S.QCardRow>
+    </S.SurveySettings>
   );
 }
 
@@ -732,18 +730,20 @@ function SurveyPreview({ draft }: { draft: SurveyDraft }) {
   );
 
   return (
-    <div className="survey-page survey-preview">
+    <S.SurveyPreview>
       <Notice tone="neutral">
         학생에게 보이는 모습입니다. 미리보기에서 고른 답은 저장되지 않습니다.
       </Notice>
-      <div className="survey-intro">
-        <h2 className="survey-preview__title">
+      <SurveyIntro>
+        <S.SurveyPreviewTitle>
           {draft.title || '제목 없는 설문'}
-        </h2>
-        {draft.intro && <p className="survey-preview__intro">{draft.intro}</p>}
+        </S.SurveyPreviewTitle>
+        {draft.intro && (
+          <S.SurveyPreviewIntro>{draft.intro}</S.SurveyPreviewIntro>
+        )}
         <Notice tone="info">{identityNotice[draft.identity]}</Notice>
-      </div>
-      <div className="survey-questions">
+      </SurveyIntro>
+      <SurveyQuestions as="div">
         {questions.map((question, index) => (
           <QuestionCard
             key={question.id}
@@ -755,50 +755,48 @@ function SurveyPreview({ draft }: { draft: SurveyDraft }) {
             }
           />
         ))}
-      </div>
-    </div>
+      </SurveyQuestions>
+    </S.SurveyPreview>
   );
 }
 
 function PublishedView({ survey }: { survey: AdminSurvey }) {
   return (
-    <div className="split-layout survey-edit">
-      <div className="split-layout__main">
+    <S.SurveyEdit>
+      <SplitMain>
         <Notice tone="neutral">
           공개된 설문은 문항을 바꿀 수 없습니다. 바꿔야 하면 새 설문을
           만들어주세요.
         </Notice>
-        {survey.intro && <p className="survey-edit__intro">{survey.intro}</p>}
-        <ol className="q-list" aria-label="문항">
+        {survey.intro && <S.SurveyEditIntro>{survey.intro}</S.SurveyEditIntro>}
+        <S.QList aria-label="문항">
           {survey.questions.map((question, index) => (
-            <li key={question.id} className="q-card">
-              <div className="q-card__summary">
+            <S.QCard key={question.id}>
+              <S.QCardSummary>
                 <QuestionSummary question={question} index={index} />
-              </div>
-              <p className="q-card__detail">
+              </S.QCardSummary>
+              <S.QCardDetail>
                 {hasChoices(question) && question.options.join(', ')}
                 {question.type === 'scale' &&
                   `${question.steps}단계, ${question.minLabel} ~ ${question.maxLabel}`}
                 {question.type === 'text' && `최대 ${question.maxLength}자`}
-              </p>
-            </li>
+              </S.QCardDetail>
+            </S.QCard>
           ))}
-        </ol>
-      </div>
-      <aside className="split-layout__aside">
-        <section className="panel" aria-labelledby="responses-title">
-          <h2 className="panel__title" id="responses-title">
-            응답 현황
-          </h2>
-          <div className="panel__body">
+        </S.QList>
+      </SplitMain>
+      <SplitAside>
+        <Panel aria-labelledby="responses-title">
+          <PanelTitle id="responses-title">응답 현황</PanelTitle>
+          <PanelBody>
             <Meter
               label="응답 수"
               value={survey.responses}
               max={survey.target}
               text={`${survey.responses} / ${survey.target}명`}
             />
-          </div>
-          <dl className="info-list survey-edit__info">
+          </PanelBody>
+          <InfoList>
             <dt>응답 대상</dt>
             <dd>{survey.audience}</dd>
             <dt>응답자 정보</dt>
@@ -815,9 +813,9 @@ function PublishedView({ survey }: { survey: AdminSurvey }) {
                 <dd>{formatDate(survey.closesAt, true)}</dd>
               </>
             )}
-          </dl>
-        </section>
-      </aside>
-    </div>
+          </InfoList>
+        </Panel>
+      </SplitAside>
+    </S.SurveyEdit>
   );
 }

@@ -1,11 +1,6 @@
-import {
-  isRouteErrorResponse,
-  Link,
-  useLocation,
-  useRouteError,
-} from 'react-router';
+import { isRouteErrorResponse, useLocation, useRouteError } from 'react-router';
 import { PageHeader } from '../app/PageHeader.tsx';
-import { buttonLook } from '../components/ui/index.ts';
+import { ButtonLink } from '../components/ui/index.ts';
 
 /** 라우트 loader가 실패했을 때 셸 안에서 보여주는 화면 */
 export function RouteErrorPage() {
@@ -25,13 +20,9 @@ export function RouteErrorPage() {
       }
       actions={
         inWork ? (
-          <Link {...buttonLook()} to="/work">
-            업무로 가기
-          </Link>
+          <ButtonLink to="/work">업무로 가기</ButtonLink>
         ) : (
-          <Link {...buttonLook()} to="/surveys">
-            설문으로 가기
-          </Link>
+          <ButtonLink to="/surveys">설문으로 가기</ButtonLink>
         )
       }
     />

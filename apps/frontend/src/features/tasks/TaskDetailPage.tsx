@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from 'react';
+import styled from 'styled-components';
 import {
   Link,
   useLoaderData,
@@ -23,8 +24,30 @@ import {
   PersonAvatar,
   statusTone,
   TextArea,
-  buttonLook,
+  ButtonLink,
   SelectControl,
+  Breadcrumb,
+  MetaRow,
+  SplitLayout,
+  SplitMain,
+  SplitAside,
+  Panel,
+  PanelTitle,
+  PanelHeading,
+  PanelBody,
+  PanelProse,
+  PanelProseEmpty,
+  panelAction,
+  FieldRoot,
+  FieldLabel,
+  FieldFoot,
+  FieldHint,
+  InfoList,
+  InfoListInline,
+  Owner,
+  TextLink,
+  FormActions,
+  VisuallyHidden,
 } from '../../components/ui/index.ts';
 import { formatDate, formatDateTime } from '../../lib/date.ts';
 import {
@@ -37,7 +60,11 @@ import {
 } from './api.ts';
 import { dueLabel, dueTone, isOverdue } from './format.ts';
 import { taskStatuses, type Task, type TaskStatus } from './types.ts';
-import './tasks.css';
+import * as S from './styles.ts';
+
+const PanelAction = styled(TextButton)`
+  ${panelAction}
+`;
 
 export async function taskLoader({ params }: LoaderFunctionArgs) {
   return getTask(params.taskId ?? '');
@@ -75,15 +102,15 @@ function TaskDetail({ task }: { task: Task }) {
 
   return (
     <>
-      <nav className="breadcrumb" aria-label="경로">
+      <Breadcrumb aria-label="경로">
         <Link to="/work/tasks">업무</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">{task.id}</span>
-      </nav>
+      </Breadcrumb>
       <PageHeader
         title={task.title}
         description={
-          <span className="meta-row">
+          <MetaRow>
             <span>{task.department} 요청</span>
             {overdue ? (
               <Badge theme="negative">마감 {dueLabel(task)}</Badge>
@@ -94,27 +121,24 @@ function TaskDetail({ task }: { task: Task }) {
                   : `${formatDate(task.dueAt)} 마감`}
               </span>
             )}
-          </span>
+          </MetaRow>
         }
         actions={
           task.agenda && (
-            <Link {...buttonLook()} to={`/work/agendas/${task.agenda.id}`}>
+            <ButtonLink to={`/work/agendas/${task.agenda.id}`}>
               안건 보기
-            </Link>
+            </ButtonLink>
           )
         }
       />
 
-      <div className="split-layout task-detail">
-        <div className="split-layout__main">
-          <section
-            className="panel panel--padded"
-            aria-labelledby={statusLabelId}
-          >
-            <div className="field">
-              <h2 className="field__label" id={statusLabelId}>
+      <SplitLayout>
+        <SplitMain>
+          <Panel $padded aria-labelledby={statusLabelId}>
+            <FieldRoot>
+              <FieldLabel as="h2" id={statusLabelId}>
                 상태
-              </h2>
+              </FieldLabel>
               <ChoiceGroup
                 aria-labelledby={statusLabelId}
                 name="task-status"
@@ -128,48 +152,45 @@ function TaskDetail({ task }: { task: Task }) {
                   disabled: saving,
                 }))}
               />
-              <div className="field__foot">
-                <span className="field__hint">{statusHint[task.status]}</span>
-              </div>
-            </div>
-          </section>
+              <FieldFoot>
+                <FieldHint>{statusHint[task.status]}</FieldHint>
+              </FieldFoot>
+            </FieldRoot>
+          </Panel>
 
           <BodyPanel task={task} />
           <ChecklistPanel task={task} />
 
           <ActivityPanel task={task} />
-        </div>
+        </SplitMain>
 
-        <aside className="split-layout__aside">
-          <section className="panel" aria-label="업무 정보">
-            <dl className="info-list">
+        <SplitAside>
+          <Panel aria-label="업무 정보">
+            <InfoList>
               <dt>담당</dt>
-              <dd className="info-list__inline">
+              <InfoListInline>
                 {task.assignees.map((name) => (
-                  <span key={name} className="owner">
+                  <Owner key={name}>
                     <PersonAvatar name={name} aria-hidden="true" />
                     {name}
-                  </span>
+                  </Owner>
                 ))}
-              </dd>
+              </InfoListInline>
               <dt>요청</dt>
-              <dd className="owner">
+              <Owner as="dd">
                 <PersonAvatar name={task.requester} aria-hidden="true" />
                 {task.requester}
-              </dd>
+              </Owner>
               <dt>마감</dt>
-              <dd className="task-due" data-tone={dueTone(task)}>
+              <S.TaskDue $tone={dueTone(task)}>
                 {formatDate(task.dueAt)}
-              </dd>
+              </S.TaskDue>
               <dt>{task.agenda ? '안건' : '묶음'}</dt>
               <dd>
                 {task.agenda ? (
-                  <Link
-                    className="text-link"
-                    to={`/work/agendas/${task.agenda.id}`}
-                  >
+                  <TextLink to={`/work/agendas/${task.agenda.id}`}>
                     {task.agenda.id} {task.agenda.title}
-                  </Link>
+                  </TextLink>
                 ) : (
                   task.group
                 )}
@@ -180,37 +201,33 @@ function TaskDetail({ task }: { task: Task }) {
                   {task.visibility}
                 </Badge>
               </dd>
-            </dl>
-          </section>
+            </InfoList>
+          </Panel>
 
           {task.outputs.length > 0 && (
-            <section className="panel" aria-labelledby="outputs-title">
-              <h2 className="panel__title" id="outputs-title">
-                산출물
-              </h2>
-              <ul className="output-list">
+            <Panel aria-labelledby="outputs-title">
+              <PanelTitle id="outputs-title">산출물</PanelTitle>
+              <S.OutputList>
                 {task.outputs.map((output) => (
                   <li key={output.id}>
                     {output.kind === 'survey' ? <SurveyIcon /> : <ReportIcon />}
-                    <span className="output-list__text">
+                    <S.OutputText>
                       {output.to ? (
-                        <Link className="output-list__title" to={output.to}>
+                        <S.OutputTitleLink to={output.to}>
                           {output.title}
-                        </Link>
+                        </S.OutputTitleLink>
                       ) : (
-                        <span className="output-list__title">
-                          {output.title}
-                        </span>
+                        <S.OutputTitle>{output.title}</S.OutputTitle>
                       )}
-                      <span className="output-list__meta">{output.meta}</span>
-                    </span>
+                      <S.OutputMeta>{output.meta}</S.OutputMeta>
+                    </S.OutputText>
                   </li>
                 ))}
-              </ul>
-            </section>
+              </S.OutputList>
+            </Panel>
           )}
-        </aside>
-      </div>
+        </SplitAside>
+      </SplitLayout>
     </>
   );
 }
@@ -237,26 +254,23 @@ function BodyPanel({ task }: { task: Task }) {
   };
 
   return (
-    <section className="panel" aria-labelledby="task-body-title">
-      <div className="panel__title panel__title--split">
-        <h2 className="panel__heading" id="task-body-title">
-          내용
-        </h2>
+    <Panel aria-labelledby="task-body-title">
+      <PanelTitle as="div" $split>
+        <PanelHeading id="task-body-title">내용</PanelHeading>
         {!editing && (
-          <TextButton
+          <PanelAction
             size="small"
-            className="panel__action"
             onClick={() => {
               setDraft(task.body);
               setEditing(true);
             }}
           >
             {task.body ? '고치기' : '내용 쓰기'}
-          </TextButton>
+          </PanelAction>
         )}
-      </div>
+      </PanelTitle>
       {editing ? (
-        <form className="panel__body" onSubmit={onSubmit}>
+        <PanelBody as="form" onSubmit={onSubmit}>
           <TextArea
             label="내용"
             rows={6}
@@ -272,7 +286,7 @@ function BodyPanel({ task }: { task: Task }) {
               저장하지 못했습니다. 잠시 후 다시 시도해주세요.
             </Notice>
           )}
-          <div className="form-actions">
+          <FormActions>
             <TextButton onClick={() => setEditing(false)}>취소</TextButton>
             <Button
               type="submit"
@@ -282,20 +296,20 @@ function BodyPanel({ task }: { task: Task }) {
             >
               저장
             </Button>
-          </div>
-        </form>
+          </FormActions>
+        </PanelBody>
       ) : (
-        <div className="panel__prose">
+        <PanelProse>
           {task.body ? (
             task.body
               .split(/\n\s*\n/)
               .map((paragraph, index) => <p key={index}>{paragraph}</p>)
           ) : (
-            <p className="panel__prose-empty">아직 적은 내용이 없습니다.</p>
+            <PanelProseEmpty>아직 적은 내용이 없습니다.</PanelProseEmpty>
           )}
-        </div>
+        </PanelProse>
       )}
-    </section>
+    </Panel>
   );
 }
 
@@ -329,23 +343,21 @@ function ChecklistPanel({ task }: { task: Task }) {
   const doneCount = task.checklist.filter((item) => item.done).length;
 
   return (
-    <section className="panel" aria-labelledby="checklist-title">
-      <div className="panel__title panel__title--split">
-        <h2 className="panel__heading" id="checklist-title">
-          체크리스트
-        </h2>
+    <Panel aria-labelledby="checklist-title">
+      <PanelTitle as="div" $split>
+        <PanelHeading id="checklist-title">체크리스트</PanelHeading>
         {task.checklist.length > 0 && (
-          <span className="task-checklist__meter">
+          <S.ChecklistMeter>
             <Meter
               label="체크리스트 완료"
               value={doneCount}
               max={task.checklist.length}
             />
-          </span>
+          </S.ChecklistMeter>
         )}
-      </div>
+      </PanelTitle>
       {task.checklist.length > 0 && (
-        <ul className="task-checklist">
+        <S.Checklist>
           {task.checklist.map((item) => (
             <li key={item.id}>
               <Checkbox
@@ -358,29 +370,27 @@ function ChecklistPanel({ task }: { task: Task }) {
                   )
                 }
               />
-              <span className="task-checklist__owner">{item.owner}</span>
+              <S.ChecklistOwner>{item.owner}</S.ChecklistOwner>
             </li>
           ))}
-        </ul>
+        </S.Checklist>
       )}
-      <form className="task-checklist__add" onSubmit={onAdd}>
-        <label className="visually-hidden" htmlFor={inputId}>
+      <S.ChecklistAdd onSubmit={onAdd}>
+        <VisuallyHidden as="label" htmlFor={inputId}>
           새 항목
-        </label>
+        </VisuallyHidden>
         <Input
           id={inputId}
-
           maxLength={80}
           placeholder="할 일 추가"
           value={text}
           onChange={(event) => setText(event.target.value)}
         />
-        <label className="visually-hidden" htmlFor={ownerId}>
+        <VisuallyHidden as="label" htmlFor={ownerId}>
           맡을 사람
-        </label>
+        </VisuallyHidden>
         <SelectControl
           id={ownerId}
-          containerClassName="task-checklist__owner-select"
           value={owner}
           onChange={(event) => setOwner(event.target.value)}
         >
@@ -391,8 +401,8 @@ function ChecklistPanel({ task }: { task: Task }) {
         <Button type="submit" disabled={saving || !text.trim()}>
           추가
         </Button>
-      </form>
-    </section>
+      </S.ChecklistAdd>
+    </Panel>
   );
 }
 
@@ -418,46 +428,39 @@ function ActivityPanel({ task }: { task: Task }) {
   };
 
   return (
-    <section className="panel" aria-labelledby="activity-title">
-      <h2 className="panel__title" id="activity-title">
-        활동
-      </h2>
-      <ol className="task-activity">
+    <Panel aria-labelledby="activity-title">
+      <PanelTitle id="activity-title">활동</PanelTitle>
+      <S.Activity>
         {task.activity.map((entry) => (
-          <li
-            key={entry.id}
-            className="task-activity__item"
-            data-kind={entry.kind}
-          >
+          <S.ActivityItem key={entry.id}>
             <PersonAvatar name={entry.author} aria-hidden="true" />
-            <div className="task-activity__body">
+            <S.ActivityBody>
               {entry.kind === 'event' ? (
-                <p className="task-activity__line">
+                <S.ActivityLine>
                   <strong>{entry.author}</strong>님이 {entry.text}{' '}
                   <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
-                </p>
+                </S.ActivityLine>
               ) : (
                 <>
-                  <p className="task-activity__line">
+                  <S.ActivityLine>
                     <strong>{entry.author}</strong>{' '}
                     <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
-                  </p>
-                  <p className="task-activity__comment">{entry.text}</p>
+                  </S.ActivityLine>
+                  <S.ActivityComment>{entry.text}</S.ActivityComment>
                 </>
               )}
-            </div>
-          </li>
+            </S.ActivityBody>
+          </S.ActivityItem>
         ))}
-      </ol>
-      <form className="task-comment" onSubmit={onSubmit}>
+      </S.Activity>
+      <S.CommentForm onSubmit={onSubmit}>
         <PersonAvatar name={session.name} aria-hidden="true" />
-        <div className="task-comment__field">
-          <label className="visually-hidden" htmlFor={commentId}>
+        <S.CommentField>
+          <VisuallyHidden as="label" htmlFor={commentId}>
             댓글
-          </label>
+          </VisuallyHidden>
           <KitTextArea
             id={commentId}
-            containerClassName="comment-input"
             placeholder="댓글 남기기"
             maxLength={1000}
             value={comment}
@@ -468,16 +471,16 @@ function ActivityPanel({ task }: { task: Task }) {
               남기지 못했습니다. 잠시 후 다시 시도해주세요.
             </Notice>
           )}
-          <div className="form-actions">
+          <FormActions>
             <Button
               type="submit"
               disabled={!comment.trim() || status === 'saving'}
             >
               댓글 달기
             </Button>
-          </div>
-        </div>
-      </form>
-    </section>
+          </FormActions>
+        </S.CommentField>
+      </S.CommentForm>
+    </Panel>
   );
 }

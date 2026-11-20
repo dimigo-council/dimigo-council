@@ -4,9 +4,12 @@ import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { Button } from '../../dimi-ui-kit/index.ts';
 import {
+  Breadcrumb,
+  FormActions,
   Notice,
   Select,
   TextArea,
+  TextButtonLink,
   TextField,
 } from '../../components/ui/index.ts';
 import { listAgendas } from '../agendas/api.ts';
@@ -14,7 +17,7 @@ import { finishedStatuses } from '../agendas/types.ts';
 import { listMembers } from '../members/api.ts';
 import { createReport } from './api.ts';
 import { reportKinds, type ReportKind } from './types.ts';
-import './reports.css';
+import * as S from './styles.ts';
 
 export async function newReportLoader() {
   const [agendas, members] = await Promise.all([listAgendas(), listMembers()]);
@@ -65,18 +68,14 @@ export function NewReportPage() {
 
   return (
     <>
-      <nav className="breadcrumb" aria-label="경로">
+      <Breadcrumb aria-label="경로">
         <Link to="/work/reports">보고서</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">새 보고서</span>
-      </nav>
+      </Breadcrumb>
       <PageHeader title="보고서 쓰기" />
 
-      <form
-        className="panel panel--padded report-form"
-        onSubmit={onSubmit}
-        noValidate
-      >
+      <S.ReportForm as="form" $padded onSubmit={onSubmit} noValidate>
         <TextField
           label="제목"
           maxLength={60}
@@ -88,7 +87,7 @@ export function NewReportPage() {
             setError(undefined);
           }}
         />
-        <div className="report-form__row">
+        <S.ReportFormRow>
           <Select
             label="종류"
             value={kind}
@@ -116,7 +115,7 @@ export function NewReportPage() {
               </option>
             ))}
           </Select>
-        </div>
+        </S.ReportFormRow>
         <TextArea
           label="내용"
           rows={10}
@@ -131,15 +130,8 @@ export function NewReportPage() {
             만들지 못했습니다. 잠시 후 다시 시도해주세요.
           </Notice>
         )}
-        <div className="form-actions">
-          <Link
-            className="kit-text-button kit-interactive"
-            data-size="medium"
-            data-theme="grayscale"
-            to="/work/reports"
-          >
-            취소
-          </Link>
+        <FormActions>
+          <TextButtonLink to="/work/reports">취소</TextButtonLink>
           <Button
             type="submit"
             theme="accent"
@@ -148,8 +140,8 @@ export function NewReportPage() {
           >
             저장
           </Button>
-        </div>
-      </form>
+        </FormActions>
+      </S.ReportForm>
     </>
   );
 }

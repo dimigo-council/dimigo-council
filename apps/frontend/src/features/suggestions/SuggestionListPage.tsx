@@ -3,15 +3,23 @@ import { PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Badge } from '../../dimi-ui-kit/index.ts';
 import {
+  ButtonLink,
   ChoiceGroup,
+  EmptyState,
+  ListGroupRoot,
+  ListRowAside,
+  ListRowLink,
+  ListRowMain,
+  ListRowMeta,
+  ListRowTitle,
+  PageToolbar,
   statusTone,
-  buttonLook,
 } from '../../components/ui/index.ts';
 import { formatRelative, formatShortDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listMySuggestions } from './api.ts';
 import { openStatuses, type Suggestion } from './types.ts';
-import './suggestions.css';
+import * as S from './styles.ts';
 
 export async function suggestionListLoader() {
   return listMySuggestions();
@@ -29,26 +37,26 @@ function latestReply(suggestion: Suggestion) {
 function SuggestionRow({ suggestion }: { suggestion: Suggestion }) {
   const reply = latestReply(suggestion);
   return (
-    <li className="list-row suggestion-row">
-      <div className="list-row__main">
-        <h2 className="list-row__title">
-          <Link className="list-row__link" to={`/suggestions/${suggestion.id}`}>
+    <S.SuggestionRow>
+      <ListRowMain>
+        <ListRowTitle as="h2">
+          <ListRowLink as={Link} to={`/suggestions/${suggestion.id}`}>
             {suggestion.title}
-          </Link>
-        </h2>
-        <div className="list-row__meta">
+          </ListRowLink>
+        </ListRowTitle>
+        <ListRowMeta>
           <Badge>{suggestion.category}</Badge>
           <span>{formatShortDate(suggestion.submittedAt)} 제출</span>
           <span>{suggestion.identity === 'anonymous' ? '익명' : '실명'}</span>
-        </div>
-      </div>
-      <div className="list-row__aside">
+        </ListRowMeta>
+      </ListRowMain>
+      <ListRowAside>
         <Badge theme={statusTone.suggestion[suggestion.status]}>
           {suggestion.status}
         </Badge>
         <span>{formatRelative(suggestion.updatedAt)}</span>
-      </div>
-      <p className="suggestion-row__reply">
+      </ListRowAside>
+      <S.SuggestionReply>
         {reply ? (
           <>
             <strong>{reply.department}</strong> {reply.body}
@@ -59,8 +67,8 @@ function SuggestionRow({ suggestion }: { suggestion: Suggestion }) {
             보통 3일 안에 확인합니다.
           </>
         )}
-      </p>
-    </li>
+      </S.SuggestionReply>
+    </S.SuggestionRow>
   );
 }
 
@@ -76,7 +84,7 @@ export function SuggestionListPage() {
     <>
       <PageHeader title="내 건의" visuallyHidden />
 
-      <div className="page-toolbar">
+      <PageToolbar>
         <ChoiceGroup
           aria-label="건의 보기"
           value={filter}
@@ -87,29 +95,26 @@ export function SuggestionListPage() {
             { value: 'done', label: `끝난 건의 ${done.length}` },
           ]}
         />
-        <Link
-          {...buttonLook({ theme: 'accent', variant: 'primary' })}
-          to="/suggestions/new"
-        >
+        <ButtonLink theme="accent" variant="primary" to="/suggestions/new">
           <PlusIcon />새 건의
-        </Link>
-      </div>
+        </ButtonLink>
+      </PageToolbar>
 
-      <div className="suggestion-list">
+      <S.SuggestionList>
         {visible.length > 0 ? (
-          <ul className="list-group" aria-label="내 건의 목록">
+          <ListGroupRoot aria-label="내 건의 목록">
             {visible.map((suggestion) => (
               <SuggestionRow key={suggestion.id} suggestion={suggestion} />
             ))}
-          </ul>
+          </ListGroupRoot>
         ) : (
-          <p className="empty-state">
+          <EmptyState>
             {suggestions.length === 0
               ? '아직 낸 건의가 없습니다. 학교생활에서 바뀌었으면 하는 점을 알려주세요.'
               : '이 보기에 해당하는 건의가 없습니다.'}
-          </p>
+          </EmptyState>
         )}
-      </div>
+      </S.SuggestionList>
     </>
   );
 }

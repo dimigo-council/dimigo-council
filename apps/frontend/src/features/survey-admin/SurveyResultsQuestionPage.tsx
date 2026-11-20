@@ -1,8 +1,19 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { Meter } from '../../components/intranet/Meter.tsx';
 import { Badge, Input } from '../../dimi-ui-kit/index.ts';
-import { ChoiceGroup } from '../../components/ui/index.ts';
+import {
+  ChoiceGroup,
+  DataCell,
+  EmptyState,
+  MetaRow,
+  Panel,
+  PanelAside,
+  TableWrap,
+  TextLink,
+  VisuallyHidden,
+} from '../../components/ui/index.ts';
+import * as S from './styles.ts';
 import { formatDateTime } from '../../lib/date.ts';
 import { isAnswered } from '../surveys/format.ts';
 import type {
@@ -82,8 +93,8 @@ function OptionCountRow({
   return (
     <tr>
       <td>{row.label}</td>
-      <td className="data-table__num">{row.count}</td>
-      <td className="data-table__num">{formatRatio(row.ratio)}</td>
+      <DataCell $num>{row.count}</DataCell>
+      <DataCell $num>{formatRatio(row.ratio)}</DataCell>
       <td>
         <Meter
           label={`${row.label} 비율`}
@@ -92,16 +103,15 @@ function OptionCountRow({
           text=""
         />
       </td>
-      <td className="data-table__num">
+      <DataCell $num>
         {somebodyChose && (
-          <Link
-            className="text-link"
+          <TextLink
             to={responsesWithAnswerHref(responsesHref, question.id, row.label)}
           >
             응답 보기
-          </Link>
+          </TextLink>
         )}
-      </td>
+      </DataCell>
     </tr>
   );
 }
@@ -122,26 +132,26 @@ function OptionCounts({
 
   return (
     <section aria-labelledby="option-counts">
-      <div className="result-section__head">
+      <S.ResultSectionHead>
         <h3 id="option-counts">{answerColumn}별 응답</h3>
         <span>{ratioBasisText(question, summary.answered)}</span>
-      </div>
-      <div className="table-wrap">
-        <table className="data-table result-table">
+      </S.ResultSectionHead>
+      <TableWrap>
+        <S.ResultTable>
           <thead>
             <tr>
               <th scope="col">{answerColumn}</th>
-              <th scope="col" className="data-table__num">
+              <DataCell as="th" scope="col" $num>
                 응답 수
-              </th>
-              <th scope="col" className="data-table__num">
+              </DataCell>
+              <DataCell as="th" scope="col" $num>
                 비율
-              </th>
-              <th scope="col" className="result-table__bar">
-                <span className="visually-hidden">비율 막대</span>
-              </th>
+              </DataCell>
+              <S.ResultTableBar scope="col">
+                <VisuallyHidden>비율 막대</VisuallyHidden>
+              </S.ResultTableBar>
               <th scope="col">
-                <span className="visually-hidden">개별 응답</span>
+                <VisuallyHidden>개별 응답</VisuallyHidden>
               </th>
             </tr>
           </thead>
@@ -156,8 +166,8 @@ function OptionCounts({
               />
             ))}
           </tbody>
-        </table>
-      </div>
+        </S.ResultTable>
+      </TableWrap>
     </section>
   );
 }
@@ -191,10 +201,10 @@ function gradeColumns(
 function CrossTabCell({ row, largest }: { row: CountRow; largest: number }) {
   const isColumnTop = row.count > 0 && row.count === largest;
   return (
-    <td className="data-table__num" data-top={isColumnTop}>
+    <S.CrosstabCell $num $top={isColumnTop}>
       {formatRatio(row.ratio)}
       <small>{row.count}명</small>
-    </td>
+    </S.CrosstabCell>
   );
 }
 
@@ -206,14 +216,14 @@ function AverageScoreRow({
   columns: GradeColumn[];
 }) {
   return (
-    <tr className="result-crosstab__foot">
+    <S.ResultCrosstabFoot>
       <th scope="row">평균 점수</th>
       {columns.map((column) => (
-        <td key={column.key} className="data-table__num">
+        <DataCell key={column.key} $num>
           {summarizeScale(question, column.responses).mean.toFixed(1)}
-        </td>
+        </DataCell>
       ))}
-    </tr>
+    </S.ResultCrosstabFoot>
   );
 }
 
@@ -230,19 +240,19 @@ function GradeCrossTable({
 
   return (
     <section aria-labelledby="grade-table">
-      <div className="result-section__head">
+      <S.ResultSectionHead>
         <h3 id="grade-table">학년별로 나눠 보기</h3>
         <span>열마다 가장 높은 값은 굵게</span>
-      </div>
-      <div className="table-wrap">
-        <table className="data-table result-table result-crosstab">
+      </S.ResultSectionHead>
+      <TableWrap>
+        <S.ResultCrosstab>
           <thead>
             <tr>
               <th scope="col">{answerColumnLabel(question)}</th>
               {columns.map((column) => (
-                <th key={column.key} scope="col" className="data-table__num">
+                <DataCell as="th" key={column.key} scope="col" $num>
                   {column.label}
-                </th>
+                </DataCell>
               ))}
             </tr>
           </thead>
@@ -262,22 +272,22 @@ function GradeCrossTable({
             {question.type === 'scale' && (
               <AverageScoreRow question={question} columns={columns} />
             )}
-            <tr className="result-crosstab__foot">
+            <S.ResultCrosstabFoot>
               <th scope="row">응답</th>
               {columns.map((column) => (
-                <td key={column.key} className="data-table__num">
+                <DataCell key={column.key} $num>
                   {column.summary.answered}명
-                </td>
+                </DataCell>
               ))}
-            </tr>
+            </S.ResultCrosstabFoot>
           </tbody>
-        </table>
-      </div>
-      <p className="result-section__note">
+        </S.ResultCrosstab>
+      </TableWrap>
+      <S.ResultSectionNote>
         {question.type === 'multiple' &&
           '복수 선택이라 열 합이 100%를 넘습니다. '}
         응답자가 {minimumGroupSize}명 미만인 학년은 표에서 빠집니다.
-      </p>
+      </S.ResultSectionNote>
     </section>
   );
 }
@@ -288,7 +298,7 @@ function containsKeyword(text: string, keyword: string) {
 }
 
 function NoMatchingAnswers() {
-  return <p className="empty-state">찾는 말이 들어간 답이 없습니다.</p>;
+  return <EmptyState>찾는 말이 들어간 답이 없습니다.</EmptyState>;
 }
 
 function TextGroupItem({ group }: { group: TextGroup }) {
@@ -297,31 +307,31 @@ function TextGroupItem({ group }: { group: TextGroup }) {
 
   if (!hasVariants) {
     return (
-      <div className="text-group">
-        <span className="text-group__label">{group.label}</span>
-        <span className="text-group__count">{countText}</span>
-      </div>
+      <S.TextGroupRow>
+        <S.TextGroupLabel>{group.label}</S.TextGroupLabel>
+        <S.TextGroupCount>{countText}</S.TextGroupCount>
+      </S.TextGroupRow>
     );
   }
 
   return (
-    <details className="text-group">
+    <S.TextGroupDetails>
       <summary>
-        <span className="text-group__label">{group.label}</span>
-        <span className="text-group__variants">
+        <S.TextGroupLabel>{group.label}</S.TextGroupLabel>
+        <S.TextGroupVariants>
           표현 {group.variants.length}가지
-        </span>
-        <span className="text-group__count">{countText}</span>
+        </S.TextGroupVariants>
+        <S.TextGroupCount>{countText}</S.TextGroupCount>
       </summary>
-      <ul className="text-group__list">
+      <S.TextGroupList>
         {group.variants.map((variant) => (
           <li key={variant.text}>
             <span>“{variant.text}”</span>
             <span>{variant.count}</span>
           </li>
         ))}
-      </ul>
-    </details>
+      </S.TextGroupList>
+    </S.TextGroupDetails>
   );
 }
 
@@ -343,16 +353,16 @@ function GroupedTextAnswers({
 
   return (
     <>
-      <ul className="text-answer-list">
+      <S.TextAnswerList>
         {matchingGroups.map((group) => (
           <li key={group.label}>
             <TextGroupItem group={group} />
           </li>
         ))}
-      </ul>
-      <p className="result-section__note">
+      </S.TextAnswerList>
+      <S.ResultSectionNote>
         띄어쓰기·문장부호만 다른 답은 같은 답으로 셉니다.
-      </p>
+      </S.ResultSectionNote>
     </>
   );
 }
@@ -375,23 +385,20 @@ function RawTextAnswers({
   if (matchingAnswers.length === 0) return <NoMatchingAnswers />;
 
   return (
-    <ul className="text-answer-list">
+    <S.TextAnswerList>
       {matchingAnswers.map(({ response, text }) => (
-        <li key={response.id} className="text-raw">
+        <S.TextRaw as="li" key={response.id}>
           <p>{text}</p>
-          <span className="meta-row">
+          <MetaRow>
             <span>{formatDateTime(response.submittedAt)}</span>
             <span>{response.grade}학년</span>
-            <Link
-              className="text-link"
-              to={`${responsesHref}?n=${response.number}`}
-            >
+            <TextLink to={`${responsesHref}?n=${response.number}`}>
               응답 #{response.number}
-            </Link>
-          </span>
-        </li>
+            </TextLink>
+          </MetaRow>
+        </S.TextRaw>
       ))}
-    </ul>
+    </S.TextAnswerList>
   );
 }
 
@@ -412,7 +419,7 @@ function TextAnswers({
 
   return (
     <section aria-label="주관식 답">
-      <div className="filter-bar result-text-bar">
+      <S.ResultTextBar>
         <ChoiceGroup
           aria-label="보기 방식"
           value={viewMode}
@@ -424,14 +431,13 @@ function TextAnswers({
         />
         <Input
           type="search"
-          containerClassName="filter-bar__search"
           leadingIcon={iconSearch}
           aria-label="답 찾기"
           placeholder="답에 들어간 말로 찾기"
           value={searchText}
           onChange={(event) => setSearchText(event.target.value)}
         />
-      </div>
+      </S.ResultTextBar>
 
       {viewMode === 'grouped' ? (
         <GroupedTextAnswers
@@ -461,7 +467,7 @@ function QuestionNavigator({
   onSelect: (index: number) => void;
 }) {
   return (
-    <nav className="result-question__nav" aria-label="문항">
+    <S.ResultQuestionNav aria-label="문항">
       <ol>
         {questions.map((question, index) => (
           <li key={question.id}>
@@ -470,18 +476,18 @@ function QuestionNavigator({
               aria-current={index === currentIndex ? 'true' : undefined}
               onClick={() => onSelect(index)}
             >
-              <span className="q-card__number">Q{index + 1}</span>
-              <span className="result-question__nav-title">
+              <S.QCardNumber>Q{index + 1}</S.QCardNumber>
+              <S.ResultQuestionNavTitle>
                 {question.title}
-              </span>
-              <span className="result-question__nav-type">
+              </S.ResultQuestionNavTitle>
+              <S.ResultQuestionNavType>
                 {questionTypeLabel[question.type]}
-              </span>
+              </S.ResultQuestionNavType>
             </button>
           </li>
         ))}
       </ol>
-    </nav>
+    </S.ResultQuestionNav>
   );
 }
 
@@ -546,19 +552,16 @@ export function SurveyResultsQuestionPage() {
   };
 
   return (
-    <div className="result-question">
+    <S.ResultQuestion>
       <QuestionNavigator
         questions={questions}
         currentIndex={currentIndex}
         onSelect={showQuestionAt}
       />
 
-      <section
-        className="panel result-question__body"
-        aria-labelledby="q-title"
-      >
-        <div className="panel__title panel__title--split result-question__head">
-          <span className="result-question__pager">
+      <Panel aria-labelledby="q-title">
+        <S.ResultQuestionHead as="div" $split>
+          <S.ResultQuestionPager>
             <StepButton
               direction="previous"
               label="이전 문항"
@@ -572,24 +575,24 @@ export function SurveyResultsQuestionPage() {
               label="다음 문항"
               onClick={() => showQuestionAt(currentIndex + 1)}
             />
-          </span>
-          <span className="panel__aside">
+          </S.ResultQuestionPager>
+          <PanelAside>
             {answeredCount}개 응답
             {skippedCount > 0 && ` · ${skippedCount}명 건너뜀`}
-          </span>
-        </div>
-        <div className="result-question__content">
-          <div className="result-question__title">
+          </PanelAside>
+        </S.ResultQuestionHead>
+        <S.ResultQuestionContent>
+          <S.ResultQuestionTitle>
             <Badge>{questionTypeLabel[question.type]}</Badge>
             <h2 id="q-title">{question.title}</h2>
-          </div>
+          </S.ResultQuestionTitle>
           <QuestionDetail
             question={question}
             responses={includedResponses}
             responsesHref={responsesHref}
           />
-        </div>
-      </section>
-    </div>
+        </S.ResultQuestionContent>
+      </Panel>
+    </S.ResultQuestion>
   );
 }

@@ -2,15 +2,25 @@ import { useState } from 'react';
 import { useLoaderData, useRevalidator } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
-import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
-import { PersonAvatar, SelectControl } from '../../components/ui/index.ts';
+import {
+  FilterBar,
+  FilterSelect,
+} from '../../components/intranet/FilterSelect.tsx';
+import {
+  DataCell,
+  EmptyState,
+  Owner,
+  PersonAvatar,
+  SelectControl,
+  TableWrap,
+} from '../../components/ui/index.ts';
 import { listMembers, updatePermission } from './api.ts';
 import {
   memberPermissions,
   type Member,
   type MemberPermission,
 } from './types.ts';
-import './members.css';
+import * as S from './styles.ts';
 import { Input } from '../../dimi-ui-kit/index.ts';
 import { iconSearch } from '../../dimi-ui-kit/icons';
 
@@ -48,7 +58,6 @@ function PermissionCell({
 
   return (
     <SelectControl
-      containerClassName="table-select"
       aria-label={`${member.name} 권한`}
       value={member.permission}
       disabled={saving}
@@ -86,8 +95,8 @@ export function MemberListPage() {
     <>
       <PageHeader title="구성원·권한" visuallyHidden />
 
-      <div className="member-board">
-        <div className="filter-bar">
+      <S.MemberBoard>
+        <FilterBar>
           <FilterSelect
             label="부서"
             value={department}
@@ -110,18 +119,17 @@ export function MemberListPage() {
           </FilterSelect>
           <Input
             type="search"
-            containerClassName="filter-bar__search"
             leadingIcon={iconSearch}
             aria-label="구성원 찾기"
             placeholder="이름으로 찾기"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-        </div>
+        </FilterBar>
 
         {visible.length > 0 ? (
-          <div className="table-wrap" tabIndex={0} aria-label="구성원 목록">
-            <table className="data-table member-table">
+          <TableWrap tabIndex={0} aria-label="구성원 목록">
+            <S.MemberTable>
               <thead>
                 <tr>
                   <th scope="col">이름</th>
@@ -135,15 +143,17 @@ export function MemberListPage() {
                 {visible.map((member) => (
                   <tr key={member.id}>
                     <th scope="row">
-                      <span className="owner">
+                      <Owner>
                         <PersonAvatar name={member.name} aria-hidden="true" />
                         <strong>{member.name}</strong>
                         {member.name === session.name && (
-                          <span className="data-table__muted">나</span>
+                          <DataCell as="span" $muted>
+                            나
+                          </DataCell>
                         )}
-                      </span>
+                      </Owner>
                     </th>
-                    <td className="data-table__muted">{member.classLabel}</td>
+                    <DataCell $muted>{member.classLabel}</DataCell>
                     <td>{member.department}</td>
                     <td>{member.position}</td>
                     <td>
@@ -155,21 +165,21 @@ export function MemberListPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </S.MemberTable>
+          </TableWrap>
         ) : (
-          <p className="empty-state">조건에 맞는 구성원이 없습니다.</p>
+          <EmptyState>조건에 맞는 구성원이 없습니다.</EmptyState>
         )}
 
-        <dl className="permission-notes">
+        <S.PermissionNotes>
           {memberPermissions.map((item) => (
             <div key={item}>
               <dt>{item}</dt>
               <dd>{permissionNote[item]}</dd>
             </div>
           ))}
-        </dl>
-      </div>
+        </S.PermissionNotes>
+      </S.MemberBoard>
     </>
   );
 }

@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import './tokens.css';
-import './kit.css';
+import styled, { css } from 'styled-components';
 import * as allIcons from './icons.generated';
 import {
   ActionButton,
@@ -22,10 +21,14 @@ import {
   OptionPicker,
   SectionHeader,
   SegmentedControl,
+  Text,
   TextButton,
   Toast,
   ValueList,
+  useKitTheme,
   type ControlType,
+  type KitMode,
+  type KitTextScale,
 } from './index';
 import {
   iconAdd,
@@ -43,57 +46,127 @@ import {
 // The preview is the one place that shows every icon, so it imports them all.
 const kitIcons = Object.values(allIcons);
 
-const page = {
-  minHeight: '100vh',
-  padding: 'var(--kit-spacing-800) var(--kit-spacing-900)',
-  background: 'var(--kit-background-secondary)',
-  color: 'var(--kit-core-glyph-primary)',
-  fontFamily: 'var(--kit-family)',
-};
-const row = {
-  display: 'flex',
-  flexWrap: 'wrap' as const,
-  alignItems: 'center',
-  gap: 'var(--kit-spacing-400)',
-};
-const card = {
-  display: 'flex',
-  flexDirection: 'column' as const,
-  gap: 'var(--kit-spacing-400)',
-  padding: 'var(--kit-spacing-550)',
-  borderRadius: 'var(--kit-radius-m)',
-  background: 'var(--kit-background-primary)',
-  boxShadow: 'inset 0 0 0 1px var(--kit-core-outline)',
-};
-const mobile = {
-  width: 360,
-  background: 'var(--kit-background-primary)',
-  borderRadius: 'var(--kit-radius-m)',
-  boxShadow: 'inset 0 0 0 1px var(--kit-core-outline)',
-};
+const Page = styled.div`
+  ${({ theme: t }) => css`
+    min-height: 100vh;
+    padding: ${t.spacing[800]} ${t.spacing[900]};
+    background: ${t.colors.background.secondary};
+    color: ${t.colors.core.glyph.primary};
+    font-family: ${t.font.family};
+  `}
+`;
+
+const Row = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing[400]};
+`;
+
+const TopBar = styled(Row)`
+  justify-content: space-between;
+  margin-bottom: ${({ theme }) => theme.spacing[800]};
+`;
+
+const Switches = styled(Row)`
+  width: 560px;
+  flex-wrap: nowrap;
+`;
+
+const TopRow = styled(Row)`
+  align-items: flex-start;
+`;
+
+const Card = styled.div`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-direction: column;
+    gap: ${t.spacing[400]};
+    padding: ${t.spacing[550]};
+    border-radius: ${t.radius.m};
+    background: ${t.colors.background.primary};
+    box-shadow: inset 0 0 0 1px ${t.colors.core.outline};
+  `}
+`;
+
+const Mobile = styled.div`
+  ${({ theme: t }) => css`
+    width: 360px;
+    background: ${t.colors.background.primary};
+    border-radius: ${t.radius.m};
+    box-shadow: inset 0 0 0 1px ${t.colors.core.outline};
+  `}
+`;
+
+const InputSlot = styled.div`
+  width: 360px;
+`;
+
+const ToastSlot = styled.div`
+  padding: ${({ theme }) => theme.spacing[400]};
+`;
+
+const SectionRoot = styled.section`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-direction: column;
+    gap: ${t.spacing[400]};
+    margin-bottom: ${t.spacing[850]};
+  `}
+`;
+
+const Heading = styled(Text)`
+  margin: 0;
+`;
+
+const IconGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: ${({ theme }) => theme.spacing[300]};
+`;
+
+const IconCell = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing[100]};
+`;
+
+const IconName = styled(Text)`
+  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--kit-spacing-400)',
-        marginBottom: 'var(--kit-spacing-850)',
-      }}
-    >
-      <h2 className="kit-text-headline-strong" style={{ margin: 0 }}>
+    <SectionRoot>
+      <Heading as="h2" $style="headlineStrong">
         {title}
-      </h2>
-      <div style={card}>{children}</div>
-    </section>
+      </Heading>
+      <Card>{children}</Card>
+    </SectionRoot>
   );
 }
 
+const textStyleNames = [
+  'display',
+  'title',
+  'headline',
+  'body',
+  'callout',
+  'footnote',
+  'caption',
+] as const;
+const weightNames = ['Weak', 'Regular', 'Strong'] as const;
+
 /** Dev-only page (/dimi-ui-kit) showing every DIMI UI KIT token and component. */
 export default function DimiUiKitPreview() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [scale, setScale] = useState<'100' | '135' | '150' | '200'>('100');
+  const [theme, setTheme] = useState<KitMode>('light');
+  const [scale, setScale] = useState<KitTextScale>('100');
+  const { modeOverride, setMode, textScale, setTextScale } = useKitTheme();
   const [controls, setControls] = useState<Record<ControlType, boolean>>({
     toggle: true,
     checkfill: true,
@@ -113,33 +186,29 @@ export default function DimiUiKitPreview() {
   const [text, setText] = useState('디미고');
   const [query, setQuery] = useState('');
 
-  // Pin the page theme to the switch (tokens.css follows the OS until data-theme is set).
-  useEffect(() => {
-    const root = document.documentElement;
-    const previous = root.dataset.theme;
-    root.dataset.theme = theme;
-    return () => {
-      if (previous) root.dataset.theme = previous;
-      else delete root.dataset.theme;
-    };
-  }, [theme]);
+  // Pin the app theme to the switches (the provider follows the OS until a mode is set),
+  // and give the previous mode and text scale back when leaving the page.
+  const [previous] = useState({ mode: modeOverride, scale: textScale });
+  useEffect(() => setMode(theme), [theme, setMode]);
+  useEffect(() => setTextScale(scale), [scale, setTextScale]);
+  useEffect(
+    () => () => {
+      setMode(previous.mode);
+      setTextScale(previous.scale);
+    },
+    [previous, setMode, setTextScale],
+  );
 
   return (
-    <div data-text-scale={scale === '100' ? undefined : scale} style={page}>
-      <div
-        style={{
-          ...row,
-          justifyContent: 'space-between',
-          marginBottom: 'var(--kit-spacing-800)',
-        }}
-      >
-        <div style={row}>
+    <Page>
+      <TopBar>
+        <Row>
           <BrandMark set="Logo/COUNCIL" size={40} label="디미고 학생회" />
-          <h1 className="kit-text-title-strong" style={{ margin: 0 }}>
+          <Heading as="h1" $style="titleStrong">
             DIMI UI KIT
-          </h1>
-        </div>
-        <div style={{ ...row, width: 560, flexWrap: 'nowrap' }}>
+          </Heading>
+        </Row>
+        <Switches>
           <SegmentedControl
             label="테마"
             items={[
@@ -160,41 +229,33 @@ export default function DimiUiKitPreview() {
             value={scale}
             onChange={setScale}
           />
-        </div>
-      </div>
+        </Switches>
+      </TopBar>
 
       <Section title="Text styles">
-        {[
-          'display',
-          'title',
-          'headline',
-          'body',
-          'callout',
-          'footnote',
-          'caption',
-        ].map((t) => (
-          <div key={t} style={row}>
-            {['weak', 'regular', 'strong'].map((w) => (
-              <span key={w} className={`kit-text-${t}-${w}`}>
-                {t}/{w} 디미고
-              </span>
+        {textStyleNames.map((t) => (
+          <Row key={t}>
+            {weightNames.map((w) => (
+              <Text key={w} $style={`${t}${w}`}>
+                {t}/{w.toLowerCase()} 디미고
+              </Text>
             ))}
-          </div>
+          </Row>
         ))}
-        <p className="kit-text-paragraph-large" style={{ margin: 0 }}>
+        <Heading as="p" $style="paragraphLarge">
           Paragraph/Large — 학생회가 모은 건의를 안건으로 올리고, 진행 과정을
           모두에게 공개해요.
-        </p>
-        <p className="kit-text-paragraph-small" style={{ margin: 0 }}>
+        </Heading>
+        <Heading as="p" $style="paragraphSmall">
           Paragraph/Small — 학생회가 모은 건의를 안건으로 올리고, 진행 과정을
           모두에게 공개해요.
-        </p>
+        </Heading>
       </Section>
 
       <Section title="Button">
         {(['primary', 'secondary'] as const).map((variant) =>
           (['grayscale', 'accent', 'negative'] as const).map((t) => (
-            <div key={variant + t} style={row}>
+            <Row key={variant + t}>
               {(['large', 'medium', 'small'] as const).map((s) => (
                 <Button
                   key={s}
@@ -209,14 +270,14 @@ export default function DimiUiKitPreview() {
               <Button theme={t} variant={variant} disabled>
                 Disabled
               </Button>
-            </div>
+            </Row>
           )),
         )}
       </Section>
 
       <Section title="TextButton · IconButton">
         {(['grayscale', 'accent', 'negative'] as const).map((t) => (
-          <div key={t} style={row}>
+          <Row key={t}>
             {(['large', 'medium', 'small'] as const).map((s) => (
               <TextButton key={s} size={s} theme={t} leadingIcon={iconAdd}>
                 이력 추가
@@ -228,10 +289,10 @@ export default function DimiUiKitPreview() {
             <TextButton theme={t} disabled>
               Disabled
             </TextButton>
-          </div>
+          </Row>
         ))}
         {(['large', 'medium'] as const).map((s) => (
-          <div key={s} style={row}>
+          <Row key={s}>
             {(
               [
                 'outline',
@@ -258,13 +319,13 @@ export default function DimiUiKitPreview() {
               label="disabled"
               disabled
             />
-          </div>
+          </Row>
         ))}
       </Section>
 
       <Section title="Badge · Chip">
         {(['large', 'small'] as const).map((s) => (
-          <div key={s} style={row}>
+          <Row key={s}>
             {(['grayscale', 'accent', 'negative', 'solid'] as const).map(
               (t) => (
                 <Badge key={t} size={s} theme={t} leadingIcon={iconGlobe}>
@@ -272,9 +333,9 @@ export default function DimiUiKitPreview() {
                 </Badge>
               ),
             )}
-          </div>
+          </Row>
         ))}
-        <div style={row}>
+        <Row>
           {(['outlined', 'grayscale', 'accent', 'solid'] as const).map((t) => (
             <Chip
               key={t}
@@ -293,12 +354,12 @@ export default function DimiUiKitPreview() {
           >
             총무부
           </Chip>
-        </div>
+        </Row>
       </Section>
 
       <Section title="Input">
-        <div style={{ ...row, alignItems: 'flex-start' }}>
-          <div style={{ width: 360 }}>
+        <TopRow>
+          <InputSlot>
             <Input
               leadingIcon={iconSearch}
               placeholder="플레이스홀더"
@@ -306,8 +367,8 @@ export default function DimiUiKitPreview() {
               onChange={(e) => setQuery(e.target.value)}
               onClear={() => setQuery('')}
             />
-          </div>
-          <div style={{ width: 360 }}>
+          </InputSlot>
+          <InputSlot>
             <Input
               leadingIcon={iconSearch}
               value={text}
@@ -315,15 +376,15 @@ export default function DimiUiKitPreview() {
               onClear={() => setText('')}
               error
             />
-          </div>
-          <div style={{ width: 360 }}>
+          </InputSlot>
+          <InputSlot>
             <Input placeholder="Disabled" disabled />
-          </div>
-        </div>
+          </InputSlot>
+        </TopRow>
       </Section>
 
       <Section title="Control">
-        <div style={row}>
+        <Row>
           {(Object.keys(controls) as ControlType[]).map((t) => (
             <Control
               key={t}
@@ -338,8 +399,8 @@ export default function DimiUiKitPreview() {
               }
             />
           ))}
-        </div>
-        <div style={row}>
+        </Row>
+        <Row>
           {(Object.keys(controls) as ControlType[]).map((t) => (
             <Control
               key={t}
@@ -349,25 +410,25 @@ export default function DimiUiKitPreview() {
               disabled
             />
           ))}
-        </div>
+        </Row>
       </Section>
 
       <Section title="Avatar · Divider">
-        <div style={row}>
+        <Row>
           {(['person', 'classroom'] as const).map((t) =>
             (['small', 'medium', 'large'] as const).map((s) => (
               <Avatar key={t + s} type={t} size={s} />
             )),
           )}
-        </div>
+        </Row>
         {(['small', 'medium', 'large'] as const).map((s) => (
           <Divider key={s} size={s} />
         ))}
       </Section>
 
       <Section title="Molecules (mobile width)">
-        <div style={{ ...row, alignItems: 'flex-start' }}>
-          <div style={mobile}>
+        <TopRow>
+          <Mobile>
             <NavigationBar
               type="index-logo"
               primary={{ icon: iconSearch, label: '검색' }}
@@ -418,8 +479,8 @@ export default function DimiUiKitPreview() {
               title="타이틀"
               content="학생회가 모은 건의를 안건으로 올리고, 진행 과정을 모두에게 공개해요."
             />
-          </div>
-          <div style={mobile}>
+          </Mobile>
+          <Mobile>
             <SectionHeader size="large" title="타이틀" value="서브 타이틀" />
             <SectionHeader
               size="medium"
@@ -477,15 +538,15 @@ export default function DimiUiKitPreview() {
               direction="column"
               subLabel="서브 레이블"
             />
-            <div style={{ padding: 'var(--kit-spacing-400)' }}>
+            <ToastSlot>
               <Toast icon={iconCheck}>저장했어요</Toast>
-            </div>
-          </div>
-        </div>
+            </ToastSlot>
+          </Mobile>
+        </TopRow>
       </Section>
 
       <Section title="Brand">
-        <div style={row}>
+        <Row>
           <BrandMark set="Logo/COUNCIL" size={48} />
           <BrandMark set="Logo/COUNCIL" variant="mono" size={48} />
           <BrandMark set="Symbol/COUNCIL" size={48} />
@@ -496,45 +557,19 @@ export default function DimiUiKitPreview() {
           <BrandMark set="Symbol/DIMIGOIN" size={48} />
           <BrandMark set="Symbol/DIMIGOIN" variant="mono" size={48} />
           <BrandMark set="Symbol/DIMIGOIN" variant="outlined" size={48} />
-        </div>
+        </Row>
       </Section>
 
       <Section title={`Icons (${kitIcons.length})`}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(112px, 1fr))',
-            gap: 'var(--kit-spacing-300)',
-          }}
-        >
+        <IconGrid>
           {kitIcons.map((i) => (
-            <div
-              key={i.name}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 'var(--kit-spacing-100)',
-              }}
-              title={i.name}
-            >
+            <IconCell key={i.name} title={i.name}>
               <Icon icon={i} />
-              <span
-                className="kit-text-caption-weak"
-                style={{
-                  color: 'var(--kit-core-glyph-tertiary)',
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {i.name}
-              </span>
-            </div>
+              <IconName $style="captionWeak">{i.name}</IconName>
+            </IconCell>
           ))}
-        </div>
+        </IconGrid>
       </Section>
-    </div>
+    </Page>
   );
 }

@@ -3,10 +3,23 @@ import { Link, useLoaderData, useNavigate } from 'react-router';
 import { PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
-import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
+import {
+  FilterBar,
+  FilterSelect,
+} from '../../components/intranet/FilterSelect.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
 import { Badge, Button, Input } from '../../dimi-ui-kit/index.ts';
-import { ListGroup, statusTone, Tabs } from '../../components/ui/index.ts';
+import {
+  EmptyState,
+  ListGroup,
+  ListRowLink,
+  ListRowMain,
+  ListRowMeta,
+  ListRowTitle,
+  PageToolbar,
+  statusTone,
+  Tabs,
+} from '../../components/ui/index.ts';
 import { formatDate, formatDateTime } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listMembers } from '../members/api.ts';
@@ -14,7 +27,7 @@ import { identityLabel } from '../surveys/format.ts';
 import { createSurveyDraft, listAdminSurveys } from './api.ts';
 import { surveyStatus } from './format.ts';
 import type { AdminSurvey } from './types.ts';
-import './survey-admin.css';
+import * as S from './styles.ts';
 import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function surveyAdminListLoader() {
@@ -47,11 +60,11 @@ function SurveyRow({ survey }: { survey: AdminSurvey }) {
     date = `${formatDate(survey.closesAt)} 마감`;
   }
   return (
-    <li className="list-row survey-admin-row">
-      <div className="list-row__main">
-        <h3 className="list-row__title">
-          <Link
-            className="list-row__link"
+    <S.SurveyAdminRow>
+      <ListRowMain>
+        <ListRowTitle>
+          <ListRowLink
+            as={Link}
             to={
               survey.stage === 'published'
                 ? `/work/surveys/${survey.id}/results`
@@ -59,30 +72,30 @@ function SurveyRow({ survey }: { survey: AdminSurvey }) {
             }
           >
             {survey.title || '제목 없는 설문'}
-          </Link>
-        </h3>
-        <div className="list-row__meta">
+          </ListRowLink>
+        </ListRowTitle>
+        <ListRowMeta>
           <span>
             {survey.department}, {survey.owner}
           </span>
           <span>{survey.audience}</span>
           <span>{survey.questions.length}문항</span>
           <span>{identityLabel[survey.identity]}</span>
-        </div>
-      </div>
+        </ListRowMeta>
+      </ListRowMain>
       {survey.stage === 'published' && (
-        <span className="survey-admin-row__meter">
+        <S.SurveyAdminRowMeter>
           <Meter
             label="응답 수"
             value={survey.responses}
             max={survey.target}
             text={`${survey.responses}명`}
           />
-        </span>
+        </S.SurveyAdminRowMeter>
       )}
       <Badge theme={statusTone.survey[status]}>{status}</Badge>
-      <span className="survey-admin-row__date">{date}</span>
-    </li>
+      <S.SurveyAdminRowDate>{date}</S.SurveyAdminRowDate>
+    </S.SurveyAdminRow>
   );
 }
 
@@ -142,14 +155,13 @@ export function SurveyAdminListPage() {
         ]}
       />
 
-      <div
-        className="survey-admin-panel"
+      <S.SurveyAdminPanel
         role="tabpanel"
         id={`survey-admin-panel-${tab}`}
         aria-labelledby={`survey-admin-tab-${tab}`}
       >
-        <div className="page-toolbar">
-          <div className="filter-bar">
+        <PageToolbar>
+          <FilterBar>
             <FilterSelect
               label="부서"
               value={department}
@@ -162,14 +174,13 @@ export function SurveyAdminListPage() {
             </FilterSelect>
             <Input
               type="search"
-              containerClassName="filter-bar__search"
               leadingIcon={iconSearch}
               aria-label="설문 찾기"
               placeholder="설문 제목으로 찾기"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
-          </div>
+          </FilterBar>
           <Button
             theme="accent"
             variant="primary"
@@ -179,7 +190,7 @@ export function SurveyAdminListPage() {
             <PlusIcon />
             설문 만들기
           </Button>
-        </div>
+        </PageToolbar>
 
         {visible.length > 0 ? (
           <ListGroup aria-label="설문 목록">
@@ -188,13 +199,13 @@ export function SurveyAdminListPage() {
             ))}
           </ListGroup>
         ) : (
-          <p className="empty-state">
+          <EmptyState>
             {department || keyword
               ? '조건에 맞는 설문이 없습니다.'
               : emptyText[tab]}
-          </p>
+          </EmptyState>
         )}
-      </div>
+      </S.SurveyAdminPanel>
     </>
   );
 }

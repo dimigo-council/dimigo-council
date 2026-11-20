@@ -3,14 +3,33 @@ import { Link, useLoaderData, useRevalidator } from 'react-router';
 import { PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
-import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
+import {
+  FilterBar,
+  FilterSelect,
+} from '../../components/intranet/FilterSelect.tsx';
 import { Badge, Button, Input } from '../../dimi-ui-kit/index.ts';
-import { statusTone, Tabs, buttonLook } from '../../components/ui/index.ts';
+import {
+  ButtonLink,
+  EmptyState,
+  ListGroupRoot,
+  ListRowActions,
+  ListRowAside,
+  ListRowExcerpt,
+  ListRowItem,
+  ListRowLink,
+  ListRowMain,
+  ListRowMeta,
+  ListRowTitle,
+  PageToolbar,
+  statusTone,
+  Tabs,
+  TextLink,
+} from '../../components/ui/index.ts';
 import { formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { approveReport, listReports } from './api.ts';
 import { reportKinds, type Report } from './types.ts';
-import './reports.css';
+import * as S from './styles.ts';
 import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function reportListLoader() {
@@ -44,46 +63,43 @@ function ReportRow({
   onApprove: () => void;
 }) {
   return (
-    <li className="list-row list-row--excerpt">
-      <div className="list-row__main">
-        <h3 className="list-row__title">
-          <Link className="list-row__link" to={`/work/reports/${report.id}`}>
+    <ListRowItem $excerpt>
+      <ListRowMain>
+        <ListRowTitle>
+          <ListRowLink as={Link} to={`/work/reports/${report.id}`}>
             {report.title}
-          </Link>
-        </h3>
-        <div className="list-row__meta">
+          </ListRowLink>
+        </ListRowTitle>
+        <ListRowMeta>
           <span>{report.id}</span>
           <Badge>{report.kind}</Badge>
           <span>
             {report.department}, {report.author}
           </span>
           {report.agenda && (
-            <Link
-              className="text-link"
-              to={`/work/agendas/${report.agenda.id}`}
-            >
+            <TextLink to={`/work/agendas/${report.agenda.id}`}>
               {report.agenda.id} {report.agenda.title}
-            </Link>
+            </TextLink>
           )}
-        </div>
-      </div>
-      <div className="list-row__aside">
+        </ListRowMeta>
+      </ListRowMain>
+      <ListRowAside>
         <Badge theme={statusTone.report[report.status]}>{report.status}</Badge>
         <span>
           {report.status === '검토 요청' && report.reviewer
             ? `${report.reviewer} 검토`
             : formatRelative(report.updatedAt)}
         </span>
-      </div>
+      </ListRowAside>
       {canApprove && (
-        <div className="list-row__actions">
+        <ListRowActions>
           <Button size="small" disabled={busy} onClick={onApprove}>
             확인 완료
           </Button>
-        </div>
+        </ListRowActions>
       )}
-      <p className="list-row__excerpt">{report.body}</p>
-    </li>
+      <ListRowExcerpt>{report.body}</ListRowExcerpt>
+    </ListRowItem>
   );
 }
 
@@ -135,14 +151,13 @@ export function ReportListPage() {
         ]}
       />
 
-      <div
-        className="report-panel"
+      <S.ReportPanel
         role="tabpanel"
         id={`reports-panel-${tab}`}
         aria-labelledby={`reports-tab-${tab}`}
       >
-        <div className="page-toolbar">
-          <div className="filter-bar">
+        <PageToolbar>
+          <FilterBar>
             <FilterSelect label="종류" value={kind} onChange={setKind}>
               <option value="">전체</option>
               {reportKinds.map((item) => (
@@ -151,25 +166,21 @@ export function ReportListPage() {
             </FilterSelect>
             <Input
               type="search"
-              containerClassName="filter-bar__search"
               leadingIcon={iconSearch}
               aria-label="보고서 찾기"
               placeholder="번호, 제목, 안건 번호로 찾기"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
-          </div>
-          <Link
-            {...buttonLook({ theme: 'accent', variant: 'primary' })}
-            to="/work/reports/new"
-          >
+          </FilterBar>
+          <ButtonLink theme="accent" variant="primary" to="/work/reports/new">
             <PlusIcon />
             보고서 쓰기
-          </Link>
-        </div>
+          </ButtonLink>
+        </PageToolbar>
 
         {visible.length > 0 ? (
-          <ul className="list-group" aria-label="보고서 목록">
+          <ListGroupRoot aria-label="보고서 목록">
             {visible.map((report) => (
               <ReportRow
                 key={report.id}
@@ -182,15 +193,15 @@ export function ReportListPage() {
                 onApprove={() => void onApprove(report.id)}
               />
             ))}
-          </ul>
+          </ListGroupRoot>
         ) : (
-          <p className="empty-state">
+          <EmptyState>
             {kind || keyword
               ? '조건에 맞는 보고서가 없습니다.'
               : emptyText[tab]}
-          </p>
+          </EmptyState>
         )}
-      </div>
+      </S.ReportPanel>
     </>
   );
 }

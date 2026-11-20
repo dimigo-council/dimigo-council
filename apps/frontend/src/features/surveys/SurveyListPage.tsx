@@ -2,10 +2,12 @@ import { Link, useLoaderData } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Badge } from '../../dimi-ui-kit/index.ts';
 import {
+  ButtonLink,
+  EmptyState,
   ListGroup,
   ListRow,
+  ListRowLink,
   Tabs,
-  buttonLook,
 } from '../../components/ui/index.ts';
 import { formatDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
@@ -17,7 +19,7 @@ import {
   identityLabel,
 } from './format.ts';
 import type { SurveySummary } from './types.ts';
-import './surveys.css';
+import * as S from './styles.ts';
 
 export async function surveyListLoader() {
   return listSurveys();
@@ -39,16 +41,16 @@ function SurveyActions({ survey }: { survey: SurveySummary }) {
     return (
       <>
         <Badge theme="grayscale">응답 완료</Badge>
-        <Link {...buttonLook({ size: 'small' })} to={to}>
+        <ButtonLink size="small" to={to}>
           응답 수정
-        </Link>
+        </ButtonLink>
       </>
     );
   }
   return (
-    <Link {...buttonLook({ theme: 'accent', variant: 'primary' })} to={to}>
+    <ButtonLink theme="accent" variant="primary" to={to}>
       {survey.myStatus === 'draft' ? '이어서 응답' : '응답하기'}
-    </Link>
+    </ButtonLink>
   );
 }
 
@@ -57,9 +59,9 @@ function SurveyRow({ survey }: { survey: SurveySummary }) {
   return (
     <ListRow
       title={
-        <Link className="list-row__link" to={`/surveys/${survey.id}`}>
+        <ListRowLink as={Link} to={`/surveys/${survey.id}`}>
           {survey.title}
-        </Link>
+        </ListRowLink>
       }
       meta={[
         survey.audience,
@@ -75,13 +77,7 @@ function SurveyRow({ survey }: { survey: SurveySummary }) {
           </>
         ) : (
           <>
-            <strong
-              className={
-                days <= 1 ? 'survey-dday survey-dday--soon' : 'survey-dday'
-              }
-            >
-              {formatDday(days)}
-            </strong>
+            <S.SurveyDday $soon={days <= 1}>{formatDday(days)}</S.SurveyDday>
             <span>{formatDate(survey.closesAt)} 마감</span>
           </>
         )
@@ -128,8 +124,7 @@ export function SurveyListPage() {
         ]}
       />
 
-      <div
-        className="survey-panel"
+      <S.SurveyPanel
         role="tabpanel"
         id={`surveys-panel-${tab}`}
         aria-labelledby={`surveys-tab-${tab}`}
@@ -141,9 +136,9 @@ export function SurveyListPage() {
             ))}
           </ListGroup>
         ) : (
-          <p className="empty-state">{emptyText[tab]}</p>
+          <EmptyState>{emptyText[tab]}</EmptyState>
         )}
-      </div>
+      </S.SurveyPanel>
     </>
   );
 }

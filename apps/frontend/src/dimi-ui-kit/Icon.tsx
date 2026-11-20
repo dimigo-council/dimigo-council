@@ -1,31 +1,33 @@
-import type { SVGProps } from 'react';
+import { useContext, type SVGProps } from 'react';
+import styled from 'styled-components';
 import type { KitIcon } from './icon-type';
+import { IconSizeContext } from './IconSize';
 
 export type { KitIcon };
 
 export interface IconProps extends SVGProps<SVGSVGElement> {
   /** An icon export from `./icons`, e.g. `iconSearch`. */
   icon: KitIcon;
-  /** Pixel size. Defaults to the size the parent kit component sets (--kit-icon-size), else 24. */
+  /** Pixel size. Defaults to the size the parent kit component sets, else 24. */
   size?: number;
   /** Accessible label. Without it the icon is decorative and hidden from screen readers. */
   label?: string;
 }
 
+/** The icon's <svg>. Use it as a selector (`${IconSvg}`) to style icons inside a component. */
+export const IconSvg = styled.svg`
+  display: inline-block;
+  flex: none;
+  fill: currentColor;
+`;
+
 /** DIMI UI KIT "Icon" component. Paths are exported from the kit at 24×24 and take the text color. */
-export function Icon({
-  icon,
-  size,
-  label,
-  className,
-  style,
-  ...rest
-}: IconProps) {
-  const dimension = size ? `${size}px` : 'var(--kit-icon-size, 24px)';
+export function Icon({ icon, size, label, style, ...rest }: IconProps) {
+  const inherited = useContext(IconSizeContext);
+  const dimension = `${size ?? inherited ?? 24}px`;
   return (
-    <svg
+    <IconSvg
       viewBox="0 0 24 24"
-      className={className ? `kit-icon ${className}` : 'kit-icon'}
       style={{ width: dimension, height: dimension, ...style }}
       role={label ? 'img' : undefined}
       aria-label={label}
@@ -35,6 +37,6 @@ export function Icon({
       {...rest}
     >
       <path d={icon.d} />
-    </svg>
+    </IconSvg>
   );
 }

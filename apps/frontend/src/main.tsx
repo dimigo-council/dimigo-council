@@ -1,15 +1,16 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
-import './dimi-ui-kit/tokens.css';
-import './dimi-ui-kit/kit.css';
-import './style.css';
-import './components/ui/ui.css';
-import './app/shell.css';
+import { KitGlobalStyle, KitThemeProvider } from './dimi-ui-kit/index.ts';
 import { router } from './app/router.tsx';
+import { AppGlobalStyle } from './app/shell.ts';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <KitThemeProvider>
+      <KitGlobalStyle />
+      <AppGlobalStyle />
+      <RouterProvider router={router} />
+    </KitThemeProvider>
   </StrictMode>,
 );

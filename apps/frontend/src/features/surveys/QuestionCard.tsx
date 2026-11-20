@@ -1,5 +1,11 @@
 import { useId } from 'react';
-import { OptionCard } from '../../components/ui/index.ts';
+import {
+  ChoiceInput,
+  FieldCount,
+  OptionCard,
+  VisuallyHidden,
+} from '../../components/ui/index.ts';
+import * as S from './styles.ts';
 import type { AnswerValue, Question } from './types.ts';
 import { TextArea } from '../../dimi-ui-kit/index.ts';
 
@@ -21,23 +27,17 @@ export function QuestionCard({
   const hintId = `${id}-hint`;
 
   return (
-    <section className="question" aria-labelledby={headingId}>
-      <h2 className="question__title" id={headingId}>
-        <span className="question__number">{index + 1}</span>
+    <S.Question aria-labelledby={headingId}>
+      <S.QuestionTitle id={headingId}>
+        <S.QuestionNumber>{index + 1}</S.QuestionNumber>
         <span>
           {question.title}
-          {question.required && (
-            <span className="question__required">필수</span>
-          )}
+          {question.required && <S.QuestionRequired>필수</S.QuestionRequired>}
         </span>
-      </h2>
+      </S.QuestionTitle>
 
       {question.type === 'single' && (
-        <div
-          className="question__options"
-          role="radiogroup"
-          aria-labelledby={headingId}
-        >
+        <S.QuestionOptions role="radiogroup" aria-labelledby={headingId}>
           {question.options.map((option) => (
             <OptionCard
               key={option}
@@ -48,18 +48,17 @@ export function QuestionCard({
               onChange={() => onChange(option)}
             />
           ))}
-        </div>
+        </S.QuestionOptions>
       )}
 
       {question.type === 'multiple' && (
         <>
           {question.maxSelections && (
-            <p className="question__hint" id={hintId}>
+            <S.QuestionHint id={hintId}>
               최대 {question.maxSelections}개까지 선택
-            </p>
+            </S.QuestionHint>
           )}
-          <div
-            className="question__options"
+          <S.QuestionOptions
             role="group"
             aria-labelledby={headingId}
             aria-describedby={question.maxSelections ? hintId : undefined}
@@ -88,54 +87,45 @@ export function QuestionCard({
                 />
               );
             })}
-          </div>
+          </S.QuestionOptions>
         </>
       )}
 
       {question.type === 'scale' && (
-        <div className="scale">
-          <div
-            className="scale__options"
-            role="radiogroup"
-            aria-labelledby={headingId}
-          >
+        <S.Scale>
+          <S.ScaleOptions role="radiogroup" aria-labelledby={headingId}>
             {Array.from({ length: question.steps }, (_, i) => i + 1).map(
               (step) => (
-                <label key={step} className="scale__item">
-                  <input
+                <S.ScaleItem key={step}>
+                  <ChoiceInput
                     type="radio"
-                    className="scale__input visually-hidden"
                     name={id}
                     value={step}
                     checked={value === step}
                     onChange={() => onChange(step)}
                   />
-                  <span className="scale__box">
+                  <S.ScaleBox>
                     {step}
                     {step === 1 && (
-                      <span className="visually-hidden">
-                        , {question.minLabel}
-                      </span>
+                      <VisuallyHidden>, {question.minLabel}</VisuallyHidden>
                     )}
                     {step === question.steps && (
-                      <span className="visually-hidden">
-                        , {question.maxLabel}
-                      </span>
+                      <VisuallyHidden>, {question.maxLabel}</VisuallyHidden>
                     )}
-                  </span>
-                </label>
+                  </S.ScaleBox>
+                </S.ScaleItem>
               ),
             )}
-          </div>
-          <div className="scale__labels" aria-hidden="true">
+          </S.ScaleOptions>
+          <S.ScaleLabels aria-hidden="true">
             <span>{question.minLabel}</span>
             <span>{question.maxLabel}</span>
-          </div>
-        </div>
+          </S.ScaleLabels>
+        </S.Scale>
       )}
 
       {question.type === 'text' && (
-        <div className="question__text">
+        <S.QuestionText>
           <TextArea
             aria-labelledby={headingId}
             maxLength={question.maxLength}
@@ -143,12 +133,12 @@ export function QuestionCard({
             value={typeof value === 'string' ? value : ''}
             onChange={(event) => onChange(event.target.value)}
           />
-          <span className="field__count">
+          <FieldCount>
             {typeof value === 'string' ? value.length : 0} /{' '}
             {question.maxLength}
-          </span>
-        </div>
+          </FieldCount>
+        </S.QuestionText>
       )}
-    </section>
+    </S.Question>
   );
 }

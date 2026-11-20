@@ -1,4 +1,58 @@
 import type { ReactNode } from 'react';
+import styled, { css } from 'styled-components';
+import { VisuallyHidden } from '../components/ui/VisuallyHidden.ts';
+
+/* 화면 제목 */
+const Root = styled.header`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
+`;
+
+const Text = styled.div`
+  min-width: 0;
+`;
+
+const Title = styled.h1`
+  ${({ theme: t }) => css`
+    margin: 0;
+    color: ${t.colors.core.glyph.primary};
+    font-size: ${t.font.size.title};
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  `}
+`;
+
+const Description = styled.p`
+  ${({ theme: t }) => css`
+    margin: 6px 0 0;
+    color: ${t.colors.core.glyph.secondary};
+    font-size: ${t.font.size.callout};
+    line-height: 1.6;
+    text-wrap: pretty;
+  `}
+`;
+
+/** 오른쪽 위 동작 줄. 선택자로 쓴다 (`${PageHeaderActions}`). */
+export const PageHeaderActions = styled.div`
+  display: flex;
+  flex: none;
+  gap: 8px;
+
+  /* 인쇄: 설문 결과처럼 본문만 남긴다 */
+  @media print {
+    display: none;
+  }
+`;
 
 export interface PageHeaderProps {
   title: string;
@@ -21,20 +75,18 @@ export function PageHeader({
     return (
       <>
         {documentTitle}
-        <h1 className="visually-hidden">{title}</h1>
+        <VisuallyHidden as="h1">{title}</VisuallyHidden>
       </>
     );
   }
   return (
-    <header className="page-header">
+    <Root>
       {documentTitle}
-      <div className="page-header__text">
-        <h1 className="page-header__title">{title}</h1>
-        {description && (
-          <p className="page-header__description">{description}</p>
-        )}
-      </div>
-      {actions && <div className="page-header__actions">{actions}</div>}
-    </header>
+      <Text>
+        <Title>{title}</Title>
+        {description && <Description>{description}</Description>}
+      </Text>
+      {actions && <PageHeaderActions>{actions}</PageHeaderActions>}
+    </Root>
   );
 }

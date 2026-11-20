@@ -1,16 +1,36 @@
 /**
- * DIMI UI KIT for React — tokens, text styles, icons, brand marks, atoms and molecules,
- * copied from the kit's Figma file (uZ34cJKP9YvpxDijYhRiSZ).
+ * DIMI UI KIT for React — theme, text styles, icons, brand marks, atoms and molecules,
+ * copied from the kit's Figma file (uZ34cJKP9YvpxDijYhRiSZ). Styled with styled-components.
  *
- * Import the styles once at the app root:
- *   import './dimi-ui-kit/tokens.css';
- *   import './dimi-ui-kit/kit.css';
+ * Wrap the app once:
+ *   <KitThemeProvider>
+ *     <KitGlobalStyle />
+ *     …
+ *   </KitThemeProvider>
  *
  * Regenerate after the kit changes:
- *   node scripts/gen-kit-tokens.mjs
+ *   node scripts/gen-kit-tokens.mjs && npx prettier --write src/dimi-ui-kit/theme.generated.ts
  *   node scripts/gen-kit-assets.mjs <kit-assets.json from the "DIMI Kit Export" plugin>
  */
-export { Icon, type IconProps } from './Icon';
+export {
+  createKitTheme,
+  textStyle,
+  type KitTheme,
+  type KitMode,
+  type KitColors,
+  type KitTextScale,
+  type KitTextStyle,
+} from './theme';
+export {
+  KitThemeProvider,
+  type KitThemeProviderProps,
+} from './KitThemeProvider';
+export { useKitTheme, type KitThemeControls } from './KitThemeContext';
+export { KitGlobalStyle } from './GlobalStyle';
+export { Text } from './Text';
+export { IconSize } from './IconSize';
+export { interactive, resetButton, type InteractiveOptions } from './styles';
+export { Icon, IconSvg, type IconProps } from './Icon';
 export type { KitIcon } from './icon-type';
 // Icons are separate named exports: import { iconSearch } from './dimi-ui-kit/icons'.
 export {
@@ -23,20 +43,58 @@ export {
 } from './Brand';
 export {
   Button,
+  ButtonRoot,
   TextButton,
   IconButton,
+  buttonStyles,
+  textButtonStyles,
+  type ButtonLook,
+  type TextButtonLook,
   type ButtonProps,
   type TextButtonProps,
   type IconButtonProps,
 } from './Button';
-export { Badge, Chip, type BadgeProps, type ChipProps } from './Badge';
-export { Input, TextArea, type InputProps, type TextAreaProps } from './Input';
-export { Control, type ControlProps, type ControlType } from './Control';
+export {
+  Badge,
+  BadgeRoot,
+  Chip,
+  chipStyles,
+  type ChipLook,
+  type BadgeProps,
+  type ChipProps,
+} from './Badge';
+export {
+  Input,
+  InputBox,
+  InputControl,
+  TextArea,
+  TextAreaControl,
+  inputBoxStyles,
+  inputFieldStyles,
+  type InputBoxLook,
+  type InputProps,
+  type TextAreaProps,
+} from './Input';
+export {
+  Control,
+  ControlRoot,
+  controlStyles,
+  controlCheckedStyles,
+  type ControlLook,
+  type ControlProps,
+  type ControlType,
+} from './Control';
 export {
   Avatar,
+  AvatarRoot,
   Divider,
   Option,
+  OptionRoot,
   Segment,
+  SegmentRoot,
+  segmentStyles,
+  segmentSelectedStyles,
+  type SegmentLook,
   type AvatarProps,
   type DividerProps,
   type OptionProps,
@@ -45,6 +103,7 @@ export {
 export {
   NavigationBar,
   SegmentedControl,
+  segmentedTrackStyles,
   OptionPicker,
   InputField,
   InputFieldDouble,

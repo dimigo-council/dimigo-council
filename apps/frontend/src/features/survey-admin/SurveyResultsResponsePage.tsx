@@ -1,7 +1,26 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { Badge, Button } from '../../dimi-ui-kit/index.ts';
-import { ControlMark, Notice } from '../../components/ui/index.ts';
+import {
+  ControlMark,
+  EmptyState,
+  InfoList,
+  Notice,
+  Panel,
+  PanelTitle,
+  SplitAside,
+  SplitMain,
+  TextLink,
+  VisuallyHidden,
+} from '../../components/ui/index.ts';
+import {
+  Question as QuestionBox,
+  QuestionNumber,
+  QuestionTitle,
+  Scale,
+  ScaleLabels,
+} from '../surveys/styles.ts';
+import * as S from './styles.ts';
 import { formatDate } from '../../lib/date.ts';
 import { identityLabel, isAnswered } from '../surveys/format.ts';
 import type {
@@ -28,7 +47,7 @@ import { useResults } from './SurveyResultsLayout.tsx';
 import type { AdminSurvey, SurveyResponse } from './types.ts';
 
 function ChosenMark() {
-  return <span className="visually-hidden">, 고름</span>;
+  return <VisuallyHidden>, 고름</VisuallyHidden>;
 }
 
 function isOptionChosen(value: AnswerValue, option: string) {
@@ -45,18 +64,18 @@ function ChoiceAnswer({
 }) {
   const boxShape = question.type === 'single' ? 'radio' : 'checkfill';
   return (
-    <ul className="answer-view__options">
+    <S.AnswerViewOptions>
       {question.options.map((option) => {
         const isChosen = isOptionChosen(value, option);
         return (
-          <li key={option} data-picked={isChosen}>
+          <S.AnswerViewOption key={option} $picked={isChosen}>
             <ControlMark type={boxShape} checked={isChosen} />
             {option}
             {isChosen && <ChosenMark />}
-          </li>
+          </S.AnswerViewOption>
         );
       })}
-    </ul>
+    </S.AnswerViewOptions>
   );
 }
 
@@ -68,23 +87,23 @@ function ScaleAnswer({
   value: AnswerValue;
 }) {
   return (
-    <div className="scale">
-      <ol className="answer-view__scale">
+    <Scale>
+      <S.AnswerViewScale as="ol">
         {scaleSteps(question).map((step) => {
           const isChosen = value === step;
           return (
-            <li key={step} data-picked={isChosen}>
+            <S.AnswerViewScaleStep key={step} $picked={isChosen}>
               {step}
               {isChosen && <ChosenMark />}
-            </li>
+            </S.AnswerViewScaleStep>
           );
         })}
-      </ol>
-      <div className="scale__labels" aria-hidden="true">
+      </S.AnswerViewScale>
+      <ScaleLabels aria-hidden="true">
         <span>{question.minLabel}</span>
         <span>{question.maxLabel}</span>
-      </div>
-    </div>
+      </ScaleLabels>
+    </Scale>
   );
 }
 
@@ -96,13 +115,13 @@ function AnswerBody({
   value: AnswerValue | undefined;
 }) {
   if (value === undefined || !isAnswered(value)) {
-    return <p className="answer-view__empty">응답하지 않음</p>;
+    return <S.AnswerViewEmpty>응답하지 않음</S.AnswerViewEmpty>;
   }
   if (question.type === 'scale') {
     return <ScaleAnswer question={question} value={value} />;
   }
   if (question.type === 'text') {
-    return <p className="answer-view__text">{String(value)}</p>;
+    return <S.AnswerViewText>{String(value)}</S.AnswerViewText>;
   }
   return <ChoiceAnswer question={question} value={value} />;
 }
@@ -119,18 +138,18 @@ function AnswerView({
 }) {
   const titleId = `answer-${question.id}`;
   return (
-    <section className="question answer-view" aria-labelledby={titleId}>
-      <h2 className="question__title" id={titleId}>
-        <span className="question__number">{index + 1}</span>
+    <QuestionBox aria-labelledby={titleId}>
+      <QuestionTitle id={titleId}>
+        <QuestionNumber>{index + 1}</QuestionNumber>
         <span>
           {question.title}
-          <span className="answer-view__type">
+          <S.AnswerViewType>
             {questionTypeLabel[question.type]}
-          </span>
+          </S.AnswerViewType>
         </span>
-      </h2>
+      </QuestionTitle>
       <AnswerBody question={question} value={value} />
-    </section>
+    </QuestionBox>
   );
 }
 
@@ -196,30 +215,28 @@ function ResponsePager({
   onMove: (position: number) => void;
 }) {
   return (
-    <div className="result-pager">
+    <S.ResultPager>
       <StepButton
         direction="previous"
         label="이전 응답"
         onClick={() => onMove(position - 1)}
       />
-      <span className="result-pager__position">
+      <S.ResultPagerPosition>
         응답 <strong>{position + 1}</strong> / {total}
-      </span>
+      </S.ResultPagerPosition>
       <StepButton
         direction="next"
         label="다음 응답"
         onClick={() => onMove(position + 1)}
       />
       {filter && (
-        <span className="result-pager__filter">
+        <S.ResultPagerFilter>
           Q{filter.questionNumber} 답이 ‘{filter.answer}’인 응답만
-          <Link className="text-link" to={`?n=${response.number}`}>
-            전체 보기
-          </Link>
-        </span>
+          <TextLink to={`?n=${response.number}`}>전체 보기</TextLink>
+        </S.ResultPagerFilter>
       )}
       {response.excluded && <Badge theme="accent">분석에서 뺌</Badge>}
-    </div>
+    </S.ResultPager>
   );
 }
 
@@ -253,11 +270,9 @@ function ResponseInfoPanel({
   onRequestDelete: () => void;
 }) {
   return (
-    <section className="panel" aria-labelledby="response-info">
-      <h2 className="panel__title" id="response-info">
-        응답 #{response.number}
-      </h2>
-      <dl className="info-list">
+    <Panel aria-labelledby="response-info">
+      <PanelTitle id="response-info">응답 #{response.number}</PanelTitle>
+      <InfoList>
         <dt>제출</dt>
         <dd>{formatDate(response.submittedAt, true)}</dd>
         <dt>응답 시간</dt>
@@ -266,8 +281,8 @@ function ResponseInfoPanel({
         <dd>{respondentLabel(survey, response)}</dd>
         <dt>분석</dt>
         <dd>{response.excluded ? '뺌' : '포함'}</dd>
-      </dl>
-      <div className="panel__body result-response-actions">
+      </InfoList>
+      <S.ResponseActions>
         <Button fullWidth disabled={isBusy} onClick={onToggleExcluded}>
           {response.excluded ? '분석에 다시 넣기' : '분석에서 빼기'}
         </Button>
@@ -279,8 +294,8 @@ function ResponseInfoPanel({
         >
           이 응답 삭제
         </Button>
-      </div>
-    </section>
+      </S.ResponseActions>
+    </Panel>
   );
 }
 
@@ -327,12 +342,9 @@ export function SurveyResultsResponsePage() {
 
   if (!response) {
     return (
-      <p className="empty-state">
-        이 답을 고른 응답이 없습니다.{' '}
-        <Link className="text-link" to="?">
-          모든 응답 보기
-        </Link>
-      </p>
+      <EmptyState>
+        이 답을 고른 응답이 없습니다. <TextLink to="?">모든 응답 보기</TextLink>
+      </EmptyState>
     );
   }
 
@@ -372,15 +384,15 @@ export function SurveyResultsResponsePage() {
         onMove={showResponseAt}
       />
 
-      <div className="split-layout result-layout">
-        <div className="split-layout__main">
+      <S.ResponseLayout>
+        <SplitMain>
           {shouldWarnFast && (
             <SuspiciouslyFastNotice
               durationSeconds={response.durationSeconds}
               typicalDurationSeconds={typicalDurationSeconds}
             />
           )}
-          <div className="answer-sheet" data-excluded={response.excluded}>
+          <S.AnswerSheet $excluded={response.excluded}>
             {survey.questions.map((question, index) => (
               <AnswerView
                 key={question.id}
@@ -389,10 +401,10 @@ export function SurveyResultsResponsePage() {
                 value={response.answers[question.id]}
               />
             ))}
-          </div>
-        </div>
+          </S.AnswerSheet>
+        </SplitMain>
 
-        <aside className="split-layout__aside">
+        <SplitAside>
           <ResponseInfoPanel
             survey={survey}
             response={response}
@@ -401,8 +413,8 @@ export function SurveyResultsResponsePage() {
             onRequestDelete={() => setIsConfirmingDelete(true)}
           />
           <Notice tone="neutral">{respondentPrivacyNotice(survey)}</Notice>
-        </aside>
-      </div>
+        </SplitAside>
+      </S.ResponseLayout>
 
       <ConfirmDialog
         open={isConfirmingDelete}

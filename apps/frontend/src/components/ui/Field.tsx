@@ -1,12 +1,101 @@
 import { useId, type ReactNode, type SelectHTMLAttributes } from 'react';
+import styled, { css } from 'styled-components';
 import {
   Icon,
   Input,
+  InputBox,
   TextArea as KitTextArea,
+  inputFieldStyles,
   type InputProps,
   type TextAreaProps as KitTextAreaProps,
 } from '../../dimi-ui-kit/index.ts';
 import { iconKeyboardArrowDown } from '../../dimi-ui-kit/icons';
+
+/* ---------- Field: kit InputField의 제목·도움말 ---------- */
+
+export const FieldRoot = styled.div`
+  display: grid;
+  gap: ${({ theme }) => theme.spacing[200]};
+  min-width: 0;
+`;
+
+export const FieldLabel = styled.label`
+  ${({ theme: t }) => css`
+    color: ${t.colors.core.glyph.secondary};
+    font-size: ${t.font.size.callout};
+    line-height: ${t.font.lineHeight.callout};
+    font-weight: ${t.font.weight.regular};
+    letter-spacing: -0.02em;
+  `}
+`;
+
+export const FieldOptional = styled.span`
+  ${({ theme: t }) => css`
+    margin-left: ${t.spacing[100]};
+    color: ${t.colors.core.glyph.tertiary};
+    font-weight: ${t.font.weight.weak};
+  `}
+`;
+
+export const FieldFoot = styled.div`
+  ${({ theme: t }) => css`
+    display: flex;
+    justify-content: space-between;
+    gap: ${t.spacing[300]};
+    min-height: ${t.font.lineHeight.footnote};
+    padding: 0 ${t.spacing[100]};
+    font-size: ${t.font.size.footnote};
+    line-height: ${t.font.lineHeight.footnote};
+
+    &:empty {
+      display: none;
+    }
+  `}
+`;
+
+export const FieldHint = styled.span`
+  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
+`;
+
+export const FieldError = styled.span`
+  color: ${({ theme }) => theme.colors.core.status.negative};
+`;
+
+export const FieldCount = styled.span<{ $over?: boolean }>`
+  ${({ theme: t, $over }) => css`
+    margin-left: auto;
+    color: ${$over ? t.colors.core.status.negative : t.colors.core.glyph.tertiary};
+    font-variant-numeric: tabular-nums;
+  `}
+`;
+
+/* Select: kit Input 틀 안의 네이티브 select. 선택자로 쓴다 (`${SelectBox}`). */
+export const SelectBox = styled(InputBox)`
+  position: relative;
+  padding: 0;
+`;
+
+const SelectField = styled.select`
+  ${({ theme: t }) => css`
+    ${inputFieldStyles(t)}
+    padding: ${t.spacing[300]} calc(${t.spacing[400]} + 24px) ${t.spacing[300]}
+      ${t.spacing[400]};
+    appearance: none;
+    cursor: pointer;
+
+    option {
+      background-color: ${t.colors.background.primary};
+      color: ${t.colors.core.glyph.primary};
+    }
+  `}
+`;
+
+const SelectIcon = styled(Icon)`
+  position: absolute;
+  right: ${({ theme }) => theme.spacing[300]};
+  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
+  pointer-events: none;
+`;
 
 /** Label, hint and error around a DIMI UI KIT input (the kit's InputField pattern, plus 선택·글자 수). */
 interface FieldFrameProps {
@@ -50,27 +139,21 @@ function FieldFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="field">
-      <label className="field__label" htmlFor={ids.id}>
+    <FieldRoot>
+      <FieldLabel htmlFor={ids.id}>
         {label}
-        {optional && <span className="field__optional">선택</span>}
-      </label>
+        {optional && <FieldOptional>선택</FieldOptional>}
+      </FieldLabel>
       {children}
-      <div className="field__foot">
+      <FieldFoot>
         {error ? (
-          <span className="field__error" id={ids.errorId}>
-            {error}
-          </span>
+          <FieldError id={ids.errorId}>{error}</FieldError>
         ) : (
-          hint && (
-            <span className="field__hint" id={ids.hintId}>
-              {hint}
-            </span>
-          )
+          hint && <FieldHint id={ids.hintId}>{hint}</FieldHint>
         )}
         {count}
-      </div>
-    </div>
+      </FieldFoot>
+    </FieldRoot>
   );
 }
 
@@ -124,12 +207,9 @@ export function TextArea({
   const ids = useFieldIds(id);
   const length = typeof value === 'string' ? value.length : 0;
   const count = showCount ? (
-    <span
-      className="field__count"
-      data-over={maxLength !== undefined && length > maxLength}
-    >
+    <FieldCount $over={maxLength !== undefined && length > maxLength}>
       {maxLength !== undefined ? `${length} / ${maxLength}` : length}
-    </span>
+    </FieldCount>
   ) : undefined;
 
   return (
@@ -168,23 +248,21 @@ export function SelectControl({
   ...rest
 }: SelectControlProps) {
   return (
-    <div
-      className={['kit-input ui-select', containerClassName]
-        .filter(Boolean)
-        .join(' ')}
-      data-error={error ? '' : undefined}
-      data-disabled={disabled ? '' : undefined}
+    <SelectBox
+      className={containerClassName}
+      $error={error}
+      $disabled={disabled}
     >
-      <select
-        className={['kit-input-field', className].filter(Boolean).join(' ')}
+      <SelectField
+        className={className}
         aria-invalid={error || undefined}
         disabled={disabled}
         {...rest}
       >
         {children}
-      </select>
-      <Icon icon={iconKeyboardArrowDown} className="ui-select__icon" />
-    </div>
+      </SelectField>
+      <SelectIcon icon={iconKeyboardArrowDown} size={20} />
+    </SelectBox>
   );
 }
 

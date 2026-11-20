@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import styled from 'styled-components';
 import {
   Link,
   useLoaderData,
@@ -14,7 +15,23 @@ import {
   Select,
   statusTone,
   TextArea,
-  buttonLook,
+  ButtonLink,
+  Breadcrumb,
+  MetaRow,
+  SplitLayout,
+  SplitMain,
+  SplitAside,
+  Panel,
+  PanelTitle,
+  PanelHeading,
+  PanelBody,
+  PanelProse,
+  PanelProseEmpty,
+  panelAction,
+  InfoList,
+  Owner,
+  TextLink,
+  FormActions,
 } from '../../components/ui/index.ts';
 import { formatDateTime } from '../../lib/date.ts';
 import { listMembers } from '../members/api.ts';
@@ -27,7 +44,11 @@ import {
   updateReportBody,
 } from './api.ts';
 import type { Report } from './types.ts';
-import './reports.css';
+import * as S from './styles.ts';
+
+const PanelAction = styled(TextButton)`
+  ${panelAction}
+`;
 
 export async function reportLoader({ params }: LoaderFunctionArgs) {
   const [report, members] = await Promise.all([
@@ -51,15 +72,15 @@ function ReportDetail({
 }) {
   return (
     <>
-      <nav className="breadcrumb" aria-label="경로">
+      <Breadcrumb aria-label="경로">
         <Link to="/work/reports">보고서</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">{report.id}</span>
-      </nav>
+      </Breadcrumb>
       <PageHeader
         title={report.title}
         description={
-          <span className="meta-row">
+          <MetaRow>
             <Badge theme={statusTone.report[report.status]}>
               {report.status}
             </Badge>
@@ -68,56 +89,53 @@ function ReportDetail({
               {report.department} · {report.author}
             </span>
             <span>{formatDateTime(report.updatedAt)} 수정</span>
-          </span>
+          </MetaRow>
         }
         actions={
           report.agenda && (
-            <Link {...buttonLook()} to={`/work/agendas/${report.agenda.id}`}>
+            <ButtonLink to={`/work/agendas/${report.agenda.id}`}>
               안건 보기
-            </Link>
+            </ButtonLink>
           )
         }
       />
 
-      <div className="split-layout">
-        <div className="split-layout__main">
+      <SplitLayout>
+        <SplitMain>
           <ReportBody report={report} />
-        </div>
-        <aside className="split-layout__aside">
-          <section className="panel" aria-label="보고서 정보">
-            <dl className="info-list">
+        </SplitMain>
+        <SplitAside>
+          <Panel aria-label="보고서 정보">
+            <InfoList>
               <dt>작성</dt>
-              <dd className="owner">
+              <Owner as="dd">
                 <PersonAvatar name={report.author} aria-hidden="true" />
                 {report.author}
-              </dd>
+              </Owner>
               {report.reviewer && (
                 <>
                   <dt>검토</dt>
-                  <dd className="owner">
+                  <Owner as="dd">
                     <PersonAvatar name={report.reviewer} aria-hidden="true" />
                     {report.reviewer}
-                  </dd>
+                  </Owner>
                 </>
               )}
               {report.agenda && (
                 <>
                   <dt>안건</dt>
                   <dd>
-                    <Link
-                      className="text-link"
-                      to={`/work/agendas/${report.agenda.id}`}
-                    >
+                    <TextLink to={`/work/agendas/${report.agenda.id}`}>
                       {report.agenda.id} {report.agenda.title}
-                    </Link>
+                    </TextLink>
                   </dd>
                 </>
               )}
-            </dl>
-          </section>
+            </InfoList>
+          </Panel>
           <ReviewPanel report={report} members={members} />
-        </aside>
-      </div>
+        </SplitAside>
+      </SplitLayout>
     </>
   );
 }
@@ -144,26 +162,23 @@ function ReportBody({ report }: { report: Report }) {
   };
 
   return (
-    <section className="panel" aria-labelledby="report-body-title">
-      <div className="panel__title panel__title--split">
-        <h2 className="panel__heading" id="report-body-title">
-          내용
-        </h2>
+    <Panel aria-labelledby="report-body-title">
+      <PanelTitle as="div" $split>
+        <PanelHeading id="report-body-title">내용</PanelHeading>
         {editable && !editing && (
-          <TextButton
+          <PanelAction
             size="small"
-            className="panel__action"
             onClick={() => {
               setDraft(report.body);
               setEditing(true);
             }}
           >
             고치기
-          </TextButton>
+          </PanelAction>
         )}
-      </div>
+      </PanelTitle>
       {editing ? (
-        <form className="panel__body" onSubmit={onSubmit}>
+        <PanelBody as="form" onSubmit={onSubmit}>
           <TextArea
             label="내용"
             rows={10}
@@ -178,7 +193,7 @@ function ReportBody({ report }: { report: Report }) {
               저장하지 못했습니다. 잠시 후 다시 시도해주세요.
             </Notice>
           )}
-          <div className="form-actions">
+          <FormActions>
             <TextButton onClick={() => setEditing(false)}>취소</TextButton>
             <Button
               type="submit"
@@ -188,20 +203,20 @@ function ReportBody({ report }: { report: Report }) {
             >
               저장
             </Button>
-          </div>
-        </form>
+          </FormActions>
+        </PanelBody>
       ) : (
-        <div className="panel__prose">
+        <PanelProse>
           {report.body ? (
             report.body
               .split(/\n\s*\n/)
               .map((paragraph, index) => <p key={index}>{paragraph}</p>)
           ) : (
-            <p className="panel__prose-empty">아직 적은 내용이 없습니다.</p>
+            <PanelProseEmpty>아직 적은 내용이 없습니다.</PanelProseEmpty>
           )}
-        </div>
+        </PanelProse>
       )}
-    </section>
+    </Panel>
   );
 }
 
@@ -236,11 +251,9 @@ function ReviewPanel({
   };
 
   return (
-    <section className="panel" aria-labelledby="review-title">
-      <h2 className="panel__title" id="review-title">
-        검토
-      </h2>
-      <div className="panel__body">
+    <Panel aria-labelledby="review-title">
+      <PanelTitle id="review-title">검토</PanelTitle>
+      <PanelBody>
         {report.status === '작성 중' && (
           <>
             <Select
@@ -266,18 +279,18 @@ function ReviewPanel({
               검토 요청 보내기
             </Button>
             {!report.body && (
-              <p className="report-review__hint">
+              <S.ReviewHint>
                 내용을 적은 뒤 검토를 요청할 수 있습니다.
-              </p>
+              </S.ReviewHint>
             )}
           </>
         )}
         {report.status === '검토 요청' &&
           (report.reviewer === session.name ? (
             <>
-              <p className="report-review__hint">
+              <S.ReviewHint>
                 {report.author}님이 검토를 요청했습니다.
-              </p>
+              </S.ReviewHint>
               <Button
                 theme="accent"
                 variant="primary"
@@ -297,9 +310,9 @@ function ReviewPanel({
             </>
           ) : (
             <>
-              <p className="report-review__hint">
+              <S.ReviewHint>
                 {report.reviewer}님이 검토하고 있습니다.
-              </p>
+              </S.ReviewHint>
               <Button
                 fullWidth
                 disabled={busy}
@@ -310,11 +323,11 @@ function ReviewPanel({
             </>
           ))}
         {report.status === '완료' && (
-          <p className="report-review__hint">
+          <S.ReviewHint>
             {report.reviewer}님이 확인한 보고서입니다. 더 고칠 수 없습니다.
-          </p>
+          </S.ReviewHint>
         )}
-      </div>
-    </section>
+      </PanelBody>
+    </Panel>
   );
 }

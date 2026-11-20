@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import {
-  Link,
   useLoaderData,
   useNavigate,
   type LoaderFunctionArgs,
@@ -9,13 +8,18 @@ import { ChevronLeftIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
 import { Button } from '../../dimi-ui-kit/index.ts';
-import { Notice } from '../../components/ui/index.ts';
+import {
+  BackLink,
+  MetaRow,
+  Notice,
+  VisuallyHidden,
+} from '../../components/ui/index.ts';
 import { formatDate } from '../../lib/date.ts';
 import { getSurvey, saveDraft, submitResponse } from './api.ts';
 import { estimatedMinutes, identityNotice, isAnswered } from './format.ts';
 import { QuestionCard } from './QuestionCard.tsx';
 import type { Answers, AnswerValue, SurveyWithResponse } from './types.ts';
-import './surveys.css';
+import * as S from './styles.ts';
 
 export async function surveyLoader({ params }: LoaderFunctionArgs) {
   return getSurvey(params.surveyId ?? '');
@@ -65,27 +69,27 @@ function SurveyForm({ survey }: { survey: SurveyWithResponse }) {
   };
 
   return (
-    <div className="survey-page">
-      <Link className="back-link" to="/surveys">
+    <S.SurveyPage>
+      <BackLink to="/surveys">
         <ChevronLeftIcon />
         설문 목록
-      </Link>
+      </BackLink>
 
       <PageHeader
         title={survey.title}
         description={
-          <span className="meta-row">
+          <MetaRow>
             <span>{survey.department}</span>
             <span>{survey.audience} 대상</span>
             <span>{formatDate(survey.closesAt, true)} 마감</span>
             <span>
               {total}문항, 약 {estimatedMinutes(total)}분
             </span>
-          </span>
+          </MetaRow>
         }
       />
 
-      <div className="survey-intro">
+      <S.SurveyIntro>
         {survey.isClosed ? (
           <Notice tone="warn">
             마감된 설문입니다. 응답을 새로 내거나 고칠 수 없습니다.
@@ -99,11 +103,11 @@ function SurveyForm({ survey }: { survey: SurveyWithResponse }) {
           label="응답한 문항"
           text={`${answered} / ${total} 응답`}
         />
-      </div>
+      </S.SurveyIntro>
 
       <form onSubmit={onSubmit} noValidate>
-        <fieldset className="survey-questions" disabled={survey.isClosed}>
-          <legend className="visually-hidden">{survey.title} 문항</legend>
+        <S.SurveyQuestions disabled={survey.isClosed}>
+          <VisuallyHidden as="legend">{survey.title} 문항</VisuallyHidden>
           {survey.questions.map((question, index) => (
             <QuestionCard
               key={question.id}
@@ -113,23 +117,23 @@ function SurveyForm({ survey }: { survey: SurveyWithResponse }) {
               onChange={(value) => setAnswer(question.id, value)}
             />
           ))}
-        </fieldset>
+        </S.SurveyQuestions>
 
         {status === 'error' && (
-          <Notice tone="warn" role="alert" className="survey-error">
+          <S.SurveyError tone="warn" role="alert">
             제출하지 못했습니다. 잠시 후 다시 시도해주세요.
-          </Notice>
+          </S.SurveyError>
         )}
 
-        <div className="survey-submit">
-          <p className="survey-submit__hint" aria-live="polite">
+        <S.SurveySubmit>
+          <S.SurveySubmitHint aria-live="polite">
             {survey.isClosed
               ? '마감된 설문입니다.'
               : missing.length > 0
                 ? `필수 문항 ${missing.join(', ')}번에 답하면 제출할 수 있습니다.`
                 : '제출한 뒤에도 마감 전까지 응답을 고칠 수 있습니다.'}
-          </p>
-          <div className="survey-submit__actions">
+          </S.SurveySubmitHint>
+          <S.SurveySubmitActions>
             <Button onClick={onLater}>
               {editing || survey.isClosed ? '목록으로' : '나중에 하기'}
             </Button>
@@ -143,9 +147,9 @@ function SurveyForm({ survey }: { survey: SurveyWithResponse }) {
                 {editing ? '수정 제출하기' : '제출하기'}
               </Button>
             )}
-          </div>
-        </div>
+          </S.SurveySubmitActions>
+        </S.SurveySubmit>
       </form>
-    </div>
+    </S.SurveyPage>
   );
 }

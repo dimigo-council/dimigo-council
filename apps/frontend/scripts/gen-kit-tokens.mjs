@@ -1,15 +1,11 @@
 // AI-written
-// Generates apps/frontend/src/dimi-ui-kit/tokens.css from DIMI UI KIT variable values
+// Generates apps/frontend/src/dimi-ui-kit/theme.generated.ts (the styled-components theme data)
+// from DIMI UI KIT variable values.
 import fs from 'node:fs';
 
 const out =
   process.argv[2] ??
-  new URL('../src/dimi-ui-kit/tokens.css', import.meta.url).pathname;
-const v = (name) =>
-  '--kit-' + name.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-');
-const ref = (name) => `var(${v(name)})`;
-const mix = (name, pct) =>
-  `color-mix(in srgb, ${ref(name)} ${pct}%, transparent)`;
+  new URL('../src/dimi-ui-kit/theme.generated.ts', import.meta.url).pathname;
 
 const primitives = {
   'Primitive/Brand/200': '#ffcbe3',
@@ -261,12 +257,6 @@ const semantic = {
   ],
 };
 
-const val = (x) => (typeof x === 'string' ? ref(x) : mix(x[0], x[1]));
-const block = (mode) =>
-  Object.entries(semantic)
-    .map(([k, pair]) => `  ${v(k)}: ${val(pair[mode])};`)
-    .join('\n');
-
 // Typography collection modes 100% / 135% / 150% / 200%
 const typeNames = [
   'Display',
@@ -282,14 +272,6 @@ const typeNames = [
 const sizes = { 100: [48, 24, 20, 16, 14, 12, 10, 16, 14] };
 const lines = { 100: [70, 34, 28, 24, 20, 18, 14, 28.8, 24] };
 const scales = { 135: 1.35, 150: 1.5, 200: 2 };
-const typeBlock = (factor) =>
-  typeNames
-    .map((n, i) => {
-      const s = +(sizes['100'][i] * factor).toFixed(2),
-        l = +(lines['100'][i] * factor).toFixed(2);
-      return `  ${v('size/' + n)}: ${s}px;\n  ${v('line-height/' + n)}: ${l}px;`;
-    })
-    .join('\n');
 
 const component = {
   'Radius/None': 0,
@@ -358,74 +340,147 @@ styleRows.push(
   ['Paragraph/Large', 'Paragraph Large', 400, -3],
 );
 
-const css = `/*
- * DIMI UI KIT tokens — generated from the kit's Figma variables (file uZ34cJKP9YvpxDijYhRiSZ).
- * Names follow the Figma variable paths: "Core/Glyph/Primary" -> --kit-core-glyph-primary.
- * Do not edit by hand; change the kit and regenerate.
- */
+/* ---------- Resolve ---------- */
 
-:root {
-${Object.entries(primitives)
-  .map(([k, x]) => `  ${v(k)}: ${x};`)
-  .join('\n')}
+// "Core/OnColor/Primary" -> ['core', 'onColor', 'primary']; "Primitive/Cool Neutral/50" -> ['primitive', 'coolNeutral', '50']
+const camel = (seg) =>
+  /^\d+$/.test(seg)
+    ? seg
+    : seg
+        .split(/\s+/)
+        .map((w) => (/^[A-Z0-9]+$/.test(w) ? w.toLowerCase() : w))
+        .map((w, i) =>
+          i === 0
+            ? w.charAt(0).toLowerCase() + w.slice(1)
+            : w.charAt(0).toUpperCase() + w.slice(1),
+        )
+        .join('');
+const keyPath = (name) => name.split('/').map(camel);
 
-  /* Color · Light */
-${block(0)}
-
-  /* Typography · Style */
-  --kit-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --kit-weight-weak: 400;
-  --kit-weight-regular: 500;
-  --kit-weight-strong: 700; /* text styles render Bold; the Style variable Weight/Strong says 600 */
-
-  /* Typography · 100% */
-${typeBlock(1)}
-
-  /* Component · Radius, Spacing, Height */
-${Object.entries(component)
-  .map(([k, x]) => `  ${v(k)}: ${x}px;`)
-  .join('\n')}
-
-  /* Atom */
-${Object.entries(atom)
-  .map(([k, x]) => `  ${v(k)}: ${ref(x)};`)
-  .join('\n')}
-
-  /* Effects */
-  --kit-shadow-floating: 0 4px 24px 0 var(--kit-core-shadow);
-}
-
-/* Color · Dark: follows the OS unless the page pins data-theme="light". */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
-${block(1).replace(/^ {2}/gm, '    ')}
+const hexToRgb = (hex) =>
+  [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+// Resolves a color to [r, g, b, alpha]. A color-mix with transparent in sRGB keeps the
+// channels and scales the alpha, so aliases at an opacity become concrete rgba values.
+function resolve(x, mode) {
+  if (typeof x !== 'string') {
+    const [r, g, b, a] = resolve(x[0], mode);
+    return [r, g, b, a * (x[1] / 100)];
   }
+  if (x in primitives) return [...hexToRgb(primitives[x]), 1];
+  if (x in semantic) return resolve(semantic[x][mode], mode);
+  throw new Error(`unknown color ${x}`);
+}
+const format = ([r, g, b, a]) => {
+  const alpha = +a.toFixed(4);
+  if (alpha === 1)
+    return '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('');
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const setPath = (obj, path, value) => {
+  let o = obj;
+  for (const k of path.slice(0, -1)) o = o[k] ??= {};
+  o[path.at(-1)] = value;
+  return obj;
+};
+
+const colorSet = (mode) => {
+  const o = {};
+  for (const [k, hex] of Object.entries(primitives))
+    setPath(o, keyPath(k), hex);
+  for (const k of Object.keys(semantic))
+    setPath(o, keyPath(k), format(resolve(k, mode)));
+  return o;
+};
+
+const px = (n) => `${n}px`;
+const typeScale = (factor) => {
+  const size = {};
+  const lineHeight = {};
+  typeNames.forEach((n, i) => {
+    size[camel(n)] = px(+(sizes['100'][i] * factor).toFixed(2));
+    lineHeight[camel(n)] = px(+(lines['100'][i] * factor).toFixed(2));
+  });
+  return { size, lineHeight };
+};
+
+const group = (prefix) => {
+  const o = {};
+  for (const [k, x] of Object.entries(component))
+    if (k.startsWith(prefix + '/'))
+      o[camel(k.slice(prefix.length + 1))] = px(x);
+  return o;
+};
+const atomObj = {};
+for (const [k, x] of Object.entries(atom)) {
+  const [g, n] = x.split('/');
+  setPath(atomObj, keyPath(k), px(component[`${g}/${n}`]));
 }
 
-:root[data-theme='dark'] {
-  color-scheme: dark;
-${block(1)}
-}
+const textStyleKey = (name) =>
+  camel(name.replace('/', ' ').replace(/\s+(\w)/g, (_, c) => c.toUpperCase()));
 
-/* Typography scale modes: set data-text-scale on <html> or any container. */
-${Object.entries(scales)
-  .map(([m, f]) => `[data-text-scale='${m}'] {\n${typeBlock(f)}\n}`)
-  .join('\n\n')}
+const ts = (value, indent = 0) =>
+  JSON.stringify(value, null, 2)
+    .replace(/"([A-Za-z_$][\w$]*)":/g, '$1:')
+    .replace(/"/g, "'")
+    .replace(/\n/g, '\n' + ' '.repeat(indent));
 
-/* Text styles */
+const typeModes = { 100: typeScale(1) };
+for (const [m, f] of Object.entries(scales)) typeModes[m] = typeScale(f);
+
+const code = `// Generated by scripts/gen-kit-tokens.mjs from the DIMI UI KIT Figma variables
+// (file uZ34cJKP9YvpxDijYhRiSZ). Do not edit by hand; change the kit and regenerate.
+// Names follow the Figma variable paths: "Core/Glyph/Primary" -> colors.core.glyph.primary.
+import type { CSSObject } from 'styled-components';
+
+/** Color · Light */
+export const lightColors = ${ts(colorSet(0))};
+
+export type KitColors = typeof lightColors;
+
+/** Color · Dark */
+export const darkColors: KitColors = ${ts(colorSet(1))};
+
+export const fontFamily =
+  "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+
+/** Text styles render Weak 400 / Regular 500 / Strong 700 (the Style variable Weight/Strong says 600). */
+export const fontWeight = { weak: 400, regular: 500, strong: 700 } as const;
+
+/** Typography collection modes: font sizes and line heights at 100%, 135%, 150% and 200%. */
+export const typeScales = ${ts(typeModes)};
+
+export type KitTextScale = keyof typeof typeScales;
+export type KitTypeScale = (typeof typeScales)[KitTextScale];
+
+export const radius = ${ts(group('Radius'))};
+
+export const spacing = ${ts(group('Spacing'))};
+
+export const height = ${ts(group('Height'))};
+
+export const atom = ${ts(atomObj)};
+
+/** The 23 kit text styles for one typography mode. Letter spacing is in em of the font size. */
+export function createTextStyles(type: KitTypeScale) {
+  return {
 ${styleRows
   .map(
-    ([name, key, w, ls]) => `.kit-text-${name.toLowerCase().replace('/', '-')} {
-  font-family: var(--kit-family);
-  font-size: var(${v('size/' + key)});
-  line-height: var(${v('line-height/' + key)});
-  font-weight: ${w};
-  letter-spacing: ${ls / 100}em;
-}`,
+    ([name, key, w, ls]) => `    ${textStyleKey(name)}: {
+      fontFamily,
+      fontSize: type.size.${camel(key)},
+      lineHeight: type.lineHeight.${camel(key)},
+      fontWeight: ${w},
+      letterSpacing: '${ls / 100}em',
+    },`,
   )
-  .join('\n\n')}
+  .join('\n')}
+  } satisfies Record<string, CSSObject>;
+}
+
+export type KitTextStyle = keyof ReturnType<typeof createTextStyles>;
 `;
 
-fs.writeFileSync(out, css);
-console.log('wrote', out, css.length);
+fs.writeFileSync(out, code);
+console.log('wrote', out, code.length);

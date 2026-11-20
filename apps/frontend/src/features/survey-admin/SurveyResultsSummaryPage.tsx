@@ -1,9 +1,22 @@
 import { useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import styled from 'styled-components';
 import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
 import { Badge, Button, TextButton } from '../../dimi-ui-kit/index.ts';
-import { Notice } from '../../components/ui/index.ts';
+import {
+  Notice,
+  Panel,
+  PanelBody,
+  PanelHeading,
+  PanelNote,
+  PanelTitle,
+  panelAction,
+  SplitAside,
+  SplitMain,
+  TextLink,
+} from '../../components/ui/index.ts';
+import { ScaleLabels } from '../surveys/styles.ts';
+import * as S from './styles.ts';
 import { formatShortDate } from '../../lib/date.ts';
 import { identityNotice } from '../surveys/format.ts';
 import type {
@@ -72,6 +85,10 @@ function TableViewButton({
   );
 }
 
+const PanelTableViewButton = styled(TableViewButton)`
+  ${panelAction}
+`;
+
 /** 카드 맨 위 한 줄 결론: "가장 많은 답 **급식** 40%" */
 function Lead({
   prefix,
@@ -83,9 +100,9 @@ function Lead({
   suffix: string;
 }) {
   return (
-    <p className="result-card__lead">
+    <S.ResultCardLead>
       {prefix} <strong>{value}</strong> {suffix}
-    </p>
+    </S.ResultCardLead>
   );
 }
 
@@ -130,38 +147,36 @@ function QuestionResultCard({
   const nobodyAnswered = answeredCount === 0;
 
   return (
-    <section className="panel result-card" aria-labelledby={titleId}>
-      <div className="result-card__head">
-        <div className="result-card__heading">
-          <span className="q-card__number">Q{index + 1}</span>
-          <h2 className="result-card__title" id={titleId}>
-            {question.title}
-          </h2>
-          <p className="result-card__meta">
+    <S.ResultCard aria-labelledby={titleId}>
+      <S.ResultCardHead>
+        <S.ResultCardHeading>
+          <S.QCardNumber>Q{index + 1}</S.QCardNumber>
+          <S.ResultCardTitle id={titleId}>{question.title}</S.ResultCardTitle>
+          <S.ResultCardMeta>
             <Badge>{questionTypeLabel[question.type]}</Badge>
             <span>
               {answeredCount}개 응답
               {skippedCount > 0 && ` · ${skippedCount}명 건너뜀`}
               {note && ` · ${note}`}
             </span>
-          </p>
-        </div>
+          </S.ResultCardMeta>
+        </S.ResultCardHeading>
         {tableView && (
           <TableViewButton
             showsTable={tableView.showsTable}
             onToggle={tableView.toggleTableView}
           />
         )}
-      </div>
+      </S.ResultCardHead>
       {nobodyAnswered ? (
-        <p className="result-card__empty">이 문항에 답한 사람이 없습니다.</p>
+        <S.ResultCardEmpty>이 문항에 답한 사람이 없습니다.</S.ResultCardEmpty>
       ) : (
         <>
           {lead}
-          <div className="result-card__body">{children}</div>
+          <S.ResultCardBody>{children}</S.ResultCardBody>
         </>
       )}
-    </section>
+    </S.ResultCard>
   );
 }
 
@@ -269,12 +284,12 @@ function ScaleQuestionResult({
             label={question.title}
             columns={scoreColumns(summary.rows)}
           />
-          <div className="scale__labels" aria-hidden="true">
+          <ScaleLabels aria-hidden="true">
             <span>1 {question.minLabel}</span>
             <span>
               {question.steps} {question.maxLabel}
             </span>
-          </div>
+          </ScaleLabels>
         </>
       )}
     </QuestionResultCard>
@@ -308,22 +323,22 @@ function TextQuestionResult({
         )
       }
     >
-      <ul className="text-groups">
+      <S.TextGroups>
         {previewGroups.map((group) => (
           <li key={group.label}>
-            <span className="text-groups__text">{group.label}</span>
+            <span>{group.label}</span>
             {group.variants.length > 1 && (
-              <span className="text-groups__variants">
+              <S.TextGroupsVariants>
                 비슷한 표현 {group.variants.length}가지
-              </span>
+              </S.TextGroupsVariants>
             )}
-            <span className="text-groups__count">{group.count}명</span>
+            <S.TextGroupsCount>{group.count}명</S.TextGroupsCount>
           </li>
         ))}
-      </ul>
-      <Link className="text-link" to={`${questionsHref}?q=${question.id}`}>
+      </S.TextGroups>
+      <TextLink to={`${questionsHref}?q=${question.id}`}>
         답 {summary.answered}개 모두 보기
-      </Link>
+      </TextLink>
     </QuestionResultCard>
   );
 }
@@ -368,7 +383,7 @@ function GradeFilter({
   excludedCount: number;
 }) {
   return (
-    <div className="filter-bar result-filter">
+    <S.ResultFilter>
       <FilterSelect label="학년" value={selectedGrade} onChange={onSelectGrade}>
         <option value="">전체</option>
         {selectableGrades.map((grade) => (
@@ -377,12 +392,12 @@ function GradeFilter({
           </option>
         ))}
       </FilterSelect>
-      <span className="result-filter__note">
+      <S.ResultFilterNote>
         {respondentCountText(selectedGrade, respondentCount)}의 응답으로
         계산했습니다
         {excludedCount > 0 && ` (분석에서 뺀 응답 ${excludedCount}개 제외)`}
-      </span>
-    </div>
+      </S.ResultFilterNote>
+    </S.ResultFilter>
   );
 }
 
@@ -423,18 +438,15 @@ function DailyResponsesPanel({
   const days = dailyCounts(responses, survey.opensAt);
 
   return (
-    <section className="panel" aria-labelledby="trend-title">
-      <div className="panel__title panel__title--split">
-        <h2 className="panel__heading" id="trend-title">
-          날짜별 응답
-        </h2>
-        <TableViewButton
-          className="panel__action"
+    <Panel aria-labelledby="trend-title">
+      <PanelTitle as="div" $split>
+        <PanelHeading id="trend-title">날짜별 응답</PanelHeading>
+        <PanelTableViewButton
           showsTable={showsTable}
           onToggle={toggleTableView}
         />
-      </div>
-      <div className="panel__body">
+      </PanelTitle>
+      <PanelBody>
         {showsTable ? (
           <ResultTable
             caption="날짜별 응답"
@@ -449,8 +461,8 @@ function DailyResponsesPanel({
             columns={dailyColumns(days)}
           />
         )}
-      </div>
-    </section>
+      </PanelBody>
+    </Panel>
   );
 }
 
@@ -465,12 +477,12 @@ function GradeResponseRow({
 }) {
   const isTooFewToShow = count < minimumGroupSize;
   return (
-    <div className="result-grade">
+    <S.ResultGrade>
       <span>{grade}학년</span>
       {isTooFewToShow ? (
-        <span className="result-grade__hidden">
+        <S.ResultGradeHidden>
           {minimumGroupSize}명 미만이라 숨김
-        </span>
+        </S.ResultGradeHidden>
       ) : (
         <Meter
           label={`${grade}학년 응답`}
@@ -479,7 +491,7 @@ function GradeResponseRow({
           text={`${count}명`}
         />
       )}
-    </div>
+    </S.ResultGrade>
   );
 }
 
@@ -489,11 +501,9 @@ function GradeResponsesPanel({
   includedResponses: SurveyResponse[];
 }) {
   return (
-    <section className="panel" aria-labelledby="grade-title">
-      <h2 className="panel__title" id="grade-title">
-        학년별 응답
-      </h2>
-      <div className="panel__body">
+    <Panel aria-labelledby="grade-title">
+      <PanelTitle id="grade-title">학년별 응답</PanelTitle>
+      <PanelBody>
         {grades.map((grade) => (
           <GradeResponseRow
             key={grade}
@@ -502,12 +512,12 @@ function GradeResponsesPanel({
             total={includedResponses.length}
           />
         ))}
-      </div>
-      <p className="panel__note">
+      </PanelBody>
+      <PanelNote>
         응답자가 {minimumGroupSize}명 미만인 학년은 누가 답했는지 짐작할 수 있어
         필터와 교차표에서 뺍니다.
-      </p>
-    </section>
+      </PanelNote>
+    </Panel>
   );
 }
 
@@ -517,19 +527,17 @@ function ResponseManagementPanel({
   onRequestDeleteAll: () => void;
 }) {
   return (
-    <section className="panel" aria-labelledby="manage-title">
-      <h2 className="panel__title" id="manage-title">
-        응답 관리
-      </h2>
-      <div className="panel__body">
-        <p className="result-manage__text">
+    <Panel aria-labelledby="manage-title">
+      <PanelTitle id="manage-title">응답 관리</PanelTitle>
+      <PanelBody>
+        <S.ResultManageText>
           응답을 모두 지우면 되돌릴 수 없습니다. 먼저 CSV로 내려받아 두세요.
-        </p>
+        </S.ResultManageText>
         <Button theme="negative" fullWidth onClick={onRequestDeleteAll}>
           모든 응답 삭제
         </Button>
-      </div>
-    </section>
+      </PanelBody>
+    </Panel>
   );
 }
 
@@ -589,8 +597,8 @@ export function SurveyResultsSummaryPage() {
   const questionsHref = surveyResultsPaths(survey.id).questions;
 
   return (
-    <div className="split-layout result-layout">
-      <div className="split-layout__main">
+    <S.ResultLayout>
+      <SplitMain>
         <GradeFilter
           selectableGrades={visibleGrades(includedResponses)}
           selectedGrade={selectedGrade}
@@ -607,16 +615,16 @@ export function SurveyResultsSummaryPage() {
             questionsHref={questionsHref}
           />
         ))}
-      </div>
+      </SplitMain>
 
-      <aside className="split-layout__aside">
+      <SplitAside>
         <DailyResponsesPanel survey={survey} responses={responses} />
         <GradeResponsesPanel includedResponses={includedResponses} />
         <Notice tone="neutral">{identityNotice[survey.identity]}</Notice>
         <ResponseManagementPanel
           onRequestDeleteAll={() => setIsConfirmingDeleteAll(true)}
         />
-      </aside>
+      </SplitAside>
 
       <DeleteAllResponsesDialog
         survey={survey}
@@ -625,6 +633,6 @@ export function SurveyResultsSummaryPage() {
         onClose={() => setIsConfirmingDeleteAll(false)}
         onDeleted={reload}
       />
-    </div>
+    </S.ResultLayout>
   );
 }

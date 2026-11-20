@@ -1,12 +1,16 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
 import { useId } from 'react';
-import { Button, type ButtonProps } from './Button';
+import styled, { css, type DefaultTheme } from 'styled-components';
+import { Button, ButtonRoot, type ButtonProps } from './Button';
 import { Icon, type KitIcon } from './Icon';
+import { IconSize } from './IconSize';
 import { iconArrowBackIos } from './icons.generated';
 import { Input, type InputProps } from './Input';
-import { Option, Segment } from './Misc';
+import { Option, OptionRoot, Segment, SegmentRoot } from './Misc';
 import { SymbolCouncil } from './Brand';
-import { cx } from './cx';
+import { Text } from './Text';
+import { interactive, resetButton } from './styles';
+import type { KitTextStyle } from './theme';
 
 /* ---------- Navigation/NavigationBar ---------- */
 
@@ -29,6 +33,53 @@ export interface NavigationBarProps extends Omit<
   secondary?: NavigationAction;
 }
 
+const NavigationBarRoot = styled.header<{ $logo: boolean }>`
+  ${({ theme: t, $logo }) => css`
+    display: flex;
+    align-items: center;
+    gap: ${t.spacing[300]};
+    box-sizing: border-box;
+    width: 100%;
+    padding: ${t.spacing[400]} ${t.spacing[500]};
+    ${$logo && 'justify-content: space-between;'}
+  `}
+`;
+
+const NavigationBarBack = styled.button`
+  ${({ theme: t }) => css`
+    ${interactive(t)}
+    ${resetButton}
+    color: ${t.colors.core.glyph.tertiary};
+  `}
+`;
+
+const NavigationBarTitle = styled.h1`
+  ${({ theme: t }) => css`
+    ${t.text.titleStrong}
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    color: ${t.colors.core.glyph.primary};
+  `}
+`;
+
+const NavigationBarActions = styled.div`
+  ${({ theme: t }) => css`
+    display: flex;
+    align-items: center;
+    gap: ${t.spacing[300]};
+    color: ${t.colors.core.glyph.primary};
+  `}
+`;
+
+const NavigationBarAction = styled.button`
+  ${({ theme: t }) => css`
+    ${interactive(t, { inset: '-2px', radius: 's' })}
+    ${resetButton}
+    display: inline-flex;
+  `}
+`;
+
 /** DIMI UI KIT "Navigation/NavigationBar" (mobile top bar). */
 export function NavigationBar({
   type = 'page',
@@ -37,51 +88,42 @@ export function NavigationBar({
   backLabel = '뒤로',
   primary,
   secondary,
-  className,
   ...rest
 }: NavigationBarProps) {
   const actions = [primary, secondary].filter((a): a is NavigationAction =>
     Boolean(a),
   );
   return (
-    <header
-      className={cx('kit-navigation-bar', className)}
-      data-type={type}
-      {...rest}
-    >
+    <NavigationBarRoot $logo={type === 'index-logo'} {...rest}>
       {type === 'page' && (
-        <button
+        <NavigationBarBack
           type="button"
-          className="kit-reset-button kit-navigation-bar-back kit-interactive"
           aria-label={backLabel}
           onClick={onBack}
         >
-          <Icon icon={iconArrowBackIos} />
-        </button>
+          <Icon icon={iconArrowBackIos} size={20} />
+        </NavigationBarBack>
       )}
       {type === 'index-logo' ? (
         <SymbolCouncil size={32} />
       ) : (
-        <h1 className="kit-navigation-bar-title kit-text-title-strong">
-          {title}
-        </h1>
+        <NavigationBarTitle>{title}</NavigationBarTitle>
       )}
       {actions.length > 0 && (
-        <div className="kit-navigation-bar-actions">
+        <NavigationBarActions>
           {actions.map((a) => (
-            <button
+            <NavigationBarAction
               key={a.label}
               type="button"
               aria-label={a.label}
               onClick={a.onClick}
-              className="kit-reset-button kit-navigation-bar-action kit-interactive"
             >
-              <Icon icon={a.icon} />
-            </button>
+              <Icon icon={a.icon} size={28} />
+            </NavigationBarAction>
           ))}
-        </div>
+        </NavigationBarActions>
       )}
-    </header>
+    </NavigationBarRoot>
   );
 }
 
@@ -101,6 +143,30 @@ export interface SegmentedControlProps<T extends string> {
   className?: string;
 }
 
+const SegmentedControlRoot = styled.div`
+  box-sizing: border-box;
+  width: 100%;
+  padding: ${({ theme }) => theme.spacing[400]};
+`;
+
+/** The track that holds Segments (kit SegmentedControl without its outer padding). */
+export const segmentedTrackStyles = (t: DefaultTheme) => css`
+  display: flex;
+  gap: ${t.spacing[100]};
+  padding: ${t.spacing[100]};
+  border-radius: ${t.radius.m};
+  background: ${t.colors.components.translucent.secondary};
+`;
+
+const SegmentedControlTrack = styled.div`
+  ${({ theme: t }) => segmentedTrackStyles(t)}
+
+  > ${SegmentRoot} {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+`;
+
 /** DIMI UI KIT "Control/SegmentedControl" (Double … Septuple: any number of segments). */
 export function SegmentedControl<T extends string>({
   items,
@@ -110,12 +176,8 @@ export function SegmentedControl<T extends string>({
   className,
 }: SegmentedControlProps<T>) {
   return (
-    <div className={cx('kit-segmented-control', className)}>
-      <div
-        className="kit-segmented-control-track"
-        role="tablist"
-        aria-label={label}
-      >
+    <SegmentedControlRoot className={className}>
+      <SegmentedControlTrack role="tablist" aria-label={label}>
         {items.map((item) => (
           <Segment
             key={item.value}
@@ -126,8 +188,8 @@ export function SegmentedControl<T extends string>({
             {item.label}
           </Segment>
         ))}
-      </div>
-    </div>
+      </SegmentedControlTrack>
+    </SegmentedControlRoot>
   );
 }
 
@@ -149,6 +211,22 @@ export interface OptionPickerProps<T extends string> {
   className?: string;
 }
 
+const OptionPickerRoot = styled.div<{ $column: boolean }>`
+  ${({ theme: t, $column }) => css`
+    display: flex;
+    gap: ${t.spacing[200]};
+    box-sizing: border-box;
+    width: 100%;
+    padding: ${t.spacing[300]} ${t.spacing[400]};
+    ${$column && 'flex-direction: column;'}
+
+    > ${OptionRoot} {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+  `}
+`;
+
 /** DIMI UI KIT "Control/OptionPicker". */
 export function OptionPicker<T extends string>({
   items,
@@ -159,9 +237,9 @@ export function OptionPicker<T extends string>({
   className,
 }: OptionPickerProps<T>) {
   return (
-    <div
-      className={cx('kit-option-picker', className)}
-      data-direction={direction}
+    <OptionPickerRoot
+      className={className}
+      $column={direction === 'column'}
       role="radiogroup"
       aria-label={label}
     >
@@ -175,7 +253,7 @@ export function OptionPicker<T extends string>({
           {item.label}
         </Option>
       ))}
-    </div>
+    </OptionPickerRoot>
   );
 }
 
@@ -186,6 +264,38 @@ export interface InputFieldProps extends Omit<InputProps, 'title'> {
   /** Helper text under the input. Shown in Negative when `error` is set. */
   subLabel?: ReactNode;
 }
+
+const InputFieldGroup = styled.div`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 100%;
+    padding: ${t.spacing[200]} ${t.spacing[400]};
+  `}
+`;
+
+const InputFieldTitle = styled.label`
+  ${({ theme: t }) => css`
+    ${t.text.calloutRegular}
+    padding: 0 ${t.spacing[100]} ${t.spacing[200]};
+    color: ${t.colors.core.glyph.secondary};
+  `}
+`;
+
+const InputFieldSub = styled.p<{ $error?: boolean }>`
+  ${({ theme: t, $error }) => css`
+    ${t.text.footnoteWeak}
+    margin: 0;
+    padding: ${t.spacing[200]} ${t.spacing[100]} 0;
+    color: ${$error ? t.colors.core.status.negative : t.colors.core.glyph.quaternary};
+  `}
+`;
+
+const InputFieldRow = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing[200]};
+`;
 
 /** DIMI UI KIT "Input/InputField" (Type=Single): title, input and helper text. */
 export function InputField({
@@ -200,27 +310,15 @@ export function InputField({
   const inputId = id ?? autoId;
   const helpId = subLabel ? `${inputId}-help` : undefined;
   return (
-    <div className={cx('kit-input-field-group', className)}>
-      {title && (
-        <label
-          htmlFor={inputId}
-          className="kit-input-field-title kit-text-callout-regular"
-        >
-          {title}
-        </label>
-      )}
+    <InputFieldGroup className={className}>
+      {title && <InputFieldTitle htmlFor={inputId}>{title}</InputFieldTitle>}
       <Input id={inputId} error={error} aria-describedby={helpId} {...rest} />
       {subLabel && (
-        <p
-          id={helpId}
-          className="kit-input-field-sub kit-text-footnote-weak"
-          data-error={error ? '' : undefined}
-          style={{ margin: 0 }}
-        >
+        <InputFieldSub id={helpId} $error={error}>
           {subLabel}
-        </p>
+        </InputFieldSub>
       )}
-    </div>
+    </InputFieldGroup>
   );
 }
 
@@ -241,22 +339,14 @@ export function InputFieldDouble({
   className,
 }: InputFieldDoubleProps) {
   return (
-    <div className={cx('kit-input-field-group', className)} role="group">
-      {title && (
-        <span className="kit-input-field-title kit-text-callout-regular">
-          {title}
-        </span>
-      )}
-      <div className="kit-input-field-row">
+    <InputFieldGroup className={className} role="group">
+      {title && <InputFieldTitle as="span">{title}</InputFieldTitle>}
+      <InputFieldRow>
         <Input {...first} />
         <Input {...second} />
-      </div>
-      {subLabel && (
-        <span className="kit-input-field-sub kit-text-footnote-weak">
-          {subLabel}
-        </span>
-      )}
-    </div>
+      </InputFieldRow>
+      {subLabel && <InputFieldSub as="span">{subLabel}</InputFieldSub>}
+    </InputFieldGroup>
   );
 }
 
@@ -267,13 +357,30 @@ export interface ToastProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
+const ToastRoot = styled.div`
+  ${({ theme: t }) => css`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: ${t.spacing[200]};
+    box-sizing: border-box;
+    padding: ${t.spacing[300]} ${t.spacing[550]};
+    border-radius: ${t.radius.circle};
+    background: ${t.colors.components.fill.primary};
+    box-shadow:
+      inset 0 0 0 1px ${t.colors.core.outline},
+      ${t.shadow.floating};
+    color: ${t.colors.core.glyph.primary};
+  `}
+`;
+
 /** DIMI UI KIT "Inform/Toast". Positioning and timing are up to the caller. */
-export function Toast({ icon, className, children, ...rest }: ToastProps) {
+export function Toast({ icon, children, ...rest }: ToastProps) {
   return (
-    <div role="status" className={cx('kit-toast', className)} {...rest}>
-      {icon && <Icon icon={icon} />}
-      <span className="kit-text-callout-regular">{children}</span>
-    </div>
+    <ToastRoot role="status" {...rest}>
+      {icon && <Icon icon={icon} size={24} />}
+      <Text $style="calloutRegular">{children}</Text>
+    </ToastRoot>
   );
 }
 
@@ -291,48 +398,69 @@ export interface HeaderProps extends Omit<
   as?: 'h1' | 'h2' | 'h3';
 }
 
+const HeaderRoot = styled.header`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-direction: column;
+    gap: ${t.spacing[100]};
+    box-sizing: border-box;
+    width: 100%;
+    padding: ${t.spacing[300]} ${t.spacing[500]};
+  `}
+`;
+
+const HeaderSub = styled.span<{ $style: KitTextStyle }>`
+  ${({ theme: t, $style }) => css`
+    ${t.text[$style]}
+    color: ${t.colors.core.glyph.secondary};
+  `}
+`;
+
+const HeaderTitle = styled.h2<{ $style: KitTextStyle }>`
+  ${({ theme: t, $style }) => css`
+    ${t.text[$style]}
+    margin: 0;
+    color: ${t.colors.core.glyph.primary};
+  `}
+`;
+
+const HeaderContent = styled.p<{ $style: KitTextStyle }>`
+  ${({ theme: t, $style }) => css`
+    ${t.text[$style]}
+    margin: 0;
+    color: ${t.colors.core.glyph.secondary};
+  `}
+`;
+
 /** DIMI UI KIT "Inform/Header". */
 export function Header({
   size = 'large',
   subTitle,
   title,
   content,
-  as: Heading = 'h2',
-  className,
+  as: heading = 'h2',
   ...rest
 }: HeaderProps) {
   const large = size === 'large';
   return (
-    <header className={cx('kit-header', className)} {...rest}>
+    <HeaderRoot {...rest}>
       {subTitle && (
-        <span
-          className={cx(
-            'kit-header-sub',
-            large ? 'kit-text-footnote-weak' : 'kit-text-caption-weak',
-          )}
-        >
+        <HeaderSub $style={large ? 'footnoteWeak' : 'captionWeak'}>
           {subTitle}
-        </span>
+        </HeaderSub>
       )}
-      <Heading
-        className={cx(
-          'kit-header-title',
-          large ? 'kit-text-headline-strong' : 'kit-text-body-strong',
-        )}
+      <HeaderTitle
+        as={heading}
+        $style={large ? 'headlineStrong' : 'bodyStrong'}
       >
         {title}
-      </Heading>
+      </HeaderTitle>
       {content && (
-        <p
-          className={cx(
-            'kit-header-content',
-            large ? 'kit-text-paragraph-large' : 'kit-text-paragraph-small',
-          )}
-        >
+        <HeaderContent $style={large ? 'paragraphLarge' : 'paragraphSmall'}>
           {content}
-        </p>
+        </HeaderContent>
       )}
-    </header>
+    </HeaderRoot>
   );
 }
 
@@ -353,6 +481,52 @@ export interface SectionHeaderProps extends Omit<
   as?: 'h2' | 'h3' | 'h4';
 }
 
+type SectionSize = 'small' | 'medium' | 'large';
+
+const SectionHeaderRoot = styled.div<{ $size: SectionSize }>`
+  ${({ theme: t, $size }) => css`
+    display: flex;
+    align-items: center;
+    gap: ${t.spacing[300]};
+    box-sizing: border-box;
+    width: 100%;
+    padding: ${{ small: t.spacing[100], medium: t.spacing[400], large: t.spacing[500] }[$size]}
+      ${t.spacing[500]};
+  `}
+`;
+
+const SectionHeaderTitle = styled.h2<{ $size: SectionSize }>`
+  ${({ theme: t, $size }) => css`
+    ${
+      $size === 'large'
+        ? t.text.titleStrong
+        : $size === 'medium'
+          ? t.text.headlineStrong
+          : t.text.calloutRegular
+    }
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    gap: ${$size === 'small' ? t.spacing[200] : t.spacing[300]};
+    margin: 0;
+    color: ${$size === 'small' ? t.colors.core.glyph.secondary : t.colors.core.glyph.primary};
+  `}
+`;
+
+const SectionHeaderValue = styled.span<{ $size: SectionSize }>`
+  ${({ theme: t, $size }) => css`
+    ${$size === 'small' ? t.text.footnoteWeak : t.text.calloutRegular}
+    flex: none;
+    color: ${$size === 'small' ? t.colors.core.glyph.tertiary : t.colors.core.status.accent};
+  `}
+`;
+
+const SectionHeaderTrailing = styled.span`
+  display: inline-flex;
+  flex: none;
+`;
+
 /** DIMI UI KIT "Inform/SectionHeader". */
 export function SectionHeader({
   size = 'medium',
@@ -361,42 +535,145 @@ export function SectionHeader({
   rightIcon,
   value,
   trailing,
-  as: Heading = 'h2',
-  className,
+  as: heading = 'h2',
   ...rest
 }: SectionHeaderProps) {
-  const titleStyle =
-    size === 'large'
-      ? 'kit-text-title-strong'
-      : size === 'medium'
-        ? 'kit-text-headline-strong'
-        : 'kit-text-callout-regular';
-  const valueStyle =
-    size === 'small' ? 'kit-text-footnote-weak' : 'kit-text-callout-regular';
   return (
-    <div
-      className={cx('kit-section-header', className)}
-      data-size={size}
-      {...rest}
-    >
-      <Heading className={cx('kit-section-header-title', titleStyle)}>
-        {leftIcon && <Icon icon={leftIcon} />}
-        {title}
-        {rightIcon && <Icon icon={rightIcon} />}
-      </Heading>
-      {value !== undefined && (
-        <span className={cx('kit-section-header-value', valueStyle)}>
-          {value}
-        </span>
-      )}
-      {trailing && (
-        <span className="kit-section-header-trailing">{trailing}</span>
-      )}
-    </div>
+    <SectionHeaderRoot $size={size} {...rest}>
+      <IconSize value={size === 'large' ? 20 : 16}>
+        <SectionHeaderTitle as={heading} $size={size}>
+          {leftIcon && <Icon icon={leftIcon} />}
+          {title}
+          {rightIcon && <Icon icon={rightIcon} />}
+        </SectionHeaderTitle>
+        {value !== undefined && (
+          <SectionHeaderValue $size={size}>{value}</SectionHeaderValue>
+        )}
+        {trailing && (
+          <IconSize value={20}>
+            <SectionHeaderTrailing>{trailing}</SectionHeaderTrailing>
+          </IconSize>
+        )}
+      </IconSize>
+    </SectionHeaderRoot>
   );
 }
 
 /* ---------- List/ValueList ---------- */
+
+type ValueTheme = 'outlined' | 'active' | 'disabled';
+
+const ValueListRoot = styled.div`
+  ${({ theme: t }) => css`
+    box-sizing: border-box;
+    width: 100%;
+    padding: ${t.spacing[200]} ${t.spacing[400]};
+  `}
+`;
+
+interface ValueCardProps {
+  $row: boolean;
+  $theme: ValueTheme;
+}
+
+const valueCardStyles = (
+  t: DefaultTheme,
+  { $row, $theme }: ValueCardProps,
+) => css`
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  padding: ${t.spacing[400]} ${t.spacing[500]};
+  border-radius: ${t.radius.m};
+  background: ${t.colors.components.fill.primary};
+  box-shadow: inset 0 0 0 1px ${t.colors.core.outline};
+  text-align: left;
+  ${
+    $row
+      ? css`
+          align-items: center;
+          gap: ${t.spacing[300]};
+        `
+      : css`
+          flex-direction: column;
+          gap: ${t.spacing[150]};
+        `
+  }
+  ${
+    $theme === 'active' &&
+    css`
+      background: ${t.colors.core.status.accent};
+      box-shadow: inset 0 0 0 1px ${t.colors.core.status.accent};
+    `
+  }
+    ${
+    $theme === 'disabled' &&
+    css`
+      background: ${t.colors.components.translucent.tertiary};
+      box-shadow: none;
+    `
+  }
+`;
+
+const ValueListCard = styled.div<ValueCardProps>`
+  ${({ theme, ...p }) => valueCardStyles(theme, p)}
+`;
+
+const ValueListButton = styled.button<ValueCardProps>`
+  ${({ theme: t, ...p }) => css`
+    ${interactive(t)}
+    ${resetButton}
+    ${valueCardStyles(t, p)}
+  `}
+`;
+
+interface ValuePartProps {
+  $style: KitTextStyle;
+  $theme: ValueTheme;
+}
+
+const valueColor = (
+  t: DefaultTheme,
+  theme: ValueTheme,
+  normal: string,
+  disabled: string,
+) =>
+  theme === 'active'
+    ? t.colors.core.onColor.primary
+    : theme === 'disabled'
+      ? disabled
+      : normal;
+
+const ValueListHead = styled.span`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing[300]};
+`;
+
+const ValueListTitle = styled.span<ValuePartProps>`
+  ${({ theme: t, $style, $theme }) => css`
+    ${t.text[$style]}
+    flex: 1;
+    min-width: 0;
+    color: ${valueColor(t, $theme, t.colors.core.glyph.primary, t.colors.core.glyph.tertiary)};
+  `}
+`;
+
+const ValueListSub = styled.span<ValuePartProps>`
+  ${({ theme: t, $style, $theme }) => css`
+    ${t.text[$style]}
+    flex: none;
+    color: ${valueColor(t, $theme, t.colors.core.glyph.tertiary, t.colors.core.glyph.quaternary)};
+  `}
+`;
+
+const ValueListContent = styled.span<ValuePartProps & { $strong?: boolean }>`
+  ${({ theme: t, $style, $theme, $strong }) => css`
+    ${t.text[$style]}
+    color: ${valueColor(t, $theme, t.colors.core.glyph.secondary, t.colors.core.glyph.quaternary)};
+    ${$strong && `font-weight: ${t.font.weight.strong};`}
+  `}
+`;
 
 export interface ValueListProps extends Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -405,7 +682,7 @@ export interface ValueListProps extends Omit<
   /** Horizontal: one line (sub-title, title, value). Vertical: title row over a paragraph. */
   direction?: 'row' | 'column';
   /** Outlined (default), Active (accent fill) or Disabled. */
-  theme?: 'outlined' | 'active' | 'disabled';
+  theme?: ValueTheme;
   title: ReactNode;
   subTitle?: ReactNode;
   content?: ReactNode;
@@ -426,61 +703,116 @@ export function ValueList({
   const body = row ? (
     <>
       {subTitle && (
-        <span className="kit-value-list-sub kit-text-callout-weak">
+        <ValueListSub $style="calloutWeak" $theme={theme}>
           {subTitle}
-        </span>
+        </ValueListSub>
       )}
-      <span className="kit-value-list-title kit-text-body-strong">{title}</span>
+      <ValueListTitle $style="bodyStrong" $theme={theme}>
+        {title}
+      </ValueListTitle>
       {content && (
-        <span className="kit-value-list-content kit-text-callout-regular">
+        <ValueListContent
+          $style="calloutRegular"
+          $theme={theme}
+          $strong={theme === 'active'}
+        >
           {content}
-        </span>
+        </ValueListContent>
       )}
     </>
   ) : (
     <>
-      <span className="kit-value-list-head">
-        <span className="kit-value-list-title kit-text-headline-strong">
+      <ValueListHead>
+        <ValueListTitle $style="headlineStrong" $theme={theme}>
           {title}
-        </span>
+        </ValueListTitle>
         {subTitle && (
-          <span className="kit-value-list-sub kit-text-footnote-weak">
+          <ValueListSub $style="footnoteWeak" $theme={theme}>
             {subTitle}
-          </span>
+          </ValueListSub>
         )}
-      </span>
+      </ValueListHead>
       {content && (
-        <span className="kit-value-list-content kit-text-paragraph-small">
+        <ValueListContent $style="paragraphSmall" $theme={theme}>
           {content}
-        </span>
+        </ValueListContent>
       )}
     </>
   );
   return (
-    <div
-      className={cx('kit-value-list', className)}
-      data-direction={direction}
-      data-theme={theme}
-    >
+    <ValueListRoot className={className}>
       {onClick ? (
-        <button
+        <ValueListButton
           type="button"
-          className="kit-reset-button kit-value-list-card kit-interactive"
           disabled={theme === 'disabled'}
           aria-pressed={theme === 'active'}
           onClick={onClick}
+          $row={row}
+          $theme={theme}
           {...rest}
         >
           {body}
-        </button>
+        </ValueListButton>
       ) : (
-        <div className="kit-value-list-card">{body}</div>
+        <ValueListCard $row={row} $theme={theme}>
+          {body}
+        </ValueListCard>
       )}
-    </div>
+    </ValueListRoot>
   );
 }
 
 /* ---------- List/ItemList ---------- */
+
+const itemListStyles = (t: DefaultTheme, large: boolean) => css`
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding: ${t.spacing[400]} ${t.spacing[400]} ${t.spacing[400]}
+    ${t.spacing[500]};
+  text-align: left;
+  gap: ${large ? t.spacing[400] : t.spacing[300]};
+`;
+
+const ItemListRoot = styled.div<{ $large: boolean }>`
+  ${({ theme, $large }) => itemListStyles(theme, $large)}
+`;
+
+const ItemListButton = styled.button<{ $large: boolean }>`
+  ${({ theme: t, $large }) => css`
+    ${interactive(t)}
+    ${resetButton}
+    ${itemListStyles(t, $large)}
+  `}
+`;
+
+const ItemListLeading = styled.span`
+  display: inline-flex;
+  flex: none;
+  color: ${({ theme }) => theme.colors.core.glyph.primary};
+`;
+
+const ItemListBody = styled.span`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: ${({ theme }) => theme.spacing[50]};
+`;
+
+const ItemListText = styled.span<{ $style: KitTextStyle; $title?: boolean }>`
+  ${({ theme: t, $style, $title }) => css`
+    ${t.text[$style]}
+    color: ${$title ? t.colors.core.glyph.primary : t.colors.core.glyph.secondary};
+  `}
+`;
+
+const ItemListTrailing = styled.span`
+  display: inline-flex;
+  flex: none;
+  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
+`;
 
 export interface ItemListProps extends Omit<
   HTMLAttributes<HTMLElement>,
@@ -510,60 +842,79 @@ export function ItemList({
   const large = size === 'large';
   const inner = (
     <>
-      {leading && <span className="kit-item-list-leading">{leading}</span>}
-      <span className="kit-item-list-body">
+      {leading && (
+        <IconSize value={large ? 28 : 24}>
+          <ItemListLeading>{leading}</ItemListLeading>
+        </IconSize>
+      )}
+      <ItemListBody>
         {subTitle && (
-          <span
-            className={cx(
-              'kit-item-list-sub',
-              large ? 'kit-text-callout-regular' : 'kit-text-footnote-weak',
-            )}
-          >
+          <ItemListText $style={large ? 'calloutRegular' : 'footnoteWeak'}>
             {subTitle}
-          </span>
+          </ItemListText>
         )}
-        <span
-          className={cx(
-            'kit-item-list-title',
-            large ? 'kit-text-headline-strong' : 'kit-text-body-strong',
-          )}
-        >
+        <ItemListText $style={large ? 'headlineStrong' : 'bodyStrong'} $title>
           {title}
-        </span>
+        </ItemListText>
         {content && (
-          <span
-            className={cx(
-              'kit-item-list-content',
-              large ? 'kit-text-paragraph-large' : 'kit-text-paragraph-small',
-            )}
-          >
+          <ItemListText $style={large ? 'paragraphLarge' : 'paragraphSmall'}>
             {content}
-          </span>
+          </ItemListText>
         )}
-      </span>
-      {trailing && <span className="kit-item-list-trailing">{trailing}</span>}
+      </ItemListBody>
+      {trailing && (
+        <IconSize value={large ? 24 : 20}>
+          <ItemListTrailing>{trailing}</ItemListTrailing>
+        </IconSize>
+      )}
     </>
   );
   return onClick ? (
-    <button
+    <ItemListButton
       type="button"
-      className={cx(
-        'kit-reset-button kit-item-list kit-interactive',
-        className,
-      )}
-      data-size={size}
+      className={className}
+      $large={large}
       onClick={onClick}
     >
       {inner}
-    </button>
+    </ItemListButton>
   ) : (
-    <div className={cx('kit-item-list', className)} data-size={size} {...rest}>
+    <ItemListRoot className={className} $large={large} {...rest}>
       {inner}
-    </div>
+    </ItemListRoot>
   );
 }
 
 /* ---------- Button/ButtonGroup and Button/ActionButton ---------- */
+
+const ButtonGroupRoot = styled.div`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-direction: column;
+    gap: ${t.spacing[200]};
+    box-sizing: border-box;
+    width: 100%;
+    padding: ${t.spacing[300]} ${t.spacing[400]};
+  `}
+`;
+
+const ButtonGroupRow = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing[200]};
+
+  > ${ButtonRoot} {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+`;
+
+const ButtonGroupSub = styled.span`
+  ${({ theme: t }) => css`
+    ${t.text.footnoteWeak}
+    padding: ${t.spacing[100]} ${t.spacing[100]} 0;
+    color: ${t.colors.core.glyph.secondary};
+  `}
+`;
 
 export interface ButtonGroupProps {
   /** Buttons in order. Their size/theme/variant are fixed by the group type. */
@@ -592,18 +943,10 @@ export function ButtonGroup({
     />
   ));
   return (
-    <div className={cx('kit-button-group', className)}>
-      {direction === 'row' ? (
-        <div className="kit-button-group-row">{items}</div>
-      ) : (
-        items
-      )}
-      {subLabel && (
-        <span className="kit-button-group-sub kit-text-footnote-weak">
-          {subLabel}
-        </span>
-      )}
-    </div>
+    <ButtonGroupRoot className={className}>
+      {direction === 'row' ? <ButtonGroupRow>{items}</ButtonGroupRow> : items}
+      {subLabel && <ButtonGroupSub>{subLabel}</ButtonGroupSub>}
+    </ButtonGroupRoot>
   );
 }
 
@@ -642,23 +985,19 @@ export function ActionButton({
     />
   );
   return (
-    <div className={cx('kit-button-group', className)}>
+    <ButtonGroupRoot className={className}>
       {direction === 'row' && alt ? (
-        <div className="kit-button-group-row">
+        <ButtonGroupRow>
           {main}
           {alt}
-        </div>
+        </ButtonGroupRow>
       ) : (
         <>
           {main}
           {alt}
         </>
       )}
-      {subLabel && (
-        <span className="kit-button-group-sub kit-text-footnote-weak">
-          {subLabel}
-        </span>
-      )}
-    </div>
+      {subLabel && <ButtonGroupSub>{subLabel}</ButtonGroupSub>}
+    </ButtonGroupRoot>
   );
 }

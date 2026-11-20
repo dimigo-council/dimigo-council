@@ -1,4 +1,10 @@
+import {
+  DataCell,
+  TableWrap,
+  VisuallyHidden,
+} from '../../components/ui/index.ts';
 import { formatRatio, shareOf, type CountRow } from './results.ts';
+import * as S from './styles.ts';
 
 /**
  * 설문 결과 차트. 모두 단일 계열이라 한 가지 색만 쓰고, 가장 큰 값만 진하게 칠한다.
@@ -25,33 +31,24 @@ function describeRows(label: string, rows: CountRow[]) {
 export function BarChart({ label, rows }: { label: string; rows: CountRow[] }) {
   const largest = largestCount(rows.map((row) => row.count));
   return (
-    <div
-      className="bar-chart"
-      role="img"
-      aria-label={describeRows(label, rows)}
-    >
+    <S.BarChart role="img" aria-label={describeRows(label, rows)}>
       {rows.map((row) => (
-        <div
-          key={row.label}
-          className="bar-chart__row"
-          data-top={isLargest(row.count, largest)}
-        >
-          <span className="bar-chart__label">{row.label}</span>
-          <span className="bar-chart__track">
-            <span
-              className="bar-chart__bar"
+        <S.BarChartRow key={row.label} $top={isLargest(row.count, largest)}>
+          <S.BarChartLabel>{row.label}</S.BarChartLabel>
+          <S.BarChartTrack>
+            <S.BarChartBar
               style={{ width: `${shareOf(row.count, largest) * 100}%` }}
             />
-          </span>
-          <span className="bar-chart__value">
+          </S.BarChartTrack>
+          <S.BarChartValue>
             <b>{formatRatio(row.ratio)}</b> · {row.count}명
-          </span>
-          <span className="chart-tip">
+          </S.BarChartValue>
+          <S.ChartTip>
             {row.label} — {row.count}명 ({formatRatio(row.ratio)})
-          </span>
-        </div>
+          </S.ChartTip>
+        </S.BarChartRow>
       ))}
-    </div>
+    </S.BarChart>
   );
 }
 
@@ -80,13 +77,9 @@ export function ColumnChart({
 }) {
   const largest = largestCount(columns.map((column) => column.count));
   const tips = columns.map((column) => column.tip);
-  const className = compact
-    ? 'column-chart column-chart--compact'
-    : 'column-chart';
-
   return (
-    <div
-      className={className}
+    <S.ColumnChart
+      $compact={compact}
       role="img"
       aria-label={`${label}: ${tips.join(', ')}`}
     >
@@ -94,24 +87,20 @@ export function ColumnChart({
         const heightPercent =
           shareOf(column.count, largest) * tallestColumnHeightPercent;
         return (
-          <div
+          <S.ColumnChartCol
             key={column.key}
-            className="column-chart__col"
-            data-top={isLargest(column.count, largest)}
+            $top={isLargest(column.count, largest)}
           >
-            <span className="column-chart__plot">
-              <span className="column-chart__value">{column.value}</span>
-              <span
-                className="column-chart__bar"
-                style={{ height: `${heightPercent}%` }}
-              />
-            </span>
-            <span className="column-chart__axis">{column.axis}</span>
-            <span className="chart-tip">{column.tip}</span>
-          </div>
+            <S.ColumnChartPlot>
+              <S.ColumnChartValue>{column.value}</S.ColumnChartValue>
+              <S.ColumnChartBar style={{ height: `${heightPercent}%` }} />
+            </S.ColumnChartPlot>
+            <S.ColumnChartAxis>{column.axis}</S.ColumnChartAxis>
+            <S.ChartTip>{column.tip}</S.ChartTip>
+          </S.ColumnChartCol>
         );
       })}
-    </div>
+    </S.ColumnChart>
   );
 }
 
@@ -128,30 +117,30 @@ export function ResultTable({
   ratioLabel?: string;
 }) {
   return (
-    <div className="table-wrap">
-      <table className="data-table result-table">
-        <caption className="visually-hidden">{caption}</caption>
+    <TableWrap>
+      <S.ResultTable>
+        <VisuallyHidden as="caption">{caption}</VisuallyHidden>
         <thead>
           <tr>
             <th scope="col">{firstColumn}</th>
-            <th scope="col" className="data-table__num">
+            <DataCell as="th" scope="col" $num>
               응답 수
-            </th>
-            <th scope="col" className="data-table__num">
+            </DataCell>
+            <DataCell as="th" scope="col" $num>
               {ratioLabel}
-            </th>
+            </DataCell>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.label}>
               <td>{row.label}</td>
-              <td className="data-table__num">{row.count}</td>
-              <td className="data-table__num">{formatRatio(row.ratio)}</td>
+              <DataCell $num>{row.count}</DataCell>
+              <DataCell $num>{formatRatio(row.ratio)}</DataCell>
             </tr>
           ))}
         </tbody>
-      </table>
-    </div>
+      </S.ResultTable>
+    </TableWrap>
   );
 }

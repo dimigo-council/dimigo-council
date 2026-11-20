@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
+import styled, { css } from 'styled-components';
 import { formatShortDate } from '../../lib/date.ts';
-import './intranet.css';
 
 export interface TimelineItem {
   id: string;
@@ -17,6 +17,105 @@ export interface TimelineItem {
   marker?: 'filled' | 'hollow';
 }
 
+const List = styled.ol`
+  margin: 0;
+  padding: 20px 18px 8px;
+  list-style: none;
+`;
+
+const Body = styled.div<{ $hollow: boolean }>`
+  ${({ theme: t, $hollow }) => css`
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: 6px;
+    padding: 0 0 24px 24px;
+    border-left: 1px solid ${t.colors.core.line};
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: -5px;
+      width: 9px;
+      height: 9px;
+      border: 2px solid ${t.colors.core.glyph.primary};
+      border-radius: 1px;
+      background: ${
+        $hollow
+          ? t.colors.background.primary
+          : t.colors.components.fill.inverted.primary
+      };
+    }
+  `}
+`;
+
+const Item = styled.li`
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 16px;
+
+  &:last-child ${Body} {
+    border-left-color: transparent;
+  }
+`;
+
+const DateText = styled.time`
+  ${({ theme: t }) => css`
+    padding-top: 2px;
+    color: ${t.colors.core.glyph.tertiary};
+    font-size: ${t.font.size.callout};
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  `}
+`;
+
+const Head = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+`;
+
+const Title = styled.h3`
+  ${({ theme: t }) => css`
+    margin: 0;
+    color: ${t.colors.core.glyph.primary};
+    font-size: ${t.font.size.callout};
+    font-weight: 700;
+  `}
+`;
+
+const Prefix = styled.span`
+  ${({ theme: t }) => css`
+    margin-right: 8px;
+    color: ${t.colors.core.glyph.tertiary};
+    font-size: ${t.font.size.callout};
+    font-weight: 700;
+  `}
+`;
+
+const Text = styled.p`
+  ${({ theme: t }) => css`
+    margin: 0;
+    color: ${t.colors.core.glyph.secondary};
+    font-size: ${t.font.size.callout};
+    line-height: 1.7;
+    white-space: pre-wrap;
+  `}
+`;
+
+const Foot = styled.div`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    color: ${t.colors.core.glyph.tertiary};
+    font-size: ${t.font.size.callout};
+  `}
+`;
+
 /** I-timeline: 날짜, 사각형 표시, 내용이 세로로 이어지는 기록 목록. 최신 기록이 위에 온다. */
 export function Timeline({
   items,
@@ -25,33 +124,25 @@ export function Timeline({
   items: TimelineItem[];
   headingLevel?: 2 | 3 | 4;
 }) {
-  const Heading = `h${headingLevel}` as const;
+  const heading = `h${headingLevel}` as const;
   return (
-    <ol className="timeline">
+    <List>
       {items.map((item) => (
-        <li
-          key={item.id}
-          className="timeline__item"
-          data-marker={item.marker ?? 'filled'}
-        >
-          <time className="timeline__date" dateTime={item.at}>
-            {formatShortDate(item.at)}
-          </time>
-          <div className="timeline__body">
-            <div className="timeline__head">
-              <Heading className="timeline__title">
-                {item.prefix && (
-                  <span className="timeline__prefix">{item.prefix}</span>
-                )}
+        <Item key={item.id}>
+          <DateText dateTime={item.at}>{formatShortDate(item.at)}</DateText>
+          <Body $hollow={item.marker === 'hollow'}>
+            <Head>
+              <Title as={heading}>
+                {item.prefix && <Prefix>{item.prefix}</Prefix>}
                 {item.title}
-              </Heading>
+              </Title>
               {item.badge}
-            </div>
-            {item.body && <p className="timeline__text">{item.body}</p>}
-            {item.foot && <div className="timeline__foot">{item.foot}</div>}
-          </div>
-        </li>
+            </Head>
+            {item.body && <Text>{item.body}</Text>}
+            {item.foot && <Foot>{item.foot}</Foot>}
+          </Body>
+        </Item>
       ))}
-    </ol>
+    </List>
   );
 }

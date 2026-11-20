@@ -84,6 +84,7 @@ import { HomePage } from '../pages/HomePage.tsx';
 import { NotFoundPage } from '../pages/NotFoundPage.tsx';
 import { PlaceholderPage } from '../pages/PlaceholderPage.tsx';
 import { RouteErrorPage } from '../pages/RouteErrorPage.tsx';
+import { StandaloneMain } from './shell.ts';
 import { StudentLayout } from './StudentLayout.tsx';
 import { WorkLayout, workLayoutLoader } from './WorkLayout.tsx';
 
@@ -110,9 +111,9 @@ export const router = createBrowserRouter([
   {
     path: 'login',
     element: (
-      <main className="standalone-main">
+      <StandaloneMain>
         <PlaceholderPage title="로그인" design="로그인 · login" />
-      </main>
+      </StandaloneMain>
     ),
   },
   {

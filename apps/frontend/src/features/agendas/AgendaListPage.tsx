@@ -1,10 +1,23 @@
 import { useState } from 'react';
-import { Link, useLoaderData } from 'react-router';
+import { useLoaderData } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
-import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
+import {
+  FilterBar,
+  FilterSelect,
+} from '../../components/intranet/FilterSelect.tsx';
 import { Meter } from '../../components/intranet/Meter.tsx';
 import { Badge, Input } from '../../dimi-ui-kit/index.ts';
-import { PersonAvatar, statusTone, Tabs } from '../../components/ui/index.ts';
+import {
+  DataCell,
+  DataTable,
+  DataTableLink,
+  EmptyState,
+  Owner,
+  PersonAvatar,
+  statusTone,
+  TableWrap,
+  Tabs,
+} from '../../components/ui/index.ts';
 import { formatShortDate } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listAgendas } from './api.ts';
@@ -16,7 +29,7 @@ import {
   type Agenda,
   type AgendaVisibility,
 } from './types.ts';
-import './agendas.css';
+import * as S from './styles.ts';
 import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function agendaListLoader() {
@@ -44,23 +57,17 @@ function StageBar({ agenda }: { agenda: Agenda }) {
   const filled = reached ? agendaStages.indexOf(reached) + 1 : 0;
   const stopped = stoppedStatuses.includes(agenda.status);
   return (
-    <span className="stage-bar">
-      <span
-        className="stage-bar__track"
-        data-stopped={stopped || undefined}
-        aria-hidden="true"
-      >
+    <S.StageBar>
+      <S.StageBarTrack aria-hidden="true">
         {agendaStages.map((stage, index) => (
-          <span key={stage} data-on={index < filled || undefined} />
+          <S.StageBarStep key={stage} $on={index < filled} $stopped={stopped} />
         ))}
-      </span>
-      <span className="stage-bar__label">
+      </S.StageBarTrack>
+      <S.StageBarLabel>
         {agenda.status}
-        {stopped && reached && (
-          <span className="stage-bar__note">{reached}에서</span>
-        )}
-      </span>
-    </span>
+        {stopped && reached && <S.StageBarNote>{reached}에서</S.StageBarNote>}
+      </S.StageBarLabel>
+    </S.StageBar>
   );
 }
 
@@ -114,13 +121,12 @@ export function AgendaListPage() {
         ]}
       />
 
-      <div
-        className="agenda-board"
+      <S.AgendaBoard
         role="tabpanel"
         id={`agendas-panel-${tab}`}
         aria-labelledby={`agendas-tab-${tab}`}
       >
-        <div className="filter-bar">
+        <FilterBar>
           <FilterSelect
             label="담당"
             value={department}
@@ -149,18 +155,17 @@ export function AgendaListPage() {
           </FilterSelect>
           <Input
             type="search"
-            containerClassName="filter-bar__search"
             leadingIcon={iconSearch}
             aria-label="안건 찾기"
             placeholder="번호, 안건 이름으로 찾기"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-        </div>
+        </FilterBar>
 
         {visible.length > 0 ? (
-          <div className="table-wrap" tabIndex={0} aria-label="안건 목록">
-            <table className="data-table agenda-table">
+          <TableWrap tabIndex={0} aria-label="안건 목록">
+            <DataTable>
               <thead>
                 <tr>
                   <th scope="col">번호</th>
@@ -170,32 +175,29 @@ export function AgendaListPage() {
                   <th scope="col">단계</th>
                   <th scope="col">업무</th>
                   <th scope="col">공개</th>
-                  <th scope="col" className="data-table__num">
+                  <DataCell as="th" scope="col" $num>
                     최근 변경
-                  </th>
+                  </DataCell>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((agenda) => (
                   <tr key={agenda.id}>
-                    <td className="data-table__muted">{agenda.id}</td>
+                    <DataCell $muted>{agenda.id}</DataCell>
                     <th scope="row">
-                      <Link
-                        className="data-table__link"
-                        to={`/work/agendas/${agenda.id}`}
-                      >
+                      <DataTableLink to={`/work/agendas/${agenda.id}`}>
                         {agenda.title}
-                      </Link>
+                      </DataTableLink>
                     </th>
-                    <td className="data-table__muted">{originLabel(agenda)}</td>
+                    <DataCell $muted>{originLabel(agenda)}</DataCell>
                     <td>
-                      <span className="owner">
+                      <Owner>
                         <PersonAvatar
                           name={agenda.department}
                           aria-hidden="true"
                         />
                         {agenda.department}
-                      </span>
+                      </Owner>
                     </td>
                     <td>
                       <StageBar agenda={agenda} />
@@ -208,7 +210,9 @@ export function AgendaListPage() {
                           max={agenda.tasks.total}
                         />
                       ) : (
-                        <span className="data-table__muted">없음</span>
+                        <DataCell as="span" $muted>
+                          없음
+                        </DataCell>
                       )}
                     </td>
                     <td>
@@ -216,26 +220,26 @@ export function AgendaListPage() {
                         {agenda.visibility}
                       </Badge>
                     </td>
-                    <td className="data-table__num data-table__muted">
+                    <DataCell $num $muted>
                       {formatShortDate(agenda.updatedAt)}
-                    </td>
+                    </DataCell>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </DataTable>
+          </TableWrap>
         ) : (
-          <p className="empty-state">
+          <EmptyState>
             {filtered
               ? '조건에 맞는 안건이 없습니다.'
               : '이 보기에 해당하는 안건이 없습니다.'}
-          </p>
+          </EmptyState>
         )}
-        <p className="agenda-board__note">
+        <S.AgendaBoardNote>
           단계는 등록, 검토, 결정, 추진, 완료 순서입니다. 보류·부결된 안건은
           멈춘 단계까지 회색으로 표시합니다.
-        </p>
-      </div>
+        </S.AgendaBoardNote>
+      </S.AgendaBoard>
     </>
   );
 }

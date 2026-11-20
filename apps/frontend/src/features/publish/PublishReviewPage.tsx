@@ -1,14 +1,28 @@
 import { useId, useState, type FormEvent } from 'react';
-import { Link, useLoaderData, useRevalidator } from 'react-router';
+import { useLoaderData, useRevalidator } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
 import { Badge, Button, TextArea } from '../../dimi-ui-kit/index.ts';
-import { statusTone, Tabs } from '../../components/ui/index.ts';
+import {
+  EmptyState,
+  FieldLabel,
+  FormActions,
+  ListGroupRoot,
+  ListRowActions,
+  ListRowAside,
+  ListRowItem,
+  ListRowMain,
+  ListRowMeta,
+  ListRowTitle,
+  statusTone,
+  Tabs,
+  TextLink,
+} from '../../components/ui/index.ts';
 import { formatDateTime, formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { listPublishItems, publishItem, requestRevision } from './api.ts';
 import type { PublishItem } from './types.ts';
-import './publish.css';
+import * as S from './styles.ts';
 
 export async function publishLoader() {
   return listPublishItems();
@@ -44,22 +58,22 @@ function PublishRow({ item }: { item: PublishItem }) {
   const pending = item.status === '공개 검토 중';
 
   return (
-    <li className="list-row list-row--excerpt">
-      <div className="list-row__main">
-        <h3 className="list-row__title">{item.title}</h3>
-        <div className="list-row__meta">
+    <ListRowItem $excerpt>
+      <ListRowMain>
+        <ListRowTitle>{item.title}</ListRowTitle>
+        <ListRowMeta>
           <Badge>{item.kind}</Badge>
           <span>
             {item.department}, {item.requester}
           </span>
           {item.agenda && (
-            <Link className="text-link" to={`/work/agendas/${item.agenda.id}`}>
+            <TextLink to={`/work/agendas/${item.agenda.id}`}>
               {item.agenda.id}
-            </Link>
+            </TextLink>
           )}
-        </div>
-      </div>
-      <div className="list-row__aside">
+        </ListRowMeta>
+      </ListRowMain>
+      <ListRowAside>
         <Badge theme={statusTone.visibility[item.status]}>{item.status}</Badge>
         <span>
           {pending
@@ -67,9 +81,9 @@ function PublishRow({ item }: { item: PublishItem }) {
             : item.decidedAt &&
               `${item.reviewer}, ${formatDateTime(item.decidedAt)}`}
         </span>
-      </div>
+      </ListRowAside>
       {pending && !revising && (
-        <div className="list-row__actions">
+        <ListRowActions>
           <Button
             size="small"
             disabled={busy}
@@ -86,28 +100,25 @@ function PublishRow({ item }: { item: PublishItem }) {
           >
             게시하기
           </Button>
-        </div>
+        </ListRowActions>
       )}
-      <p className="list-row__excerpt publish-preview">{item.preview}</p>
+      <S.PublishPreview>{item.preview}</S.PublishPreview>
       {item.status === '수정 요청' && item.note && (
-        <p className="publish-note">
+        <S.PublishNote>
           <strong>수정 요청</strong> {item.note}
-        </p>
+        </S.PublishNote>
       )}
       {revising && (
-        <form className="publish-revise" onSubmit={onRevise}>
-          <label className="field__label" htmlFor={noteId}>
-            무엇을 고쳐야 하나요?
-          </label>
+        <S.PublishRevise onSubmit={onRevise}>
+          <FieldLabel htmlFor={noteId}>무엇을 고쳐야 하나요?</FieldLabel>
           <TextArea
             id={noteId}
-            containerClassName="comment-input"
             maxLength={300}
             placeholder="요청한 사람에게 그대로 전달됩니다."
             value={note}
             onChange={(event) => setNote(event.target.value)}
           />
-          <div className="form-actions">
+          <FormActions>
             <Button disabled={busy} onClick={() => setRevising(false)}>
               취소
             </Button>
@@ -119,10 +130,10 @@ function PublishRow({ item }: { item: PublishItem }) {
             >
               수정 요청 보내기
             </Button>
-          </div>
-        </form>
+          </FormActions>
+        </S.PublishRevise>
       )}
-    </li>
+    </ListRowItem>
   );
 }
 
@@ -151,30 +162,29 @@ export function PublishReviewPage() {
         ]}
       />
 
-      <div
-        className="publish-panel"
+      <S.PublishPanel
         role="tabpanel"
         id={`publish-panel-${tab}`}
         aria-labelledby={`publish-tab-${tab}`}
       >
         {visible.length > 0 ? (
-          <ul className="list-group" aria-label="공개 검토 목록">
+          <ListGroupRoot aria-label="공개 검토 목록">
             {visible.map((item) => (
               <PublishRow key={item.id} item={item} />
             ))}
-          </ul>
+          </ListGroupRoot>
         ) : (
-          <p className="empty-state">
+          <EmptyState>
             {tab === 'pending'
               ? '공개를 기다리는 글이 없습니다.'
               : '아직 처리한 글이 없습니다.'}
-          </p>
+          </EmptyState>
         )}
-        <p className="publish-panel__note">
+        <S.PublishPanelNote>
           게시하면 학생 화면 학생회 활동에 바로 보입니다. 학생 이름이나 학생을
           알아볼 수 있는 내용이 없는지 확인해주세요.
-        </p>
-      </div>
+        </S.PublishPanelNote>
+      </S.PublishPanel>
     </>
   );
 }

@@ -1,8 +1,11 @@
 import { useId, useState, type FormEvent } from 'react';
-import { Link, useLoaderData, useRevalidator } from 'react-router';
+import { useLoaderData, useRevalidator } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useSession } from '../../app/session.ts';
-import { FilterSelect } from '../../components/intranet/FilterSelect.tsx';
+import {
+  FilterBar,
+  FilterSelect,
+} from '../../components/intranet/FilterSelect.tsx';
 import { Badge, Button, TextButton, Input } from '../../dimi-ui-kit/index.ts';
 import {
   ChoiceGroup,
@@ -11,6 +14,19 @@ import {
   statusTone,
   Tabs,
   TextArea,
+  EmptyState,
+  FieldLabel,
+  FieldRoot,
+  FormActions,
+  ListGroupRoot,
+  ListRowActions,
+  ListRowAside,
+  ListRowExcerpt,
+  ListRowItem,
+  ListRowMain,
+  ListRowMeta,
+  ListRowTitle,
+  TextLink,
 } from '../../components/ui/index.ts';
 import { formatRelative } from '../../lib/date.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
@@ -20,7 +36,7 @@ import { listMembers } from '../members/api.ts';
 import { suggestionCategories } from '../suggestions/types.ts';
 import { listInbox, resolveSuggestion, startReview } from './api.ts';
 import type { InboxResult, InboxSuggestion } from './types.ts';
-import './inbox.css';
+import * as S from './styles.ts';
 import { iconSearch } from '../../dimi-ui-kit/icons';
 
 export async function inboxLoader() {
@@ -110,23 +126,22 @@ function ResolveForm({
   };
 
   return (
-    <form
-      className="inbox-resolve"
+    <S.InboxResolve
       aria-label={`${item.id} 처리`}
       onSubmit={onSubmit}
       noValidate
     >
-      <div className="field">
-        <span className="field__label" id={resultLabelId}>
+      <FieldRoot>
+        <FieldLabel as="span" id={resultLabelId}>
           처리 결과
-        </span>
+        </FieldLabel>
         <ChoiceGroup
           aria-labelledby={resultLabelId}
           value={result}
           onChange={setResult}
           items={results.map((value) => ({ value, label: value }))}
         />
-      </div>
+      </FieldRoot>
       {result === '안건 채택' && (
         <Select
           label="묶을 안건"
@@ -163,7 +178,7 @@ function ResolveForm({
           처리하지 못했습니다. 잠시 후 다시 시도해주세요.
         </Notice>
       )}
-      <div className="form-actions">
+      <FormActions>
         <TextButton onClick={onClose}>취소</TextButton>
         <Button
           type="submit"
@@ -173,8 +188,8 @@ function ResolveForm({
         >
           {result === '반려' ? '반려하기' : '처리 완료'}
         </Button>
-      </div>
-    </form>
+      </FormActions>
+    </S.InboxResolve>
   );
 }
 
@@ -192,10 +207,10 @@ function InboxRow({
   const [resolving, setResolving] = useState(false);
 
   return (
-    <li className="list-row list-row--excerpt">
-      <div className="list-row__main">
-        <h3 className="list-row__title">{item.title}</h3>
-        <div className="list-row__meta">
+    <ListRowItem $excerpt>
+      <ListRowMain>
+        <ListRowTitle>{item.title}</ListRowTitle>
+        <ListRowMeta>
           <span>{item.id}</span>
           <Badge>{item.category}</Badge>
           <span>{item.author ?? '익명'}</span>
@@ -205,35 +220,35 @@ function InboxRow({
               : '배정 전'}
           </span>
           {item.agenda && (
-            <Link className="text-link" to={`/work/agendas/${item.agenda.id}`}>
+            <TextLink to={`/work/agendas/${item.agenda.id}`}>
               {item.agenda.id}
-            </Link>
+            </TextLink>
           )}
-        </div>
-      </div>
-      <div className="list-row__aside">
+        </ListRowMeta>
+      </ListRowMain>
+      <ListRowAside>
         <Badge theme={statusTone.suggestion[item.status]}>{item.status}</Badge>
         <span>{formatRelative(item.updatedAt)}</span>
-      </div>
+      </ListRowAside>
       {item.status === '접수 대기' && (
-        <div className="list-row__actions">
+        <ListRowActions>
           <Button size="small" disabled={busy} onClick={onStart}>
             내가 검토하기
           </Button>
-        </div>
+        </ListRowActions>
       )}
       {item.status === '검토 중' && !resolving && (
-        <div className="list-row__actions">
+        <ListRowActions>
           <Button size="small" onClick={() => setResolving(true)}>
             처리하기
           </Button>
-        </div>
+        </ListRowActions>
       )}
-      <p className="list-row__excerpt">{item.body}</p>
+      <ListRowExcerpt>{item.body}</ListRowExcerpt>
       {item.answer && (
-        <p className="inbox-answer">
+        <S.InboxAnswer>
           <strong>답변</strong> {item.answer}
-        </p>
+        </S.InboxAnswer>
       )}
       {resolving && item.status === '검토 중' && (
         <ResolveForm
@@ -242,7 +257,7 @@ function InboxRow({
           onClose={() => setResolving(false)}
         />
       )}
-    </li>
+    </ListRowItem>
   );
 }
 
@@ -298,13 +313,12 @@ export function InboxPage() {
         ]}
       />
 
-      <div
-        className="inbox-panel"
+      <S.InboxPanel
         role="tabpanel"
         id={`inbox-panel-${tab}`}
         aria-labelledby={`inbox-tab-${tab}`}
       >
-        <div className="filter-bar">
+        <FilterBar>
           <FilterSelect label="분류" value={category} onChange={setCategory}>
             <option value="">전체</option>
             {suggestionCategories.map((item) => (
@@ -313,17 +327,16 @@ export function InboxPage() {
           </FilterSelect>
           <Input
             type="search"
-            containerClassName="filter-bar__search"
             leadingIcon={iconSearch}
             aria-label="건의 찾기"
             placeholder="번호, 제목, 내용으로 찾기"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-        </div>
+        </FilterBar>
 
         {visible.length > 0 ? (
-          <ul className="list-group" aria-label="건의 목록">
+          <ListGroupRoot aria-label="건의 목록">
             {visible.map((item) => (
               <InboxRow
                 key={item.id}
@@ -333,19 +346,19 @@ export function InboxPage() {
                 onStart={() => void onStart(item.id)}
               />
             ))}
-          </ul>
+          </ListGroupRoot>
         ) : (
-          <p className="empty-state">
+          <EmptyState>
             {category || keyword
               ? '조건에 맞는 건의가 없습니다.'
               : emptyText[tab]}
-          </p>
+          </EmptyState>
         )}
-        <p className="inbox-panel__note">
+        <S.InboxPanelNote>
           접수 대기 건의는 3일 안에 맡아주세요. 맡으면 학생 화면에 검토 중으로
           보입니다.
-        </p>
-      </div>
+        </S.InboxPanelNote>
+      </S.InboxPanel>
     </>
   );
 }

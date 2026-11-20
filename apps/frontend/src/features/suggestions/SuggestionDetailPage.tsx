@@ -1,6 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
+import styled from 'styled-components';
 import {
-  Link,
   useLoaderData,
   useRevalidator,
   type LoaderFunctionArgs,
@@ -8,13 +8,25 @@ import {
 import { ChevronLeftIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Steps, type StepItem } from '../../components/intranet/Steps.tsx';
-import { Badge, Button, TextArea } from '../../dimi-ui-kit/index.ts';
+import { Badge, Button, InputBox, TextArea } from '../../dimi-ui-kit/index.ts';
 import {
   Notice,
   PersonAvatar,
   statusTone,
   Switch,
-  buttonLook,
+  BackLink,
+  ButtonLink,
+  CountText,
+  MetaRow,
+  Panel,
+  PanelTitle,
+  PanelBody,
+  SplitLayout,
+  SplitMain,
+  SplitAside,
+  InfoList,
+  TextLink,
+  commentInput,
 } from '../../components/ui/index.ts';
 import {
   formatDateTime,
@@ -23,7 +35,13 @@ import {
 } from '../../lib/date.ts';
 import { addComment, getSuggestion, updateNotify } from './api.ts';
 import type { Suggestion, SuggestionMessage } from './types.ts';
-import './suggestions.css';
+import * as S from './styles.ts';
+
+const CommentBody = styled(PanelBody)`
+  > ${InputBox} {
+    ${commentInput}
+  }
+`;
 
 export async function suggestionLoader({ params }: LoaderFunctionArgs) {
   return getSuggestion(params.suggestionId ?? '');
@@ -66,10 +84,10 @@ function toSteps(suggestion: Suggestion): StepItem[] {
 function Message({ message }: { message: SuggestionMessage }) {
   const mine = message.from === 'me';
   return (
-    <li className="message">
+    <S.Message>
       <PersonAvatar name={mine ? '나' : (message.department ?? '학생회')} />
-      <div className="message__body">
-        <p className="message__head">
+      <S.MessageBody>
+        <S.MessageHead>
           <strong>
             {mine
               ? message.original
@@ -79,15 +97,15 @@ function Message({ message }: { message: SuggestionMessage }) {
           </strong>
           {message.staffName && <span>담당 {message.staffName}</span>}
           <time dateTime={message.at}>{formatDateTime(message.at)}</time>
-        </p>
-        <p className="message__text">{message.body}</p>
+        </S.MessageHead>
+        <S.MessageText>{message.body}</S.MessageText>
         {message.action && (
-          <Link {...buttonLook({ size: 'small' })} to={message.action.to}>
+          <ButtonLink size="small" to={message.action.to}>
             {message.action.label}
-          </Link>
+          </ButtonLink>
         )}
-      </div>
-    </li>
+      </S.MessageBody>
+    </S.Message>
   );
 }
 
@@ -126,16 +144,16 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
 
   return (
     <>
-      <Link className="back-link" to="/suggestions">
+      <BackLink to="/suggestions">
         <ChevronLeftIcon />내 건의
-      </Link>
+      </BackLink>
       <PageHeader
         title={suggestion.title}
         description={
-          <span className="meta-row">
+          <MetaRow>
             <span>{suggestion.id}</span>
             <span>{formatShortDate(suggestion.submittedAt)} 제출</span>
-          </span>
+          </MetaRow>
         }
         actions={
           <Badge theme={statusTone.suggestion[suggestion.status]}>
@@ -144,56 +162,50 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
         }
       />
 
-      <section className="panel panel--padded" aria-label="처리 단계">
+      <Panel $padded aria-label="처리 단계">
         <Steps aria-label="처리 단계" items={toSteps(suggestion)} />
-      </section>
+      </Panel>
 
-      <div className="split-layout">
-        <div className="split-layout__main">
+      <SplitLayout>
+        <SplitMain>
           {agenda && (
-            <section className="linked-agenda" aria-labelledby="agenda-title">
+            <S.LinkedAgenda aria-labelledby="agenda-title">
               <div>
-                <p className="linked-agenda__label">이 건의가 연결된 안건</p>
-                <h2 className="linked-agenda__title" id="agenda-title">
+                <S.LinkedAgendaLabel>이 건의가 연결된 안건</S.LinkedAgendaLabel>
+                <S.LinkedAgendaTitle id="agenda-title">
                   {agenda.title}
-                </h2>
-                <p className="meta-row">
+                </S.LinkedAgendaTitle>
+                <MetaRow as="p">
                   <span>
                     현재 단계: {agenda.stage}
                     {agenda.stageNote && `, ${agenda.stageNote}`}
                   </span>
                   <span>건의 {agenda.suggestionCount}건 연결</span>
-                </p>
+                </MetaRow>
               </div>
-              <Link className="text-link" to={`/activity/${agenda.id}`}>
-                진행 과정 보기
-              </Link>
-            </section>
+              <TextLink to={`/activity/${agenda.id}`}>진행 과정 보기</TextLink>
+            </S.LinkedAgenda>
           )}
 
-          <section className="panel" aria-labelledby="messages-title">
-            <h2
-              className="panel__title panel__title--split"
-              id="messages-title"
-            >
+          <Panel aria-labelledby="messages-title">
+            <PanelTitle $split id="messages-title">
               주고받은 내용
-              <span className="count">{suggestion.messages.length}</span>
-            </h2>
-            <ol className="messages">
+              <CountText>{suggestion.messages.length}</CountText>
+            </PanelTitle>
+            <S.Messages>
               {suggestion.messages.map((message) => (
                 <Message key={message.id} message={message} />
               ))}
-            </ol>
-          </section>
+            </S.Messages>
+          </Panel>
 
-          <form className="panel" onSubmit={onComment}>
-            <h2 className="panel__title">
+          <Panel as="form" onSubmit={onComment}>
+            <PanelTitle>
               <label htmlFor={commentId}>추가 의견</label>
-            </h2>
-            <div className="panel__body">
+            </PanelTitle>
+            <CommentBody>
               <TextArea
                 id={commentId}
-                containerClassName="comment-input"
                 placeholder="덧붙일 내용이 있으면 남겨주세요. 담당자에게 전달됩니다."
                 maxLength={1000}
                 value={comment}
@@ -204,27 +216,25 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
                   보내지 못했습니다. 잠시 후 다시 시도해주세요.
                 </Notice>
               )}
-              <div className="comment-actions">
-                <p className="comment-actions__hint">
+              <S.CommentActions>
+                <S.CommentActionsHint>
                   접수된 건의는 원문을 고칠 수 없어 추가 의견으로 남깁니다.
-                </p>
+                </S.CommentActionsHint>
                 <Button
                   type="submit"
                   disabled={!comment.trim() || sending === 'saving'}
                 >
                   보내기
                 </Button>
-              </div>
-            </div>
-          </form>
-        </div>
+              </S.CommentActions>
+            </CommentBody>
+          </Panel>
+        </SplitMain>
 
-        <aside className="split-layout__aside">
-          <section className="panel" aria-labelledby="info-title">
-            <h2 className="panel__title" id="info-title">
-              건의 정보
-            </h2>
-            <dl className="info-list">
+        <SplitAside>
+          <Panel aria-labelledby="info-title">
+            <PanelTitle id="info-title">건의 정보</PanelTitle>
+            <InfoList>
               <dt>분류</dt>
               <dd>
                 <Badge>{suggestion.category}</Badge>
@@ -235,12 +245,9 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
                 <>
                   <dt>의견 보탠 안건</dt>
                   <dd>
-                    <Link
-                      className="text-link"
-                      to={`/activity/${suggestion.aboutAgenda.id}`}
-                    >
+                    <TextLink to={`/activity/${suggestion.aboutAgenda.id}`}>
                       {suggestion.aboutAgenda.title}
-                    </Link>
+                    </TextLink>
                   </dd>
                 </>
               )}
@@ -250,14 +257,12 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
               <dd>{formatFullDate(suggestion.submittedAt)}</dd>
               <dt>최근 변경</dt>
               <dd>{formatFullDate(suggestion.updatedAt)}</dd>
-            </dl>
-          </section>
+            </InfoList>
+          </Panel>
 
-          <section className="panel" aria-labelledby="notify-title">
-            <h2 className="panel__title" id="notify-title">
-              알림
-            </h2>
-            <div className="panel__body notify-list">
+          <Panel aria-labelledby="notify-title">
+            <PanelTitle id="notify-title">알림</PanelTitle>
+            <S.NotifyList>
               <Switch
                 label="상태가 바뀌면 알림 받기"
                 checked={notify.status}
@@ -274,10 +279,10 @@ function SuggestionDetail({ suggestion }: { suggestion: Suggestion }) {
                   }
                 />
               )}
-            </div>
-          </section>
-        </aside>
-      </div>
+            </S.NotifyList>
+          </Panel>
+        </SplitAside>
+      </SplitLayout>
     </>
   );
 }

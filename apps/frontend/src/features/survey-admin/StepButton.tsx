@@ -1,4 +1,5 @@
 import { ChevronLeftIcon } from '../../app/icons.tsx';
+import { NextIconButton, PlainIconButton } from './styles.ts';
 
 /** 문항·응답을 하나씩 앞뒤로 넘기는 화살표 버튼. 다음 버튼은 같은 아이콘을 뒤집어 쓴다. */
 export function StepButton({
@@ -10,17 +11,11 @@ export function StepButton({
   label: string;
   onClick: () => void;
 }) {
-  const className =
-    direction === 'next' ? 'icon-button result-question__next' : 'icon-button';
+  const Root = direction === 'next' ? NextIconButton : PlainIconButton;
   return (
-    <button
-      type="button"
-      className={className}
-      aria-label={label}
-      onClick={onClick}
-    >
+    <Root type="button" aria-label={label} onClick={onClick}>
       <ChevronLeftIcon />
-    </button>
+    </Root>
   );
 }
 
