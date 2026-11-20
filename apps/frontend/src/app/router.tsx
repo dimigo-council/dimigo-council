@@ -1,88 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
-import {
-  AgendaListPage,
-  agendaListLoader,
-} from '../features/agendas/AgendaListPage.tsx';
-import {
-  AgendaWorkPage,
-  agendaWorkLoader,
-} from '../features/agendas/AgendaWorkPage.tsx';
-import {
-  ActivityListPage,
-  activityListLoader,
-} from '../features/activity/ActivityListPage.tsx';
-import {
-  AgendaDetailPage,
-  agendaLoader,
-} from '../features/activity/AgendaDetailPage.tsx';
-import { InboxPage, inboxLoader } from '../features/inbox/InboxPage.tsx';
-import {
-  MemberListPage,
-  memberListLoader,
-} from '../features/members/MemberListPage.tsx';
-import {
-  PublishReviewPage,
-  publishLoader,
-} from '../features/publish/PublishReviewPage.tsx';
-import {
-  NewReportPage,
-  newReportLoader,
-} from '../features/reports/NewReportPage.tsx';
-import {
-  ReportDetailPage,
-  reportLoader,
-} from '../features/reports/ReportDetailPage.tsx';
-import {
-  ReportListPage,
-  reportListLoader,
-} from '../features/reports/ReportListPage.tsx';
-import {
-  SurveyAdminListPage,
-  surveyAdminListLoader,
-} from '../features/survey-admin/SurveyAdminListPage.tsx';
-import {
-  SurveyEditPage,
-  surveyEditLoader,
-} from '../features/survey-admin/SurveyEditPage.tsx';
-import { SurveyResultsQuestionPage } from '../features/survey-admin/SurveyResultsQuestionPage.tsx';
-import { SurveyResultsResponsePage } from '../features/survey-admin/SurveyResultsResponsePage.tsx';
-import {
-  SurveyResultsLayout,
-  surveyResultsLoader,
-} from '../features/survey-admin/SurveyResultsLayout.tsx';
-import { SurveyResultsSummaryPage } from '../features/survey-admin/SurveyResultsSummaryPage.tsx';
-import {
-  SurveyListPage,
-  surveyListLoader,
-} from '../features/surveys/SurveyListPage.tsx';
-import {
-  SurveyResponsePage,
-  surveyLoader,
-} from '../features/surveys/SurveyResponsePage.tsx';
-import {
-  NewSuggestionPage,
-  newSuggestionLoader,
-} from '../features/suggestions/NewSuggestionPage.tsx';
-import {
-  SuggestionDetailPage,
-  suggestionLoader,
-} from '../features/suggestions/SuggestionDetailPage.tsx';
-import {
-  SuggestionListPage,
-  suggestionListLoader,
-} from '../features/suggestions/SuggestionListPage.tsx';
-import {
-  TaskDetailPage,
-  taskLoader,
-} from '../features/tasks/TaskDetailPage.tsx';
-import {
-  TaskListPage,
-  taskListLoader,
-} from '../features/tasks/TaskListPage.tsx';
-import { HomePage } from '../pages/HomePage.tsx';
-import { NotFoundPage } from '../pages/NotFoundPage.tsx';
-import { PlaceholderPage } from '../pages/PlaceholderPage.tsx';
 import { RouteErrorPage } from '../pages/RouteErrorPage.tsx';
 import { StandaloneMain } from './shell.ts';
 import { StudentLayout } from './StudentLayout.tsx';
@@ -107,14 +24,26 @@ if (import.meta.env.DEV) {
 }
 
 export const router = createBrowserRouter([
-  { index: true, element: <HomePage /> },
+  {
+    index: true,
+    HydrateFallback: () => null,
+    lazy: async () => ({
+      Component: (await import('../pages/HomePage.tsx')).HomePage,
+    }),
+  },
   {
     path: 'login',
-    element: (
-      <StandaloneMain>
-        <PlaceholderPage title="로그인" design="로그인 · login" />
-      </StandaloneMain>
-    ),
+    HydrateFallback: () => null,
+    lazy: async () => {
+      const { PlaceholderPage } = await import('../pages/PlaceholderPage.tsx');
+      return {
+        element: (
+          <StandaloneMain>
+            <PlaceholderPage title="로그인" design="로그인 · login" />
+          </StandaloneMain>
+        ),
+      };
+    },
   },
   {
     element: <StudentLayout />,
@@ -125,38 +54,76 @@ export const router = createBrowserRouter([
         children: [
           {
             path: 'surveys',
-            loader: surveyListLoader,
-            element: <SurveyListPage />,
+            lazy: async () => {
+              const m = await import('../features/surveys/SurveyListPage.tsx');
+              return {
+                Component: m.SurveyListPage,
+                loader: m.surveyListLoader,
+              };
+            },
           },
           {
             path: 'surveys/:surveyId',
-            loader: surveyLoader,
-            element: <SurveyResponsePage />,
+            lazy: async () => {
+              const m =
+                await import('../features/surveys/SurveyResponsePage.tsx');
+              return {
+                Component: m.SurveyResponsePage,
+                loader: m.surveyLoader,
+              };
+            },
           },
           {
             path: 'suggestions',
-            loader: suggestionListLoader,
-            element: <SuggestionListPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/suggestions/SuggestionListPage.tsx');
+              return {
+                Component: m.SuggestionListPage,
+                loader: m.suggestionListLoader,
+              };
+            },
           },
           {
             path: 'suggestions/new',
-            loader: newSuggestionLoader,
-            element: <NewSuggestionPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/suggestions/NewSuggestionPage.tsx');
+              return {
+                Component: m.NewSuggestionPage,
+                loader: m.newSuggestionLoader,
+              };
+            },
           },
           {
             path: 'suggestions/:suggestionId',
-            loader: suggestionLoader,
-            element: <SuggestionDetailPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/suggestions/SuggestionDetailPage.tsx');
+              return {
+                Component: m.SuggestionDetailPage,
+                loader: m.suggestionLoader,
+              };
+            },
           },
           {
             path: 'activity',
-            loader: activityListLoader,
-            element: <ActivityListPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/activity/ActivityListPage.tsx');
+              return {
+                Component: m.ActivityListPage,
+                loader: m.activityListLoader,
+              };
+            },
           },
           {
             path: 'activity/:agendaId',
-            loader: agendaLoader,
-            element: <AgendaDetailPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/activity/AgendaDetailPage.tsx');
+              return { Component: m.AgendaDetailPage, loader: m.agendaLoader };
+            },
           },
         ],
       },
@@ -174,78 +141,159 @@ export const router = createBrowserRouter([
         children: [
           {
             path: 'tasks',
-            loader: taskListLoader,
-            element: <TaskListPage />,
+            lazy: async () => {
+              const m = await import('../features/tasks/TaskListPage.tsx');
+              return { Component: m.TaskListPage, loader: m.taskListLoader };
+            },
           },
           {
             path: 'tasks/:taskId',
-            loader: taskLoader,
-            element: <TaskDetailPage />,
+            lazy: async () => {
+              const m = await import('../features/tasks/TaskDetailPage.tsx');
+              return { Component: m.TaskDetailPage, loader: m.taskLoader };
+            },
           },
           {
             path: 'agendas',
-            loader: agendaListLoader,
-            element: <AgendaListPage />,
+            lazy: async () => {
+              const m = await import('../features/agendas/AgendaListPage.tsx');
+              return {
+                Component: m.AgendaListPage,
+                loader: m.agendaListLoader,
+              };
+            },
           },
           {
             path: 'agendas/:agendaId',
-            loader: agendaWorkLoader,
-            element: <AgendaWorkPage />,
+            lazy: async () => {
+              const m = await import('../features/agendas/AgendaWorkPage.tsx');
+              return {
+                Component: m.AgendaWorkPage,
+                loader: m.agendaWorkLoader,
+              };
+            },
           },
           {
             path: 'suggestions',
-            loader: inboxLoader,
-            element: <InboxPage />,
+            lazy: async () => {
+              const m = await import('../features/inbox/InboxPage.tsx');
+              return { Component: m.InboxPage, loader: m.inboxLoader };
+            },
           },
           {
             path: 'surveys',
-            loader: surveyAdminListLoader,
-            element: <SurveyAdminListPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/survey-admin/SurveyAdminListPage.tsx');
+              return {
+                Component: m.SurveyAdminListPage,
+                loader: m.surveyAdminListLoader,
+              };
+            },
           },
           {
             path: 'surveys/:surveyId/edit',
-            loader: surveyEditLoader,
-            element: <SurveyEditPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/survey-admin/SurveyEditPage.tsx');
+              return {
+                Component: m.SurveyEditPage,
+                loader: m.surveyEditLoader,
+              };
+            },
           },
           {
             path: 'surveys/:surveyId/results',
-            loader: surveyResultsLoader,
-            element: <SurveyResultsLayout />,
+            lazy: async () => {
+              const m =
+                await import('../features/survey-admin/SurveyResultsLayout.tsx');
+              return {
+                Component: m.SurveyResultsLayout,
+                loader: m.surveyResultsLoader,
+              };
+            },
             children: [
-              { index: true, element: <SurveyResultsSummaryPage /> },
-              { path: 'questions', element: <SurveyResultsQuestionPage /> },
-              { path: 'responses', element: <SurveyResultsResponsePage /> },
+              {
+                index: true,
+                lazy: async () => ({
+                  Component: (
+                    await import('../features/survey-admin/SurveyResultsSummaryPage.tsx')
+                  ).SurveyResultsSummaryPage,
+                }),
+              },
+              {
+                path: 'questions',
+                lazy: async () => ({
+                  Component: (
+                    await import('../features/survey-admin/SurveyResultsQuestionPage.tsx')
+                  ).SurveyResultsQuestionPage,
+                }),
+              },
+              {
+                path: 'responses',
+                lazy: async () => ({
+                  Component: (
+                    await import('../features/survey-admin/SurveyResultsResponsePage.tsx')
+                  ).SurveyResultsResponsePage,
+                }),
+              },
             ],
           },
           {
             path: 'reports',
-            loader: reportListLoader,
-            element: <ReportListPage />,
+            lazy: async () => {
+              const m = await import('../features/reports/ReportListPage.tsx');
+              return {
+                Component: m.ReportListPage,
+                loader: m.reportListLoader,
+              };
+            },
           },
           {
             path: 'reports/new',
-            loader: newReportLoader,
-            element: <NewReportPage />,
+            lazy: async () => {
+              const m = await import('../features/reports/NewReportPage.tsx');
+              return { Component: m.NewReportPage, loader: m.newReportLoader };
+            },
           },
           {
             path: 'reports/:reportId',
-            loader: reportLoader,
-            element: <ReportDetailPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/reports/ReportDetailPage.tsx');
+              return { Component: m.ReportDetailPage, loader: m.reportLoader };
+            },
           },
           {
             path: 'publish',
-            loader: publishLoader,
-            element: <PublishReviewPage />,
+            lazy: async () => {
+              const m =
+                await import('../features/publish/PublishReviewPage.tsx');
+              return {
+                Component: m.PublishReviewPage,
+                loader: m.publishLoader,
+              };
+            },
           },
           {
             path: 'members',
-            loader: memberListLoader,
-            element: <MemberListPage />,
+            lazy: async () => {
+              const m = await import('../features/members/MemberListPage.tsx');
+              return {
+                Component: m.MemberListPage,
+                loader: m.memberListLoader,
+              };
+            },
           },
         ],
       },
     ],
   },
   ...devRoutes,
-  { path: '*', element: <NotFoundPage /> },
+  {
+    path: '*',
+    lazy: async () => ({
+      Component: (await import('../pages/NotFoundPage.tsx')).NotFoundPage,
+    }),
+  },
 ]);
