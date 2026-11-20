@@ -89,6 +89,7 @@ If a rule and the kit disagree, the kit wins. Fix the rule, or add what's missin
   | Appearance | No fill, stroke or effect. Radius 0. Clip content off |
 
 - Body children are fixed **1200** wide frames, centered by the Body's auto layout, so the side margins come from centering and don't need a padding token.
+  - Exception: auth screens (로그인, 회원가입) use a centered **440** wide card as the Body child instead of a 1200 frame.
 - Name frames `Area / Page / State`, e.g. `학생 / 공지 목록 / Empty`.
 
 ---
