@@ -11,7 +11,7 @@ If a rule and the kit disagree, the kit wins. Fix the rule, or add what's missin
 - If no token fits, don't pick a value "close enough". Add a token to the kit, or change the design to use one that exists.
 - Exception: canvas positions (x/y of screens and sections) can't be bound. Use the fixed numbers in §3.
 
-**Spacing scale:** `2 · 6 · 8 · 12 · 16 · 20 · 24 · 28 · 32 · 36 · 40 · 48 · 64 · 72`
+**Spacing scale:** `2 · 6 · 8 · 12 · 16 · 20 · 24 · 28 · 32 · 36 · 40 · 48 · 64 · 72 · 80`
 **Radius scale:** `4 · 6 · 8 · 12 · 14` (10 is a placeholder, don't use it)
 
 ---
@@ -55,8 +55,10 @@ If a rule and the kit disagree, the kit wins. Fix the rule, or add what's missin
 ### Organization
 
 - Page `PC` holds all desktop screens.
-- One **Section per audience**: `학생회` and `학생`. Never mix council and student screens.
-- Inside a section, one **row per flow** (e.g. 공지 목록 → 공지 상세 → 공지 작성).
+- One **Section per audience**: `공통` (landing, sign-in, sign-up, terms), `학생회` and `학생`. Never mix council and student screens.
+- Inside an audience section, each **feature is its own sub-section**, named after the feature (e.g. `활동`, `설문`, `질문과 건의`). Sub-sections are stacked top to bottom.
+- Inside a feature sub-section, the flow runs left to right (e.g. 공지 목록 → 공지 상세 → 공지 작성). State screens stack below their main screen.
+- Never put loose text (labels, notes) directly in a section or sub-section. The sub-section name is the label.
 
 ### Spacing between things on the canvas
 
@@ -64,18 +66,29 @@ If a rule and the kit disagree, the kit wins. Fix the rule, or add what's missin
 |---|---|
 | Screens in the same flow (horizontal) | **120** |
 | States/variants of the same screen (stacked below it: empty, error, loading, modal open) | **80** |
-| Flow rows inside a section (vertical) | **240** |
-| Section edge and the first/last screen (section padding) | **160** |
-| Sections | **400** |
+| Feature sub-section edge and its screens (sub-section padding) | **160** |
+| Feature sub-sections inside an audience section (vertical) | **240** |
+| Audience section edge and its sub-sections (section padding) | **160** |
+| Audience sections (vertical, all at x 0) | **400** |
 
-- Align screens in a row by **top edge**. Align rows by **left edge**.
-- Every x/y on the canvas is a whole number on the 8 grid.
-- Flow labels or annotations go **above** the row, 40 from the screens, using `Headline/Strong`. Nothing goes between screens.
+- Align screens in a row by **top edge**. Align sub-sections by **left edge**.
+- Every sub-section in an audience section has the **same width** (the widest one's).
+- Every x/y and section size on the canvas is a whole number on the 8 grid. When stacking, round screen heights up to a multiple of 8.
 
 ### Screen frames
 
 - PC screen width **1440**. Height **hugs content** with a min height of **900** (one viewport).
-- Content column is a fixed **1200** wide frame, centered in the screen's vertical auto layout, so the side margins come from centering and don't need a padding token.
+- Every screen is `TopNav` + `Body` + `Footer`. Every `Body` has the same settings:
+
+  | Property | Value |
+  |---|---|
+  | Auto layout | Vertical, top / center, no wrap |
+  | Padding | Top **40** (`Spacing/800`), bottom **80** (`Spacing/1000`), left/right 0 |
+  | Gap | **24** (`Spacing/550`) |
+  | Sizing | Fill width, hug height, min height **828** (900 − 72 TopNav) |
+  | Appearance | No fill, stroke or effect. Radius 0. Clip content off |
+
+- Body children are fixed **1200** wide frames, centered by the Body's auto layout, so the side margins come from centering and don't need a padding token.
 - Name frames `Area / Page / State`, e.g. `학생 / 공지 목록 / Empty`.
 
 ---
@@ -90,9 +103,10 @@ Pick the gap by **what it separates**, not by what looks right. Closer relations
 | Related items in a group (form fields, list items, buttons in a bar) | 8–16 |
 | Groups inside a section (field groups, card grids) | 20–32 |
 | Sections of a page (header ↔ content ↔ footer areas) | 40–48 |
-| Page-level (TopNav ↔ page title, page edges) | 64–72 |
+| Page-level (TopNav ↔ page title, page edges) | Fixed by `Body` (§3): 40 top, 80 bottom, 24 between Body children |
 
 - One flat gap across related **and** unrelated items is wrong. Nest related items in their own frame with a smaller gap.
+  - Exception: the Body's direct children (breadcrumb, page heading, content) all use the Body's 24 gap. Don't change the Body to separate them. Change spacing inside the children instead.
 - Padding ≥ the gap between its children. A card whose children are 16 apart has at least 16 padding.
 - Card/panel padding is symmetric: same left/right, same top/bottom.
 
