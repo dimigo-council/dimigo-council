@@ -1,5 +1,5 @@
 import type { statusTone } from '../../components/ui/index.ts';
-import type { Answers, Survey } from '../surveys/types.ts';
+import type { Survey } from '../surveys/types.ts';
 
 /** 작성 중 → 예약(공개일을 기다림) → 공개. 공개된 설문의 진행 중·마감은 마감일로 정해진다. */
 export type SurveyStage = 'draft' | 'scheduled' | 'published';
@@ -22,22 +22,6 @@ export interface AdminSurvey extends Omit<Survey, 'closesAt' | 'activity'> {
   savedAt: string;
   /** 부서장에게 검토를 요청했는지 */
   reviewRequested: boolean;
-}
-
-/** 학생 한 명이 제출한 응답 (결과 내보내기 CSV의 한 줄) */
-export interface SurveyResponse {
-  id: string;
-  /** 제출 순서. 1부터 */
-  number: number;
-  submittedAt: string;
-  /** 설문을 열고 제출하기까지 걸린 시간. 모르면 비어 있다. */
-  durationSeconds?: number;
-  /** 학년·반을 수집하는 설문에서만 있다. 이름은 어떤 설문도 수집하지 않는다. */
-  grade?: number;
-  classNumber?: number;
-  answers: Answers;
-  /** 분석에서 뺀 응답. 응답 자체는 남는다. */
-  excluded: boolean;
 }
 
 /** 문항별 결과 (서버가 분석에서 뺀 응답을 빼고 계산한다) */

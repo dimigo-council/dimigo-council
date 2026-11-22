@@ -1,15 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { useLoaderData, type LoaderFunctionArgs } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
-import { Button, TextButton } from '../../dimi-ui-kit/index.ts';
-import { Breadcrumbs, ButtonLink, Notice } from '../../components/ui/index.ts';
-import { errorMessage } from '../../lib/api.ts';
+import { TextButton } from '../../dimi-ui-kit/index.ts';
+import { Breadcrumbs, ButtonLink } from '../../components/ui/index.ts';
 import { formatShortDate } from '../../lib/date.ts';
 import { activityNo } from '../activities/format.ts';
-import { getSurveyResults, listResponsesForExport } from './api.ts';
+import { getSurveyResults } from './api.ts';
 import { questionTypeLabel } from './format.ts';
-import { formatRatio, responsesCsv } from './results.ts';
-import type { AdminSurvey, QuestionResult } from './types.ts';
+import { formatRatio } from './results.ts';
+import type { QuestionResult } from './types.ts';
 import * as S from './styles.ts';
 
 export async function surveyResultsLoader({ params }: LoaderFunctionArgs) {
@@ -18,19 +17,6 @@ export async function surveyResultsLoader({ params }: LoaderFunctionArgs) {
 
 /** 단답형·장문형은 처음에 이만큼만 보여주고 "더보기"로 늘린다. */
 const TEXT_PAGE = 3;
-
-async function downloadCsv(survey: AdminSurvey) {
-  const responses = await listResponsesForExport(survey.id);
-  const blob = new Blob([responsesCsv(survey, responses)], {
-    type: 'text/csv;charset=utf-8',
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${survey.title} 응답.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 function periodText(opensAt?: string, closesAt?: string) {
   if (!opensAt || !closesAt) return '응답 기간 미정';
@@ -46,20 +32,6 @@ function remainingText(daysLeft: number | null, closedAt?: string) {
 export function SurveyResultsPage() {
   const results = useLoaderData<typeof surveyResultsLoader>();
   const { survey } = results;
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState('');
-
-  const onExport = async () => {
-    setExporting(true);
-    setExportError('');
-    try {
-      await downloadCsv(survey);
-    } catch (caught) {
-      setExportError(errorMessage(caught, '결과를 내보내지 못했어요.'));
-    } finally {
-      setExporting(false);
-    }
-  };
 
   return (
     <>
@@ -97,15 +69,7 @@ export function SurveyResultsPage() {
         />
       ))}
 
-      {exportError && (
-        <Notice tone="warn" role="alert">
-          {exportError}
-        </Notice>
-      )}
       <S.PageActions>
-        <Button disabled={exporting} onClick={() => void onExport()}>
-          결과 내보내기
-        </Button>
         {survey.activity && (
           <ButtonLink
             theme="accent"

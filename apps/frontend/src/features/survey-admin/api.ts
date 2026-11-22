@@ -1,4 +1,4 @@
-import { api, listAll, notFoundAs } from '../../lib/api.ts';
+import { api, notFoundAs } from '../../lib/api.ts';
 import { numericId } from '../activities/api.ts';
 import { fetchSurvey, type SurveyResponseBody } from '../surveys/api.ts';
 import type { Question } from '../surveys/types.ts';
@@ -6,7 +6,6 @@ import type {
   AdminSurvey,
   QuestionResult,
   SurveyDraft,
-  SurveyResponse,
   SurveyResults,
 } from './types.ts';
 
@@ -135,35 +134,4 @@ export async function getSurveyResults(id: string): Promise<SurveyResults> {
     daysLeft: results.daysLeft,
     questions: results.questions,
   };
-}
-
-interface ResponseRow {
-  id: string;
-  submittedAt: string;
-  durationSeconds: number | null;
-  grade: number | null;
-  classNumber: number | null;
-  answers: SurveyResponse['answers'];
-  excluded: boolean;
-}
-
-/** 결과 내보내기(CSV)용 응답 전체. 제출 순서대로. */
-export async function listResponsesForExport(
-  id: string,
-): Promise<SurveyResponse[]> {
-  const rows = await listAll<ResponseRow>(
-    `/surveys/${numericId(id)}/responses`,
-  );
-  return rows.map((row, index) => ({
-    id: row.id,
-    number: index + 1,
-    submittedAt: row.submittedAt,
-    ...(row.durationSeconds != null && {
-      durationSeconds: row.durationSeconds,
-    }),
-    ...(row.grade != null && { grade: row.grade }),
-    ...(row.classNumber != null && { classNumber: row.classNumber }),
-    answers: row.answers,
-    excluded: row.excluded,
-  }));
 }

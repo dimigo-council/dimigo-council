@@ -8,6 +8,7 @@ COPY apps/frontend/package.json apps/frontend/package.json
 RUN npm ci --workspace @dimigo-council/frontend --include-workspace-root=false
 
 COPY apps/frontend apps/frontend
+ARG VITE_API_BASE_URL=/api
 RUN npm --workspace @dimigo-council/frontend run build
 
 FROM nginx:stable-alpine AS runtime

@@ -12,6 +12,7 @@ Run `npm install` from the repository root. Copy `.env.template` to `.env` in th
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: the Google OAuth web client for school sign-in.
 - `GOOGLE_SIGNUP_REDIRECT_URI` and `GOOGLE_LOGIN_REDIRECT_URI`: frontend callback URLs; register both exact URLs as authorized redirect URIs for that Google client. For local development, use the `http://localhost:5173` values in `.env.template`.
 - `GMAIL_SMTP_USER` and `GMAIL_APP_PASSWORD`: the sending Google account address and its app password. The server connects to `smtp.gmail.com` on port 465 using TLS.
+- `FRONTEND_ORIGIN`: the frontend's public origin (for example, `https://app.example.com`) when it calls the API on a different origin. This enables credentialed CORS for that exact origin. Leave it empty when using a same-origin reverse proxy.
 
 Run `sh apps/backend/scripts/generate-secrets.sh` from the repository root to generate independent values for `ACCESS_TOKEN_SECRET` and `EMAIL_CODE_SECRET`, then paste them into `apps/backend/.env`.
 
@@ -44,7 +45,7 @@ New users must complete onboarding before using other protected routes. The data
 
 After onboarding, use the `accessToken` in the response for subsequent requests. The original access token still contains the pending user snapshot.
 
-The API does not enable CORS. Browser clients should reach it through the same origin, such as a reverse proxy. The refresh cookie is Secure and requires HTTPS outside localhost.
+The API enables credentialed CORS only for `FRONTEND_ORIGIN` when it is set. The refresh cookie is Secure and requires HTTPS outside localhost. Its SameSite=Lax setting supports HTTPS subdomains of the same site; a frontend on a different site needs a different cookie policy.
 
 ## Feature APIs
 
