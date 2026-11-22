@@ -10,8 +10,9 @@ If a rule and the kit disagree, the kit wins. Fix the rule, or add what's missin
 - Every spacing, radius, color and text value is bound to a kit variable or style. **No typed numbers** inside a screen.
 - If no token fits, don't pick a value "close enough". Add a token to the kit, or change the design to use one that exists.
 - Exception: canvas positions (x/y of screens and sections) can't be bound. Use the fixed numbers in §3.
+- Exception: stroke weight stays a typed number (1 or 2, see §2). The kit has no stroke-weight token.
 
-**Spacing scale:** `2 · 6 · 8 · 12 · 16 · 20 · 24 · 28 · 32 · 36 · 40 · 48 · 64 · 72 · 80`
+**Spacing scale** (kit `Spacing/*`; 4 = `Spacing/100`): `2 · 4 · 6 · 8 · 12 · 16 · 20 · 24 · 28 · 32 · 36 · 40 · 48 · 64 · 72 · 80`
 **Radius scale:** `4 · 6 · 8 · 12 · 14` (10 is a placeholder, don't use it)
 
 ---
@@ -45,6 +46,7 @@ If a rule and the kit disagree, the kit wins. Fix the rule, or add what's missin
 ### Dividers
 
 - To separate rows, put a **single-side Inside stroke** on the row (bottom only, using per-side weights) or use the kit Divider. Don't draw separate rectangles or lines.
+  - Exception: timeline rails and stepper connectors may be rectangles. They connect items, they don't separate them.
 - Never stack two borders: two bordered cards with gap 0 produce a 2px seam. Use one container border plus internal dividers instead.
 - The last row in a bordered container has no bottom divider. The container border already closes it.
 
@@ -90,6 +92,7 @@ If a rule and the kit disagree, the kit wins. Fix the rule, or add what's missin
 
 - Body children are fixed **1200** wide frames, centered by the Body's auto layout, so the side margins come from centering and don't need a padding token.
   - Exception: auth screens (로그인, 회원가입) use a centered **440** wide card as the Body child instead of a 1200 frame.
+  - Exception: 약관 pages (이용약관, 개인정보처리방침) use a centered **800** wide reading column as the Body child.
 - Name frames `Area / Page / State`, e.g. `학생 / 공지 목록 / Empty`.
 
 ---
@@ -109,6 +112,7 @@ Pick the gap by **what it separates**, not by what looks right. Closer relations
 - One flat gap across related **and** unrelated items is wrong. Nest related items in their own frame with a smaller gap.
   - Exception: the Body's direct children (breadcrumb, page heading, content) all use the Body's 24 gap. Don't change the Body to separate them. Change spacing inside the children instead.
 - Padding ≥ the gap between its children. A card whose children are 16 apart has at least 16 padding.
+  - Exception: rows inside a list may have padding smaller than the list's gap.
 - Card/panel padding is symmetric: same left/right, same top/bottom.
 
 ---
@@ -146,6 +150,8 @@ Pick the gap by **what it separates**, not by what looks right. Closer relations
 - One `Title` per screen (the page title). `Headline` for section headings. `Body` for content. `Footnote`/`Caption` for meta (dates, counts, helper text).
 - Hierarchy comes from **Strong / Regular / Weak**, not from extra sizes or colors.
 - Text color: `g1` primary, `g2` secondary, `g3` tertiary/disabled. Don't use the accent color for plain text.
+  - Exception: the newest date on 활동/업무 timelines may use `accent`.
+  - Required-field asterisks (`*`) use `neg`.
 - Long text uses `Paragraph/*`, not `Body/*`.
 
 ---
