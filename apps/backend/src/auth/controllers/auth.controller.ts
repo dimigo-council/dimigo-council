@@ -123,9 +123,7 @@ export class AuthController {
     request: Request,
     response: Response,
   ) {
-    const state = parseCookie(request.headers.cookie ?? '')[
-      'oauth_state'
-    ];
+    const state = parseCookie(request.headers.cookie ?? '')['oauth_state'];
     response.clearCookie('oauth_state', OAUTH_STATE_COOKIE_OPTIONS);
     const callbackUrl = new URL(
       this.config.getOrThrow<string>(

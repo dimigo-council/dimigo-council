@@ -1,4 +1,5 @@
 export * from './schema.ts';
+export * from './values.ts';
 
 import type { users } from './schema.ts';
 

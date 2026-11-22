@@ -33,14 +33,20 @@ function context(authorization?: string): ExecutionContext {
   } as unknown as ExecutionContext;
 }
 
-function reflector(adminOnly = false, allowPending = false): Reflector {
+function reflector(
+  adminOnly = false,
+  allowPending = false,
+  studentCouncilOnly = false,
+): Reflector {
   return {
     getAllAndOverride: vi.fn((key: string) =>
       key === 'adminOnly'
         ? adminOnly
         : key === 'allowPending'
           ? allowPending
-          : false,
+          : key === 'studentCouncilOnly'
+            ? studentCouncilOnly
+            : false,
     ),
   } as unknown as Reflector;
 }
@@ -123,6 +129,24 @@ describe('SessionGuard', () => {
       new SessionGuard(reflector(true), config()).canActivate(
         context(
           `Bearer ${await tokenFor({ ...user, permissions: Permission.isAdmin })}`,
+        ),
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it('checks the student council permission bit', async () => {
+    const councilOnly = reflector(false, false, true);
+    await expect(
+      new SessionGuard(councilOnly, config()).canActivate(
+        context(
+          `Bearer ${await tokenFor({ ...user, permissions: Permission.isAdmin })}`,
+        ),
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      new SessionGuard(councilOnly, config()).canActivate(
+        context(
+          `Bearer ${await tokenFor({ ...user, permissions: Permission.isStudentCouncil })}`,
         ),
       ),
     ).resolves.toBe(true);

@@ -30,6 +30,8 @@ const authUserClaim = z.object({
 
 export const Public = () => SetMetadata('public', true);
 export const AdminOnly = () => SetMetadata('adminOnly', true);
+/** Requires the isStudentCouncil bit. The admin bit alone does not pass. */
+export const StudentCouncilOnly = () => SetMetadata('studentCouncilOnly', true);
 export const AllowPending = () => SetMetadata('allowPending', true);
 export type AuthSession = { user: AuthUser; sessionId: string };
 export type AuthenticatedRequest = Request & { authSession: AuthSession };
@@ -103,6 +105,14 @@ export class SessionGuard implements CanActivate {
         context.getClass(),
       ]) &&
       (session.user.permissions & Permission.isAdmin) === 0
+    )
+      throw new ForbiddenException();
+    if (
+      this.reflector.getAllAndOverride<boolean>('studentCouncilOnly', [
+        context.getHandler(),
+        context.getClass(),
+      ]) &&
+      (session.user.permissions & Permission.isStudentCouncil) === 0
     )
       throw new ForbiddenException();
     if (
