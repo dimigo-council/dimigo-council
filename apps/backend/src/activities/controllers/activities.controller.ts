@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Put,
@@ -14,6 +13,7 @@ import {
   Req,
   StandardSchemaValidationPipe,
 } from '@nestjs/common';
+import { ParseRowIdPipe } from '#/common/ids';
 import {
   Public,
   StudentCouncilOnly,
@@ -94,7 +94,7 @@ export class ActivitiesController {
   @Get('/:id')
   get(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.activities.get(request.authSession.user, id);
   }
@@ -117,7 +117,7 @@ export class ActivitiesController {
   @Patch('/:id')
   update(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: updateActivityDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -131,7 +131,7 @@ export class ActivitiesController {
   @Patch('/:id/scope')
   setScope(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: activityScopeDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -144,7 +144,7 @@ export class ActivitiesController {
   @StudentCouncilOnly()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('/:id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async remove(@Param('id', ParseRowIdPipe) id: number): Promise<void> {
     await this.activities.remove(id);
   }
 
@@ -152,7 +152,7 @@ export class ActivitiesController {
   @Post('/:id/history')
   addHistory(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({ schema: historyDtoSchema, pipes: [StandardSchemaValidationPipe] })
     body: HistoryDto,
   ) {
@@ -163,8 +163,8 @@ export class ActivitiesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('/:id/history/:historyId')
   async deleteHistory(
-    @Param('id', ParseIntPipe) id: number,
-    @Param('historyId', ParseIntPipe) historyId: number,
+    @Param('id', ParseRowIdPipe) id: number,
+    @Param('historyId', ParseRowIdPipe) historyId: number,
   ): Promise<void> {
     await this.activities.deleteHistory(id, historyId);
   }

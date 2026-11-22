@@ -6,11 +6,11 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   StandardSchemaValidationPipe,
 } from '@nestjs/common';
+import { ParseRowIdPipe } from '#/common/ids';
 import { AdminOnly } from '#/auth/session.guard';
 import { departmentDtoSchema, type DepartmentDto } from '../dto/members.dto.ts';
 import { DepartmentsService } from '../providers/departments.service.ts';
@@ -40,7 +40,7 @@ export class DepartmentsController {
   @AdminOnly()
   @Patch('/:id')
   rename(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: departmentDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -53,7 +53,7 @@ export class DepartmentsController {
   @AdminOnly()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('/:id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async remove(@Param('id', ParseRowIdPipe) id: number): Promise<void> {
     await this.departments.remove(id);
   }
 }

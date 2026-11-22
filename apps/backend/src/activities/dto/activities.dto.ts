@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { queryRowId, rowId } from '#/common/ids';
 import { paginationQuerySchema, queryBoolean } from '#/common/pagination';
 import {
   activityHistoryKinds,
@@ -45,7 +46,7 @@ export const activityPlanSchema = z.object({
 export const activityListQuerySchema = paginationQuerySchema.extend({
   status: z.enum(activityStatuses).optional(),
   scope: z.enum(activityScopes).optional(),
-  departmentId: z.coerce.number().int().positive().optional(),
+  departmentId: queryRowId.optional(),
   /** LND-03, HOM-02: home and landing lists leave out 보류 activities. */
   hideOnHold: queryBoolean.optional(),
   search: z.string().trim().min(1).max(80).optional(),
@@ -62,12 +63,12 @@ export const createActivityDtoSchema = z.object({
   description: description.default(''),
   scope: z.enum(activityScopes),
   status: z.enum(activityStatuses).default('검토 중'),
-  departmentId: z.number().int().positive().nullable().optional(),
+  departmentId: rowId.nullable().optional(),
   /** 담당자. Defaults to the creator. */
   ownerId: z.uuid().nullable().optional(),
   /** 첫 추진 기록 */
   firstRecord: z.string().trim().max(200).optional(),
-  inquiryIds: z.array(z.number().int().positive()).max(50).default([]),
+  inquiryIds: z.array(rowId).max(50).default([]),
   plan: activityPlanSchema.nullable().optional(),
 });
 export type CreateActivityDto = z.infer<typeof createActivityDtoSchema>;
@@ -77,7 +78,7 @@ export const updateActivityDtoSchema = z
     title,
     description,
     status: z.enum(activityStatuses),
-    departmentId: z.number().int().positive().nullable(),
+    departmentId: rowId.nullable(),
     ownerId: z.uuid().nullable(),
     plan: activityPlanSchema.nullable(),
   })

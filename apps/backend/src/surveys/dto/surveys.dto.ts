@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { rowId } from '#/common/ids';
 import { paginationQuerySchema } from '#/common/pagination';
 
 const questionBase = {
@@ -40,8 +41,8 @@ export const surveyDraftDtoSchema = z
   .object({
     title: z.string().trim().max(200),
     intro: z.string().trim().max(3000),
-    activityId: z.number().int().positive().nullable(),
-    departmentId: z.number().int().positive().nullable(),
+    activityId: rowId.nullable(),
+    departmentId: rowId.nullable(),
     /** 응답 학년 */
     grades: z
       .array(grade)

@@ -6,13 +6,13 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
   Req,
   StandardSchemaValidationPipe,
 } from '@nestjs/common';
+import { ParseRowIdPipe } from '#/common/ids';
 import {
   StudentCouncilOnly,
   type AuthenticatedRequest,
@@ -48,7 +48,7 @@ export class TasksController {
   }
 
   @Get('/:id')
-  get(@Param('id', ParseIntPipe) id: number) {
+  get(@Param('id', ParseRowIdPipe) id: number) {
     return this.tasks.get(id);
   }
 
@@ -67,7 +67,7 @@ export class TasksController {
   @Patch('/:id')
   update(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: updateTaskDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -80,7 +80,7 @@ export class TasksController {
   @Post('/:id/logs')
   addLog(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({ schema: taskLogDtoSchema, pipes: [StandardSchemaValidationPipe] })
     body: TaskLogDto,
   ) {
@@ -89,7 +89,7 @@ export class TasksController {
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('/:id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async remove(@Param('id', ParseRowIdPipe) id: number): Promise<void> {
     await this.tasks.remove(id);
   }
 }

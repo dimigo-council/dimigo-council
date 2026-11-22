@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { queryRowId, rowId } from '#/common/ids';
 import { createActivityDtoSchema } from '#/activities/dto/activities.dto';
 import { paginationQuerySchema, queryBoolean } from '#/common/pagination';
 import { inquiryScopes, inquiryStatuses } from '#/db/schema/index';
@@ -12,7 +13,7 @@ export const inquiryListQuerySchema = paginationQuerySchema.extend({
   status: z.enum(inquiryStatuses).optional(),
   /** 내 질의만 보기 */
   mine: queryBoolean.optional(),
-  departmentId: z.coerce.number().int().positive().optional(),
+  departmentId: queryRowId.optional(),
 });
 export type InquiryListQuery = z.infer<typeof inquiryListQuerySchema>;
 
@@ -43,7 +44,7 @@ export const inquiryScopeDtoSchema = z
 export type InquiryScopeDto = z.infer<typeof inquiryScopeDtoSchema>;
 
 export const inquiryDepartmentDtoSchema = z.object({
-  departmentId: z.number().int().positive().nullable(),
+  departmentId: rowId.nullable(),
 });
 export type InquiryDepartmentDto = z.infer<typeof inquiryDepartmentDtoSchema>;
 
@@ -54,12 +55,12 @@ export type InquiryDepartmentDto = z.infer<typeof inquiryDepartmentDtoSchema>;
 export const answerInquiryDtoSchema = z.object({
   status: z.enum(['답변 완료', '처리 완료', '반려']),
   body: z.string().trim().min(1).max(2000).optional(),
-  departmentId: z.number().int().positive().optional(),
+  departmentId: rowId.optional(),
 });
 export type AnswerInquiryDto = z.infer<typeof answerInquiryDtoSchema>;
 
 export const linkActivityDtoSchema = z.object({
-  activityId: z.number().int().positive(),
+  activityId: rowId,
 });
 export type LinkActivityDto = z.infer<typeof linkActivityDtoSchema>;
 

@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import {
   addDays,
   daysUntil,
@@ -6,6 +7,7 @@ import {
 } from './dates.ts';
 import { withIGa, withRo } from './korean.ts';
 import { pgErrorCode } from './database-errors.ts';
+import { MAX_ROW_ID, ParseRowIdPipe, queryRowId, rowId } from './ids.ts';
 
 describe('dates', () => {
   it('uses the Seoul calendar', () => {
@@ -34,5 +36,19 @@ describe('pgErrorCode', () => {
   it('reads the code from a wrapped driver error', () => {
     expect(pgErrorCode({ cause: { code: '23505' } })).toBe('23505');
     expect(pgErrorCode(new Error('plain'))).toBeUndefined();
+  });
+});
+
+describe('row ids', () => {
+  it('accepts only values a PostgreSQL integer column can hold', () => {
+    const pipe = new ParseRowIdPipe();
+    expect(pipe.transform('1')).toBe(1);
+    expect(pipe.transform(String(MAX_ROW_ID))).toBe(MAX_ROW_ID);
+    for (const value of ['0', '-1', '1.5', '1e3', 'abc', '', '2147483648'])
+      expect(() => pipe.transform(value)).toThrow(BadRequestException);
+    expect(rowId.safeParse(MAX_ROW_ID).success).toBe(true);
+    expect(rowId.safeParse(MAX_ROW_ID + 1).success).toBe(false);
+    expect(queryRowId.safeParse('99999999999').success).toBe(false);
+    expect(queryRowId.parse('12')).toBe(12);
   });
 });

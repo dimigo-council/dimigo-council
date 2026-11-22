@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -14,6 +13,7 @@ import {
   Req,
   StandardSchemaValidationPipe,
 } from '@nestjs/common';
+import { ParseRowIdPipe } from '#/common/ids';
 import {
   StudentCouncilOnly,
   type AuthenticatedRequest,
@@ -61,7 +61,7 @@ export class SurveysController {
   @Get('/:id')
   get(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.surveys.get(request.authSession.user, id);
   }
@@ -83,7 +83,7 @@ export class SurveysController {
   @Patch('/:id')
   update(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: surveyDraftDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -96,7 +96,7 @@ export class SurveysController {
   @StudentCouncilOnly()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('/:id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async remove(@Param('id', ParseRowIdPipe) id: number): Promise<void> {
     await this.surveys.remove(id);
   }
 
@@ -105,7 +105,7 @@ export class SurveysController {
   @Post('/:id/review-request')
   requestReview(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.surveys.requestReview(request.authSession.user, id);
   }
@@ -115,7 +115,7 @@ export class SurveysController {
   @Post('/:id/publish')
   publish(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.surveys.publish(request.authSession.user, id);
   }
@@ -125,7 +125,7 @@ export class SurveysController {
   @Post('/:id/unpublish')
   unpublish(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.surveys.unpublish(request.authSession.user, id);
   }
@@ -134,7 +134,7 @@ export class SurveysController {
   @Patch('/:id/accepting')
   setAccepting(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({ schema: acceptingDtoSchema, pipes: [StandardSchemaValidationPipe] })
     body: AcceptingDto,
   ) {
@@ -149,7 +149,7 @@ export class SurveysController {
   @Post('/:id/responses')
   respond(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: surveyResponseDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -163,7 +163,7 @@ export class SurveysController {
   @Get('/:id/results')
   results(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.surveys.results(request.authSession.user, id);
   }
@@ -171,7 +171,7 @@ export class SurveysController {
   @StudentCouncilOnly()
   @Get('/:id/responses')
   listResponses(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Query({
       schema: paginationQuerySchema,
       pipes: [StandardSchemaValidationPipe],
@@ -185,7 +185,7 @@ export class SurveysController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch('/:id/responses/:responseId')
   async setExcluded(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Param('responseId', ParseUUIDPipe) responseId: string,
     @Body({ schema: excludedDtoSchema, pipes: [StandardSchemaValidationPipe] })
     body: ExcludedDto,
@@ -197,7 +197,7 @@ export class SurveysController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('/:id/responses/:responseId')
   async deleteResponse(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Param('responseId', ParseUUIDPipe) responseId: string,
   ): Promise<void> {
     await this.surveys.deleteResponse(id, responseId);

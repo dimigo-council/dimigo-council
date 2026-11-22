@@ -50,7 +50,7 @@ The API does not enable CORS. Browser clients should reach it through the same o
 
 Every route below needs a bearer access token from a user who finished onboarding, unless it says otherwise. "Council" means the `isStudentCouncil` bit (4); the admin bit alone does not grant council routes. "Admin" means the `isAdmin` bit (1). Permission changes reach a user's access token at the next refresh, so a revoked council member keeps access for up to 15 minutes. Migration `0001_productive_mauler` adds the tables for these features.
 
-List routes take `page` (from 1) and `pageSize` (1 to 100, default 20) and return `{ items, total, page, pageSize }`. Status and scope values use the Korean labels from `documents/기능_명세서.md`, such as `추진 중` or `전체 공개`. Dates without a time (`startAt`, `dueAt`) are `YYYY-MM-DD` in Seoul time.
+List routes take `page` (from 1) and `pageSize` (1 to 100, default 20) and return `{ items, total, page, pageSize }`. Status and scope values use the Korean labels from `documents/기능_명세서.md`, such as `추진 중` or `전체 공개`. Dates without a time (`startAt`, `dueAt`) are `YYYY-MM-DD` in Seoul time. Integer ids in paths, queries and bodies must be from 1 to 2147483647; other values return 400.
 
 ### Departments and members
 

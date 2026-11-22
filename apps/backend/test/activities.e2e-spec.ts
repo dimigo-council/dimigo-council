@@ -143,6 +143,33 @@ describe('activity routes (e2e)', () => {
     expect(activities.deleteHistory).toHaveBeenCalledWith(27, 3);
   });
 
+  it('rejects ids that do not fit an integer column before querying', async () => {
+    activities.get.mockClear();
+    activities.list.mockClear();
+    activities.create.mockClear();
+    for (const id of ['2147483648', '99999999999', '0', '-1', 'abc'])
+      await request(app.getHttpServer())
+        .get(`/activities/${id}`)
+        .set('Authorization', tokens.student)
+        .expect(400);
+    await request(app.getHttpServer())
+      .get('/activities/2147483647')
+      .set('Authorization', tokens.student)
+      .expect(200);
+    expect(activities.get).toHaveBeenCalledTimes(1);
+    await request(app.getHttpServer())
+      .get('/activities?departmentId=99999999999')
+      .set('Authorization', tokens.student)
+      .expect(400);
+    expect(activities.list).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .post('/activities')
+      .set('Authorization', tokens.council)
+      .send({ title: '새 활동', scope: '전체 공개', inquiryIds: [99999999999] })
+      .expect(400);
+    expect(activities.create).not.toHaveBeenCalled();
+  });
+
   it('saves and loads the 임시 저장 draft', async () => {
     await request(app.getHttpServer())
       .put('/activities/draft')

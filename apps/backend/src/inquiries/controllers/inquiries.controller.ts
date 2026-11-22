@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Put,
@@ -14,6 +13,7 @@ import {
   Req,
   StandardSchemaValidationPipe,
 } from '@nestjs/common';
+import { ParseRowIdPipe } from '#/common/ids';
 import {
   StudentCouncilOnly,
   type AuthenticatedRequest,
@@ -55,7 +55,7 @@ export class InquiriesController {
   @Get('/:id')
   get(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.inquiries.get(request.authSession.user, id);
   }
@@ -76,7 +76,7 @@ export class InquiriesController {
   @Patch('/:id/scope')
   setScope(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: inquiryScopeDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -90,7 +90,7 @@ export class InquiriesController {
   @Post('/:id/like')
   toggleLike(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.inquiries.toggleLike(request.authSession.user, id);
   }
@@ -99,7 +99,7 @@ export class InquiriesController {
   @Patch('/:id/department')
   setDepartment(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: inquiryDepartmentDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -118,7 +118,7 @@ export class InquiriesController {
   @Post('/:id/answer')
   answer(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: answerInquiryDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -132,7 +132,7 @@ export class InquiriesController {
   @Put('/:id/activity')
   linkActivity(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: linkActivityDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -150,7 +150,7 @@ export class InquiriesController {
   @Post('/:id/activity')
   createActivity(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
     @Body({
       schema: activityFromInquiryDtoSchema,
       pipes: [StandardSchemaValidationPipe],
@@ -164,7 +164,7 @@ export class InquiriesController {
   @Delete('/:id/activity')
   unlinkActivity(
     @Req() request: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseRowIdPipe) id: number,
   ) {
     return this.inquiries.unlinkActivity(request.authSession.user, id);
   }
