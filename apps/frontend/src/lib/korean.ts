@@ -5,3 +5,10 @@ export function withRo(word: string) {
   const final = code % 28;
   return final === 0 || final === 8 ? `${word}로` : `${word}으로`;
 }
+
+/** 받침에 맞춰 "이/가"를 붙인다. (박성현이, 문세희가) */
+export function withIGa(word: string) {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  if (code < 0 || code > 11171) return `${word}이`;
+  return code % 28 === 0 ? `${word}가` : `${word}이`;
+}

@@ -19,13 +19,11 @@ export const FieldRoot = styled.div`
   min-width: 0;
 `;
 
+/** Figma Field 제목: Callout/Strong, Primary */
 export const FieldLabel = styled.label`
   ${({ theme: t }) => css`
-    color: ${t.colors.core.glyph.secondary};
-    font-size: ${t.font.size.callout};
-    line-height: ${t.font.lineHeight.callout};
-    font-weight: ${t.font.weight.regular};
-    letter-spacing: -0.02em;
+    ${t.text.calloutStrong}
+    color: ${t.colors.core.glyph.primary};
   `}
 `;
 
@@ -43,9 +41,7 @@ export const FieldFoot = styled.div`
     justify-content: space-between;
     gap: ${t.spacing[300]};
     min-height: ${t.font.lineHeight.footnote};
-    padding: 0 ${t.spacing[100]};
-    font-size: ${t.font.size.footnote};
-    line-height: ${t.font.lineHeight.footnote};
+    ${t.text.footnoteRegular}
 
     &:empty {
       display: none;
@@ -53,8 +49,12 @@ export const FieldFoot = styled.div`
   `}
 `;
 
+/** Figma Field 도움말: Paragraph/Large, Secondary */
 export const FieldHint = styled.span`
-  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
+  ${({ theme: t }) => css`
+    ${t.text.paragraphLarge}
+    color: ${t.colors.core.glyph.secondary};
+  `}
 `;
 
 export const FieldError = styled.span`

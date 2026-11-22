@@ -1,4 +1,4 @@
-/* 앱 셸 공용: 학생 화면(GNB)과 업무공간(사이드바)이 함께 쓰는 조각. */
+/* 앱 셸 공용 조각 (AppLayout과 셸 바깥 단독 화면). */
 import { Link } from 'react-router';
 import styled, { createGlobalStyle, css } from 'styled-components';
 

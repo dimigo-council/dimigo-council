@@ -162,7 +162,7 @@ export const PanelNote = styled.p`
 
 export const PanelProseEmpty = styled.p``;
 
-/** 패널 안 긴 글 (업무 내용, 보고서). 문단은 빈 줄로 나뉜다. */
+/** 패널 안 긴 글. 문단은 빈 줄로 나뉜다. */
 export const PanelProse = styled.div`
   ${({ theme: t }) => css`
     display: grid;
@@ -211,7 +211,7 @@ export const InfoListInline = styled.dd`
   gap: 4px 8px;
 `;
 
-/* ---------- 2단: 본문 + 오른쪽 정보 (건의, 공개 안건) ---------- */
+/* ---------- 2단: 본문 + 오른쪽 정보 ---------- */
 
 export const SplitLayout = styled.div`
   display: grid;
@@ -237,7 +237,7 @@ export const SplitAside = styled.aside`
   min-width: 0;
 `;
 
-/* ---------- 경로: 상세 화면 위 "안건 / A-26-031" ---------- */
+/* ---------- 경로: 상세 화면 위 "설문 / 작성 중" ---------- */
 
 export const Breadcrumb = styled.nav`
   ${({ theme: t }) => css`

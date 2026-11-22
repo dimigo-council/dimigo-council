@@ -9,7 +9,7 @@ import type {
 } from './types.ts';
 
 /**
- * 설문 관리 API (업무공간).
+ * 설문 관리 API (학생회 화면).
  * TODO: 백엔드 설문 API가 생기면 아래 함수 본문만 fetch 호출로 바꾼다. 화면은 이 함수들만 쓴다.
  * 지금은 메모리에만 저장한다. 공개한 설문은 listPublishedSurveys로 학생 화면 설문(features/surveys)에 나간다.
  */
@@ -54,7 +54,7 @@ export async function createSurveyDraft(
     department,
     owner,
     audience: '전교생',
-    identity: 'anonymous',
+    collectsClass: false,
     stage: 'draft',
     intro: '',
     savedAt: new Date().toISOString(),
@@ -89,9 +89,20 @@ export async function requestSurveyReview(id: string): Promise<void> {
   editable(find(id)).reviewRequested = true;
 }
 
-/** 공개 예약. 공개일이 이미 지났으면 바로 공개한다. */
+/** 작성 중인 설문 가운데 가장 최근에 저장한 것 (설문 목록의 "불러오기") */
+export async function getLatestSurveyDraft(): Promise<AdminSurvey | null> {
+  const drafts = surveys
+    .filter((survey) => survey.stage === 'draft')
+    .sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+  return drafts[0] ? structuredClone(drafts[0]) : null;
+}
+
+/** 공개 예약. 공개일이 이미 지났으면 바로 공개한다. 연결 활동이 없으면 게시할 수 없다. */
 export async function scheduleSurvey(id: string): Promise<void> {
   const survey = editable(find(id));
+  if (!survey.activity) {
+    throw new Error('연결 활동을 골라야 설문을 게시할 수 있습니다.');
+  }
   const opensAt = survey.opensAt ?? new Date().toISOString();
   survey.opensAt = opensAt;
   survey.stage = new Date(opensAt) > new Date() ? 'scheduled' : 'published';
@@ -113,24 +124,32 @@ export async function listPublishedSurveys(): Promise<Survey[]> {
       ({
         id,
         title,
+        intro,
         department,
         audience,
-        identity,
+        collectsClass,
+        activity,
         closesAt,
         closedAt,
         questions,
         stage,
+        responses,
+        target,
       }) =>
-        stage === 'published' && closesAt
+        stage === 'published' && closesAt && activity
           ? [
               {
                 id,
                 title,
+                intro,
                 department,
                 audience,
-                identity,
+                collectsClass,
+                activity,
                 closesAt: closedAt ?? closesAt,
                 questions,
+                responses,
+                target,
               },
             ]
           : [],

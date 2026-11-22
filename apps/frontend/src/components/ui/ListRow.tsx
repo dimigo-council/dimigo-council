@@ -33,18 +33,15 @@ export const ListRowLink = styled.a`
 export const ListRowMain = styled.div`
   display: grid;
   flex: 1;
-  gap: ${({ theme }) => theme.spacing[100]};
+  gap: ${({ theme }) => theme.spacing[50]};
   min-width: 0;
 `;
 
 export const ListRowTitle = styled.h3`
   ${({ theme: t }) => css`
+    ${t.text.bodyStrong}
     margin: 0;
     color: ${t.colors.core.glyph.primary};
-    font-size: ${t.font.size.body};
-    line-height: ${t.font.lineHeight.body};
-    font-weight: ${t.font.weight.strong};
-    letter-spacing: -0.02em;
     overflow-wrap: break-word;
   `}
 `;
@@ -56,9 +53,8 @@ export const ListRowMeta = styled.div`
     flex-wrap: wrap;
     align-items: center;
     gap: ${t.spacing[100]} ${t.spacing[300]};
+    ${t.text.footnoteRegular}
     color: ${t.colors.core.glyph.tertiary};
-    font-size: ${t.font.size.callout};
-    line-height: ${t.font.lineHeight.callout};
 
     a {
       position: relative;
@@ -96,7 +92,7 @@ export const ListRowActions = styled.div`
   }
 `;
 
-/** 본문 미리보기 (건의 접수함, 보고서, 공개 검토). `<ListRowItem $excerpt>` 안에 둔다. */
+/** 본문 미리보기. `<ListRowItem $excerpt>` 안에 둔다. */
 export const ListRowExcerpt = styled.p`
   ${({ theme: t }) => css`
     display: -webkit-box;
@@ -116,19 +112,27 @@ export const ListRowExcerpt = styled.p`
   `}
 `;
 
-/** Stable class shared by every row, whatever its props (for `row + row`). */
+/** Stable class shared by every row, whatever its props. */
 const ListRowBase = styled.li``;
 
-export const ListRowItem = styled(ListRowBase)<{ $excerpt?: boolean }>`
-  ${({ theme: t, $excerpt }) => css`
+/**
+ * 행 아래 구분선. 목록의 마지막 행에는 긋지 않는다 (테두리 있는 목록의 아래 테두리와 겹치지 않게).
+ * `$divider={false}`면 이 행 아래에는 긋지 않는다.
+ */
+export const ListRowItem = styled(ListRowBase)<{
+  $excerpt?: boolean;
+  $divider?: boolean;
+}>`
+  ${({ theme: t, $excerpt, $divider = true }) => css`
     position: relative;
     display: flex;
     align-items: center;
     gap: ${t.spacing[400]};
     padding: ${t.spacing[400]} ${t.spacing[500]};
+    ${$divider && `border-bottom: 1px solid ${t.colors.core.outline};`}
 
-    & + ${ListRowBase} {
-      border-top: 1px solid ${t.colors.core.outline};
+    &:last-child {
+      border-bottom: 0;
     }
     &:has(${ListRowLink}:hover) {
       background: ${t.colors.components.interaction.hover};
@@ -180,6 +184,8 @@ export interface ListRowProps {
   /** 오른쪽 끝 버튼. 행 링크보다 위에 놓여 따로 눌린다. */
   actions?: ReactNode;
   headingLevel?: 2 | 3 | 4;
+  /** 행 아래 구분선. 기본은 true이고, 목록의 마지막 행에는 늘 긋지 않는다. */
+  divider?: boolean;
 }
 
 /** 목록의 한 줄 (kit List/ItemList를 링크·메타·버튼이 있는 업무 목록에 맞게 펼친 것). */
@@ -190,9 +196,10 @@ export function ListRow({
   aside,
   actions,
   headingLevel = 3,
+  divider = true,
 }: ListRowProps) {
   return (
-    <ListRowItem>
+    <ListRowItem $divider={divider}>
       <ListRowMain>
         <ListRowTitle as={`h${headingLevel}`}>
           {href ? <ListRowLink href={href}>{title}</ListRowLink> : title}

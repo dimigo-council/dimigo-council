@@ -1,61 +1,54 @@
-import type { AgendaVisibility } from '../agendas/types.ts';
+import type { Department } from '../members/types.ts';
 
-/** 업무 상태. KIT 상태 매핑의 "마감 지남"은 상태가 아니라 마감일로 정해진다. */
-export const taskStatuses = ['할 일', '진행 중', '검토 요청', '완료'] as const;
+/** 업무 상태. 업무 보드의 열 순서이기도 하다. */
+export const taskStatuses = ['예정됨', '진행 중', '검토 요청', '완료'] as const;
 export type TaskStatus = (typeof taskStatuses)[number];
 
-export interface TaskChecklistItem {
+/**
+ * 진행 기록 한 줄. label은 기록 유형(배정, 진행 중, 수정, 완료 …)이고,
+ * 상태를 바꾼 기록이면 status에 바뀐 뒤 상태가 남는다. 가장 최근 status가 업무의 현재 상태다.
+ */
+export interface TaskLog {
   id: string;
-  text: string;
-  done: boolean;
-  owner: string;
-}
-
-/** 업무로 만든 결과물 (설문, 파일 등) */
-export interface TaskOutput {
-  id: string;
-  kind: 'survey' | 'file';
-  title: string;
-  meta: string;
-  to?: string;
-}
-
-/** 업무 활동: event는 시스템이 남긴 기록, comment는 구성원이 쓴 댓글 */
-export interface TaskActivity {
-  id: string;
-  kind: 'event' | 'comment';
-  author: string;
   at: string;
+  label: string;
   text: string;
+  status?: TaskStatus;
 }
 
+/** 업무는 공개 범위가 없다. 전체 공개 활동에 연결된 업무만 활동과 함께 공개된다. */
 export interface Task {
+  /** 업무 번호 */
   id: string;
   title: string;
-  status: TaskStatus;
-  /** 업무를 낸 부서 */
-  department: string;
-  requester: string;
-  assignees: string[];
-  /** 안건에 묶인 업무면 그 안건 */
-  agenda?: { id: string; title: string };
-  /** 안건 없이 하는 일의 묶음 (정기 회의 운영 등) */
-  group?: string;
+  /** 활동이 없을 때 카드에 보이는 태그 (행사, 회의, 홍보 …) */
+  tag?: string;
+  activity?: { id: string; title: string };
+  /** 업무를 배정한 사람 */
+  assigner: string;
+  department: Department;
+  /** 담당자 */
+  assignee: string;
+  startAt: string;
   dueAt: string;
-  doneAt?: string;
-  body: string;
-  visibility: AgendaVisibility;
-  checklist: TaskChecklistItem[];
-  outputs: TaskOutput[];
-  activity: TaskActivity[];
+  status: TaskStatus;
+  /** 오래된 기록이 앞 */
+  logs: TaskLog[];
 }
 
 export interface NewTaskInput {
   title: string;
-  body: string;
-  agenda?: { id: string; title: string };
+  activity?: { id: string; title: string };
+  department: Department;
   assignee: string;
+  startAt: string;
   dueAt: string;
-  requester: string;
-  department: string;
+  status: TaskStatus;
+  assigner: string;
 }
+
+/** 업무 수정에서 고칠 수 있는 것 */
+export type TaskEdit = Pick<
+  Task,
+  'title' | 'activity' | 'department' | 'assignee' | 'startAt' | 'dueAt'
+>;

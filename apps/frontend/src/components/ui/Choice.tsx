@@ -136,7 +136,7 @@ export interface ChoiceGroupProps<T extends string> {
   /** null이면 아무것도 고르지 않은 상태 */
   value: T | null;
   onChange: (value: T) => void;
-  /** segmented: kit SegmentedControl 모양. chips: kit Chip 모양의 단일 선택 (건의 분류 등) */
+  /** segmented: kit SegmentedControl 모양. chips: kit Chip 모양의 단일 선택 */
   variant?: 'segmented' | 'chips';
   name?: string;
   'aria-label'?: string;
@@ -149,7 +149,7 @@ export interface ChoiceGroupProps<T extends string> {
 const GroupRoot = styled.div<{ $chips: boolean }>`
   ${({ theme: t, $chips }) => css`
     ${!$chips && segmentedTrackStyles(t)}
-    display: inline-flex;
+    display: ${$chips ? 'inline-flex' : 'flex'};
     max-width: 100%;
     ${
       $chips
@@ -277,54 +277,49 @@ const OptionCardText = styled.span`
     display: grid;
     gap: ${t.spacing[50]};
     min-width: 0;
-    padding-top: ${t.spacing[50]};
   `}
 `;
 
 const OptionCardTitle = styled.span`
   ${({ theme: t }) => css`
-    color: ${t.colors.core.glyph.secondary};
-    font-size: ${t.font.size.body};
-    line-height: ${t.font.lineHeight.body};
-    font-weight: ${t.font.weight.weak};
-    letter-spacing: -0.02em;
+    ${t.text.calloutStrong}
+    color: ${t.colors.core.glyph.primary};
   `}
 `;
 
 const OptionCardDescription = styled.span`
   ${({ theme: t }) => css`
+    ${t.text.footnoteRegular}
     color: ${t.colors.core.glyph.tertiary};
-    font-size: ${t.font.size.footnote};
-    line-height: ${t.font.lineHeight.footnote};
   `}
 `;
 
-/* OptionCard: kit Option 카드 + Control. 선택되면 Accent 2px 테두리. */
+/*
+ * OptionCard: Figma "Option" 줄. kit Control(Radio·CheckFill) + Callout/Strong 글자,
+ * 테두리 Outline 1. 고르면 Accent 반투명 배경과 Accent 테두리.
+ */
 const OptionCardRoot = styled.label`
   ${({ theme: t }) => css`
     position: relative;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: ${t.spacing[300]};
-    padding: ${t.spacing[300]} ${t.spacing[400]};
+    /* Figma 좌우 14: kit Spacing에 14가 없어 값 그대로 쓴다 (Figma 쪽 토큰 누락) */
+    padding: ${t.spacing[300]} 14px;
     border-radius: ${t.radius.m};
-    background: ${t.colors.components.fill.primary};
+    background: ${t.colors.background.primary};
     box-shadow: inset 0 0 0 1px ${t.colors.core.outline};
     cursor: pointer;
 
+    &:has(${OptionCardDescription}) {
+      align-items: flex-start;
+    }
     &:has(${ChoiceInput}:checked) {
-      box-shadow: inset 0 0 0 2px ${t.colors.core.status.accent};
+      background: ${t.colors.core.status.translucent.accent};
+      box-shadow: inset 0 0 0 1px ${t.colors.core.status.accent};
     }
-    &:has(${ChoiceInput}:checked) ${OptionCardTitle} {
-      color: ${t.colors.core.glyph.primary};
-      font-weight: ${t.font.weight.strong};
-    }
-    &:hover:not(:has(${ChoiceInput}:disabled)) {
-      background: color-mix(
-        in srgb,
-        ${t.colors.components.fill.primary},
-        ${t.colors.core.glyph.primary} 4%
-      );
+    &:hover:not(:has(${ChoiceInput}:disabled, ${ChoiceInput}:checked)) {
+      background: ${t.colors.components.interaction.hover};
     }
     &:has(${ChoiceInput}:focus-visible) {
       outline: 2px solid ${t.colors.core.status.accent};

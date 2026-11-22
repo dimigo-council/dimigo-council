@@ -1,7 +1,13 @@
-import { withRo } from '../../lib/korean.ts';
-import { adjustAgendaCounts } from '../agendas/api.ts';
+import { formatShortDate } from '../../lib/date.ts';
+import { withIGa, withRo } from '../../lib/korean.ts';
 import { mockTasks } from './mockData.ts';
-import type { NewTaskInput, Task, TaskStatus } from './types.ts';
+import type {
+  NewTaskInput,
+  Task,
+  TaskEdit,
+  TaskLog,
+  TaskStatus,
+} from './types.ts';
 
 /**
  * 업무 API.
@@ -11,7 +17,6 @@ import type { NewTaskInput, Task, TaskStatus } from './types.ts';
 export const isMockApi = true;
 
 const tasks = structuredClone(mockTasks);
-let nextNumber = 419;
 
 function find(id: string) {
   const task = tasks.find((item) => item.id === id);
@@ -21,19 +26,15 @@ function find(id: string) {
   return task;
 }
 
-function log(
-  task: Task,
-  kind: 'event' | 'comment',
-  author: string,
-  text: string,
-) {
-  task.activity.push({
-    id: `a${task.activity.length + 1}`,
-    kind,
-    author,
+function log(task: Task, entry: Omit<TaskLog, 'id' | 'at'>) {
+  const numbers = task.logs.map((item) => Number(item.id.slice(1)) || 0);
+  task.logs.push({
+    id: `l${Math.max(0, ...numbers) + 1}`,
     at: new Date().toISOString(),
-    text,
+    ...entry,
   });
+  // 가장 최근에 기록된 상태가 업무의 현재 상태다.
+  if (entry.status) task.status = entry.status;
 }
 
 export async function listTasks(): Promise<Task[]> {
@@ -45,94 +46,84 @@ export async function getTask(id: string): Promise<Task> {
 }
 
 export async function createTask(input: NewTaskInput): Promise<string> {
-  const id = `T-${String(nextNumber++).padStart(4, '0')}`;
+  const id = String(Math.max(...tasks.map((item) => Number(item.id))) + 1);
   const task: Task = {
     id,
     title: input.title.trim(),
-    status: '할 일',
+    ...(input.activity && { activity: input.activity }),
+    assigner: input.assigner,
     department: input.department,
-    requester: input.requester,
-    assignees: [input.assignee],
-    ...(input.agenda && { agenda: input.agenda }),
-    ...(!input.agenda && { group: '기타' }),
+    assignee: input.assignee,
+    startAt: input.startAt,
     dueAt: input.dueAt,
-    body: input.body.trim(),
-    visibility: '학생회 내부',
-    checklist: [],
-    outputs: [],
-    activity: [],
+    status: input.status,
+    logs: [],
   };
-  log(
-    task,
-    'event',
-    input.requester,
-    input.assignee === input.requester
-      ? '업무를 만들었습니다.'
-      : `${input.assignee}에게 업무를 배정했습니다.`,
-  );
+  log(task, {
+    label: '배정',
+    text:
+      input.assignee === input.assigner
+        ? `${withIGa(input.assigner)} 업무를 만들었어요.`
+        : `${withIGa(input.assigner)} ${input.assignee}에게 업무를 배정했어요.`,
+    status: input.status,
+  });
   tasks.push(task);
-  if (input.agenda) await adjustAgendaCounts(input.agenda.id, { tasks: 1 });
   return id;
 }
 
-export async function updateTaskStatus(
+/** 기록 추가. 한 줄 내용과 그때의 상태를 남기고, 그 상태를 업무의 현재 상태로 삼는다. */
+export async function addTaskLog(
   id: string,
   status: TaskStatus,
-  author: string,
+  text: string,
+): Promise<void> {
+  log(find(id), { label: status, text: text.trim(), status });
+}
+
+/** 업무 수정. 바뀐 내용은 진행 기록에 자동으로 남긴다. */
+export async function updateTask(
+  id: string,
+  edit: TaskEdit,
+  by: string,
 ): Promise<void> {
   const task = find(id);
-  if (task.status === status) return;
-  const doneChange =
-    (status === '완료' ? 1 : 0) - (task.status === '완료' ? 1 : 0);
-  if (task.agenda && doneChange) {
-    await adjustAgendaCounts(task.agenda.id, { tasksDone: doneChange });
+  const changes: string[] = [];
+  if (edit.title.trim() !== task.title) changes.push('제목을');
+  if (edit.activity?.id !== task.activity?.id) changes.push('연결된 활동을');
+  if (edit.department !== task.department) changes.push('담당 부서를');
+  if (edit.assignee !== task.assignee) {
+    changes.push(`담당자를 ${task.assignee}에서 ${withRo(edit.assignee)}`);
   }
-  task.status = status;
-  if (status === '완료') task.doneAt = new Date().toISOString();
-  else delete task.doneAt;
-  log(task, 'event', author, `상태를 ${withRo(status)} 바꿨습니다.`);
+  if (formatShortDate(edit.startAt) !== formatShortDate(task.startAt)) {
+    changes.push(
+      `시작일을 ${formatShortDate(task.startAt)}에서 ${formatShortDate(edit.startAt)}로`,
+    );
+  }
+  if (formatShortDate(edit.dueAt) !== formatShortDate(task.dueAt)) {
+    changes.push(
+      `마감일을 ${formatShortDate(task.dueAt)}에서 ${formatShortDate(edit.dueAt)}로`,
+    );
+  }
+  if (changes.length === 0) return;
+  Object.assign(task, { ...edit, title: edit.title.trim() });
+  if (!edit.activity) delete task.activity;
+  log(task, {
+    label: '수정',
+    text: `${withIGa(by)} ${changes.join(', ')} 바꿨어요.`,
+  });
 }
 
-export async function toggleChecklistItem(
+/** 홈 "나의 업무" 체크: 완료로 바꾸거나 진행 중으로 되돌린다. */
+export async function setTaskDone(
   id: string,
-  itemId: string,
   done: boolean,
+  by: string,
 ): Promise<void> {
-  const item = find(id).checklist.find((entry) => entry.id === itemId);
-  if (item) item.done = done;
-}
-
-export async function addTaskComment(
-  id: string,
-  author: string,
-  text: string,
-): Promise<void> {
-  log(find(id), 'comment', author, text.trim());
-}
-
-export async function updateTaskBody(
-  id: string,
-  body: string,
-  author: string,
-): Promise<void> {
-  const task = find(id);
-  const next = body.trim();
-  if (task.body === next) return;
-  task.body = next;
-  log(task, 'event', author, '내용을 고쳤습니다.');
-}
-
-export async function addChecklistItem(
-  id: string,
-  text: string,
-  owner: string,
-): Promise<void> {
-  const task = find(id);
-  const numbers = task.checklist.map((item) => Number(item.id.slice(1)) || 0);
-  task.checklist.push({
-    id: `c${Math.max(0, ...numbers) + 1}`,
-    text: text.trim(),
-    owner,
-    done: false,
+  log(find(id), {
+    label: done ? '완료' : '진행 중',
+    text: done
+      ? `${withIGa(by)} 업무를 완료했어요.`
+      : `${withIGa(by)} 업무를 다시 열었어요.`,
+    status: done ? '완료' : '진행 중',
   });
 }

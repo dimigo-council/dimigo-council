@@ -2,8 +2,8 @@ import { mockSurveys } from '../surveys/mockData.ts';
 import type { AdminSurvey } from './types.ts';
 
 /**
- * 개발용 예시 설문 (업무공간). 공개된 설문은 학생 화면 설문 예시(features/surveys)에
- * 응답 수 등을 붙였고, 작성 중인 "시험 기간 자습실 수요 조사"는 documents/test_UI 시안(설문 편집)의 예시를 옮겼다.
+ * 개발용 예시 설문 (학생회 화면). 공개된 설문은 학생 화면 설문 예시(features/surveys)에
+ * 만든 사람과 공개일을 붙였고, 작성 중·예약 설문은 설문 만들기 화면을 보려고 만든 예시다.
  */
 
 function daysFrom(days: number, hours = 9, minutes = 0) {
@@ -15,40 +15,14 @@ function daysFrom(days: number, hours = 9, minutes = 0) {
 
 const published: Record<
   string,
-  Pick<AdminSurvey, 'owner' | 'responses' | 'target'> & {
-    openedDaysAgo: number;
-  }
+  Pick<AdminSurvey, 'owner'> & { openedDaysAgo: number }
 > = {
-  'lunch-2026-10': {
-    owner: '오지후',
-    responses: 412,
-    target: 640,
-    openedDaysAgo: 6,
-  },
-  'sports-day-2026': {
-    owner: '최유나',
-    responses: 287,
-    target: 640,
-    openedDaysAgo: 3,
-  },
-  'dorm-laundry-2026': {
-    owner: '이서준',
-    responses: 133,
-    target: 210,
-    openedDaysAgo: 5,
-  },
-  'council-review-2026-1': {
-    owner: '윤채원',
-    responses: 498,
-    target: 640,
-    openedDaysAgo: 34,
-  },
-  'festival-booth-2026': {
-    owner: '강민재',
-    responses: 521,
-    target: 640,
-    openedDaysAgo: 55,
-  },
+  'dimi-sports-2026': { owner: '조원', openedDaysAgo: 10 },
+  'suneung-cheer-2026': { owner: '문세희', openedDaysAgo: 6 },
+  'lunch-2026-11': { owner: '최유나', openedDaysAgo: 5 },
+  'parcel-time-2026': { owner: '정민준', openedDaysAgo: 2 },
+  'sns-2026': { owner: '문세희', openedDaysAgo: 40 },
+  'art-festival-2026': { owner: '김호태', openedDaysAgo: 34 },
 };
 
 export const mockAdminSurveys: AdminSurvey[] = [
@@ -58,24 +32,21 @@ export const mockAdminSurveys: AdminSurvey[] = [
       ...survey,
       stage: 'published' as const,
       owner: extra.owner,
-      intro: '',
       opensAt: daysFrom(-extra.openedDaysAgo),
       savedAt: daysFrom(-extra.openedDaysAgo - 1, 17),
-      responses: extra.responses,
-      target: extra.target,
       reviewRequested: true,
     };
   }),
   {
     id: 'exam-study-room-2026',
     title: '시험 기간 자습실 수요 조사',
-    department: '학습부',
-    owner: '최민호',
+    department: '바른생활부',
+    owner: '최유나',
     audience: '전교생',
-    identity: 'anonymous',
+    collectsClass: false,
     stage: 'draft',
     intro:
-      '시험 2주 전 자습실 연장 운영이 필요한지 알아보려고 합니다. 응답은 익명으로 처리되며 학습부만 결과를 확인합니다.',
+      '시험 2주 전 자습실 연장 운영이 필요한지 알아보려고 합니다. 이름은 수집하지 않으며 바른생활부만 결과를 확인합니다.',
     opensAt: daysFrom(4),
     closesAt: daysFrom(11, 23, 59),
     savedAt: daysFrom(-1, 14, 20),
@@ -106,16 +77,14 @@ export const mockAdminSurveys: AdminSurvey[] = [
       },
       {
         id: 'q4',
-        type: 'scale',
+        type: 'single',
         title: '연장 운영이 성적 관리에 도움이 될 것 같나요?',
         required: true,
-        steps: 5,
-        minLabel: '전혀 아니다',
-        maxLabel: '매우 그렇다',
+        options: ['매우 그렇다', '그렇다', '보통이다', '아니다'],
       },
       {
         id: 'q5',
-        type: 'text',
+        type: 'long',
         title: '그 밖에 바라는 점을 자유롭게 적어주세요.',
         required: false,
         maxLength: 500,
@@ -125,10 +94,10 @@ export const mockAdminSurveys: AdminSurvey[] = [
   {
     id: 'club-fair-2026',
     title: '동아리 박람회 부스 배치 의견',
-    department: '문화부',
-    owner: '강민재',
+    department: '문예창작부',
+    owner: '한도윤',
     audience: '동아리 부장',
-    identity: 'named',
+    collectsClass: true,
     stage: 'draft',
     intro: '',
     closesAt: daysFrom(12, 23, 59),
@@ -147,14 +116,15 @@ export const mockAdminSurveys: AdminSurvey[] = [
     ],
   },
   {
-    id: 'nov-meeting-2026',
-    title: '11월 정기회의 의제 의견 수렴',
-    department: '기획부',
-    owner: '윤채원',
+    id: 'dec-meeting-2026',
+    title: '12월 학생회 회의 의제 의견 수렴',
+    department: '기록부',
+    owner: '오주하',
     audience: '전교생',
-    identity: 'student-id',
+    collectsClass: true,
+    activity: { id: '24', title: '디미체전 운영 개선' },
     stage: 'scheduled',
-    intro: '11월 정기회의에서 다뤘으면 하는 이야기를 받습니다.',
+    intro: '12월 학생회 회의에서 다뤘으면 하는 이야기를 받습니다.',
     opensAt: daysFrom(3),
     closesAt: daysFrom(10, 23, 59),
     savedAt: daysFrom(-2, 19, 40),
@@ -165,14 +135,14 @@ export const mockAdminSurveys: AdminSurvey[] = [
       {
         id: 'q1',
         type: 'multiple',
-        title: '정기회의에서 다뤘으면 하는 주제를 골라주세요.',
+        title: '회의에서 다뤘으면 하는 주제를 골라주세요.',
         required: true,
         maxSelections: 2,
         options: ['급식', '시설', '행사', '학습'],
       },
       {
         id: 'q2',
-        type: 'text',
+        type: 'long',
         title: '구체적인 의견이 있으면 적어주세요.',
         required: false,
         maxLength: 500,

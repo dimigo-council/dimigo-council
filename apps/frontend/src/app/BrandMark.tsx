@@ -1,20 +1,28 @@
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
+// 셸에는 로고 한 장만 쓰므로 kit BrandMark(모든 로고를 싣는다) 대신 파일 하나만 불러온다.
+import logoSvg from '../dimi-ui-kit/brand/logo-council-color-32.svg?raw';
 
-const Mark = styled.span`
-  ${({ theme: t }) => css`
-    display: inline-grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: ${t.radius.xs};
-    background: ${t.colors.components.fill.inverted.primary};
-    color: ${t.colors.core.glyph.inverted.primary};
-    font-size: ${t.font.size.footnote};
-    font-weight: 800;
-  `}
+const Root = styled.span`
+  display: inline-flex;
+  flex: none;
+  height: 32px;
+
+  > svg {
+    display: block;
+    width: auto;
+    height: 100%;
+  }
 `;
 
-/** 셸 왼쪽 위 브랜드 글자 상자 */
-export function BrandMark() {
-  return <Mark aria-hidden="true">학</Mark>;
+/** GNB·푸터의 학생자치회 로고 (kit Logo/COUNCIL color 32) */
+export function BrandLogo({ label }: { label?: string }) {
+  return (
+    <Root
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      // 저장소에 있는 kit 내보내기 파일이다. 사용자 입력이 아니다.
+      dangerouslySetInnerHTML={{ __html: logoSvg }}
+    />
+  );
 }

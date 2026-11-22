@@ -14,10 +14,10 @@ export function surveyStatus(
 }
 
 export const questionTypeLabel: Record<Question['type'], string> = {
-  single: '객관식',
+  single: '단일 선택',
   multiple: '복수 선택',
-  scale: '척도',
-  text: '주관식',
+  short: '단답형',
+  long: '장문형',
 };
 
 export const audiences = [
@@ -79,6 +79,10 @@ export function publishChecks(
         opensAt < closesAt &&
         new Date(closesAt) > now,
       ),
+    },
+    {
+      label: '연결 활동 선택됨',
+      done: Boolean(draft.activity),
     },
     {
       label: `${reviewerLabel(survey.department)}에게 검토 요청`,

@@ -1,5 +1,5 @@
 import { dayDiff } from '../../lib/date.ts';
-import type { AnswerValue, SurveyIdentity } from './types.ts';
+import type { AnswerValue } from './types.ts';
 
 /** 마감까지 남은 날. 오늘 마감이면 0. */
 export function daysLeft(iso: string, now = new Date()) {
@@ -15,19 +15,22 @@ export function estimatedMinutes(questionCount: number) {
   return Math.max(1, Math.round(questionCount * 0.4));
 }
 
-export const identityLabel: Record<SurveyIdentity, string> = {
-  anonymous: '익명',
-  'student-id': '학번만 수집',
-  named: '실명',
-};
+/** 응답자 정보 안내. 이름은 어떤 설문도 수집하지 않는다. */
+export function respondentNotice(collectsClass: boolean) {
+  return collectsClass
+    ? '이름은 수집하지 않고 학년과 반만 함께 받아요. 회원가입 때 학년·반을 입력한 학생만 응답할 수 있어요.'
+    : '이름과 학년·반을 수집하지 않아요. 중복 참여를 막기 위해 참여 여부만 기록해요.';
+}
 
-export const identityNotice: Record<SurveyIdentity, string> = {
-  anonymous:
-    '익명 설문입니다. 학생회는 응답 내용과 응답자를 연결해 볼 수 없고, 중복 참여를 막기 위해 참여 여부만 기록합니다.',
-  'student-id':
-    '학번만 수집하는 설문입니다. 응답 대상인지 확인하는 데만 쓰고, 이름은 수집하지 않습니다.',
-  named: '실명 설문입니다. 담당 부서가 응답자의 이름과 학번을 볼 수 있습니다.',
-};
+/** 응답자 정보 짧은 표시 */
+export function respondentLabel(collectsClass: boolean) {
+  return collectsClass ? '학년·반 수집' : '이름 미수집';
+}
+
+/** 참여율 0~1 */
+export function participation(survey: { responses: number; target: number }) {
+  return survey.target > 0 ? Math.min(1, survey.responses / survey.target) : 0;
+}
 
 export function isAnswered(value: AnswerValue | undefined) {
   if (value === undefined) return false;

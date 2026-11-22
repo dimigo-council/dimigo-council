@@ -1,9 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
+import { createBrowserRouter, redirect, type RouteObject } from 'react-router';
 import { RouteErrorPage } from '../pages/RouteErrorPage.tsx';
-import { StandaloneMain } from './shell.ts';
-import { StudentLayout } from './StudentLayout.tsx';
-import { WorkLayout, workLayoutLoader } from './WorkLayout.tsx';
+import { AppLayout } from './AppLayout.tsx';
+import { getSession } from './session.ts';
 
 const devRoutes: RouteObject[] = [];
 if (import.meta.env.DEV) {
@@ -23,271 +22,247 @@ if (import.meta.env.DEV) {
   }
 }
 
-export const router = createBrowserRouter([
+/** 로그인 전 화면 (랜딩, 로그인, 회원가입, 약관). 방문자 GNB를 쓴다. */
+const visitorRoutes: RouteObject[] = [
   {
-    index: true,
-    HydrateFallback: () => null,
-    lazy: async () => ({
-      Component: (await import('../pages/HomePage.tsx')).HomePage,
-    }),
+    path: 'landing',
+    lazy: async () => {
+      const m = await import('../pages/LandingPage.tsx');
+      return { Component: m.LandingPage, loader: m.landingLoader };
+    },
   },
   {
     path: 'login',
-    HydrateFallback: () => null,
+    lazy: async () => ({
+      Component: (await import('../features/auth/AuthPages.tsx')).LoginPage,
+    }),
+  },
+  {
+    path: 'login/code',
     lazy: async () => {
-      const { PlaceholderPage } = await import('../pages/PlaceholderPage.tsx');
+      const { CodePage } = await import('../features/auth/AuthPages.tsx');
+      return { Component: () => <CodePage flow="login" /> };
+    },
+  },
+  {
+    path: 'signup',
+    lazy: async () => ({
+      Component: (await import('../features/auth/AuthPages.tsx')).SignupPage,
+    }),
+  },
+  {
+    path: 'signup/code',
+    lazy: async () => {
+      const { CodePage } = await import('../features/auth/AuthPages.tsx');
+      return { Component: () => <CodePage flow="signup" /> };
+    },
+  },
+  {
+    path: 'signup/info',
+    lazy: async () => ({
+      Component: (await import('../features/auth/AuthPages.tsx'))
+        .SignupInfoPage,
+    }),
+  },
+  {
+    path: 'terms',
+    lazy: async () => ({
+      Component: (await import('../pages/PolicyPage.tsx')).TermsPage,
+    }),
+  },
+  {
+    path: 'privacy',
+    lazy: async () => ({
+      Component: (await import('../pages/PolicyPage.tsx')).PrivacyPage,
+    }),
+  },
+];
+
+/** 학생 화면과 학생회 화면이 같은 컴포넌트를 쓰는 경로 (활동 기록, 설문 응답) */
+const sharedPages = {
+  records: {
+    path: 'records',
+    lazy: async () => {
+      const m = await import('../features/records/RecordPages.tsx');
+      return { Component: m.RecordListPage, loader: m.recordListLoader };
+    },
+  },
+  record: {
+    path: 'records/:recordId',
+    lazy: async () => {
+      const m = await import('../features/records/RecordPages.tsx');
+      return { Component: m.RecordViewerPage, loader: m.recordLoader };
+    },
+  },
+  surveyResponse: {
+    path: 'surveys/:surveyId',
+    lazy: async () => {
+      const m = await import('../features/surveys/SurveyResponsePage.tsx');
+      return { Component: m.SurveyResponsePage, loader: m.surveyLoader };
+    },
+  },
+} satisfies Record<string, RouteObject>;
+
+const studentRoutes: RouteObject[] = [
+  {
+    index: true,
+    lazy: async () => {
+      const m = await import('../pages/HomePage.tsx');
+      return { Component: m.HomePage, loader: m.homeLoader };
+    },
+  },
+  {
+    path: 'activities',
+    lazy: async () => {
+      const m = await import('../features/activities/ActivityListPage.tsx');
+      return { Component: m.ActivityListPage, loader: m.activityListLoader };
+    },
+  },
+  {
+    path: 'activities/:activityId',
+    lazy: async () => {
+      const m = await import('../features/activities/ActivityDetailPage.tsx');
+      return { Component: m.ActivityDetailPage, loader: m.activityLoader };
+    },
+  },
+  {
+    path: 'surveys',
+    lazy: async () => {
+      const m = await import('../features/surveys/SurveyListPage.tsx');
+      return { Component: m.SurveyListPage, loader: m.surveyListLoader };
+    },
+  },
+  sharedPages.surveyResponse,
+  ...['inquiries', 'inquiries/new'].map((path): RouteObject => ({
+    path,
+    lazy: async () => {
+      const m = await import('../features/inquiries/InquiryPage.tsx');
+      return { Component: m.InquiryPage, loader: m.inquiryListLoader };
+    },
+  })),
+  sharedPages.records,
+  sharedPages.record,
+];
+
+const councilRoutes: RouteObject[] = [
+  {
+    index: true,
+    lazy: async () => {
+      const m = await import('../pages/CouncilHomePage.tsx');
+      return { Component: m.CouncilHomePage, loader: m.councilHomeLoader };
+    },
+  },
+  {
+    path: 'activities',
+    lazy: async () => {
+      const m = await import('../features/activities/ActivityListPage.tsx');
       return {
-        element: (
-          <StandaloneMain>
-            <PlaceholderPage title="로그인" design="로그인 · login" />
-          </StandaloneMain>
-        ),
+        Component: m.ActivityListPage,
+        loader: m.councilActivityListLoader,
       };
     },
   },
   {
-    element: <StudentLayout />,
+    path: 'activities/new',
+    lazy: async () => {
+      const m = await import('../features/activities/ActivityNewPage.tsx');
+      return { Component: m.ActivityNewPage, loader: m.activityNewLoader };
+    },
+  },
+  {
+    path: 'activities/:activityId',
+    lazy: async () => {
+      const m = await import('../features/activities/ActivityDetailPage.tsx');
+      return {
+        Component: m.ActivityDetailPage,
+        loader: m.councilActivityLoader,
+      };
+    },
+  },
+  {
+    path: 'tasks',
+    lazy: async () => {
+      const m = await import('../features/tasks/TaskListPage.tsx');
+      return { Component: m.TaskListPage, loader: m.taskListLoader };
+    },
+  },
+  {
+    path: 'tasks/new',
+    lazy: async () => {
+      const m = await import('../features/tasks/TaskNewPage.tsx');
+      return { Component: m.TaskNewPage, loader: m.taskNewLoader };
+    },
+  },
+  {
+    path: 'tasks/:taskId',
+    lazy: async () => {
+      const m = await import('../features/tasks/TaskDetailPage.tsx');
+      return { Component: m.TaskDetailPage, loader: m.taskLoader };
+    },
+  },
+  {
+    path: 'surveys',
+    lazy: async () => {
+      const m = await import('../features/surveys/SurveyListPage.tsx');
+      return {
+        Component: m.SurveyListPage,
+        loader: m.councilSurveyListLoader,
+      };
+    },
+  },
+  sharedPages.surveyResponse,
+  {
+    path: 'surveys/:surveyId/edit',
+    lazy: async () => {
+      const m = await import('../features/survey-admin/SurveyEditPage.tsx');
+      return { Component: m.SurveyEditPage, loader: m.surveyEditLoader };
+    },
+  },
+  {
+    path: 'surveys/:surveyId/results',
+    lazy: async () => {
+      const m = await import('../features/survey-admin/SurveyResultsPage.tsx');
+      return { Component: m.SurveyResultsPage, loader: m.surveyResultsLoader };
+    },
+  },
+  {
+    path: 'inquiries',
+    lazy: async () => {
+      const m = await import('../features/inquiries/InquiryInboxPage.tsx');
+      return { Component: m.InquiryInboxPage, loader: m.inquiryInboxLoader };
+    },
+  },
+  sharedPages.records,
+  sharedPages.record,
+  {
+    // 구성원·권한: GNB에는 없고 주소로만 들어간다.
+    path: 'members',
+    lazy: async () => {
+      const m = await import('../features/members/MemberListPage.tsx');
+      return { Component: m.MemberListPage, loader: m.memberListLoader };
+    },
+  },
+];
+
+export const router = createBrowserRouter([
+  {
+    element: <AppLayout mode="visitor" />,
     HydrateFallback: () => null,
-    children: [
-      {
-        errorElement: <RouteErrorPage />,
-        children: [
-          {
-            path: 'surveys',
-            lazy: async () => {
-              const m = await import('../features/surveys/SurveyListPage.tsx');
-              return {
-                Component: m.SurveyListPage,
-                loader: m.surveyListLoader,
-              };
-            },
-          },
-          {
-            path: 'surveys/:surveyId',
-            lazy: async () => {
-              const m =
-                await import('../features/surveys/SurveyResponsePage.tsx');
-              return {
-                Component: m.SurveyResponsePage,
-                loader: m.surveyLoader,
-              };
-            },
-          },
-          {
-            path: 'suggestions',
-            lazy: async () => {
-              const m =
-                await import('../features/suggestions/SuggestionListPage.tsx');
-              return {
-                Component: m.SuggestionListPage,
-                loader: m.suggestionListLoader,
-              };
-            },
-          },
-          {
-            path: 'suggestions/new',
-            lazy: async () => {
-              const m =
-                await import('../features/suggestions/NewSuggestionPage.tsx');
-              return {
-                Component: m.NewSuggestionPage,
-                loader: m.newSuggestionLoader,
-              };
-            },
-          },
-          {
-            path: 'suggestions/:suggestionId',
-            lazy: async () => {
-              const m =
-                await import('../features/suggestions/SuggestionDetailPage.tsx');
-              return {
-                Component: m.SuggestionDetailPage,
-                loader: m.suggestionLoader,
-              };
-            },
-          },
-          {
-            path: 'activity',
-            lazy: async () => {
-              const m =
-                await import('../features/activity/ActivityListPage.tsx');
-              return {
-                Component: m.ActivityListPage,
-                loader: m.activityListLoader,
-              };
-            },
-          },
-          {
-            path: 'activity/:agendaId',
-            lazy: async () => {
-              const m =
-                await import('../features/activity/AgendaDetailPage.tsx');
-              return { Component: m.AgendaDetailPage, loader: m.agendaLoader };
-            },
-          },
-        ],
-      },
-    ],
+    children: [{ errorElement: <RouteErrorPage />, children: visitorRoutes }],
+  },
+  {
+    path: '/',
+    element: <AppLayout mode="student" />,
+    HydrateFallback: () => null,
+    children: [{ errorElement: <RouteErrorPage />, children: studentRoutes }],
   },
   {
     path: 'work',
-    loader: workLayoutLoader,
-    element: <WorkLayout />,
+    // 학생회 임원만 들어온다.
+    loader: () => (getSession().councilRole ? null : redirect('/')),
+    element: <AppLayout mode="council" />,
     HydrateFallback: () => null,
-    children: [
-      { index: true, element: <Navigate to="tasks" replace /> },
-      {
-        errorElement: <RouteErrorPage />,
-        children: [
-          {
-            path: 'tasks',
-            lazy: async () => {
-              const m = await import('../features/tasks/TaskListPage.tsx');
-              return { Component: m.TaskListPage, loader: m.taskListLoader };
-            },
-          },
-          {
-            path: 'tasks/:taskId',
-            lazy: async () => {
-              const m = await import('../features/tasks/TaskDetailPage.tsx');
-              return { Component: m.TaskDetailPage, loader: m.taskLoader };
-            },
-          },
-          {
-            path: 'agendas',
-            lazy: async () => {
-              const m = await import('../features/agendas/AgendaListPage.tsx');
-              return {
-                Component: m.AgendaListPage,
-                loader: m.agendaListLoader,
-              };
-            },
-          },
-          {
-            path: 'agendas/:agendaId',
-            lazy: async () => {
-              const m = await import('../features/agendas/AgendaWorkPage.tsx');
-              return {
-                Component: m.AgendaWorkPage,
-                loader: m.agendaWorkLoader,
-              };
-            },
-          },
-          {
-            path: 'suggestions',
-            lazy: async () => {
-              const m = await import('../features/inbox/InboxPage.tsx');
-              return { Component: m.InboxPage, loader: m.inboxLoader };
-            },
-          },
-          {
-            path: 'surveys',
-            lazy: async () => {
-              const m =
-                await import('../features/survey-admin/SurveyAdminListPage.tsx');
-              return {
-                Component: m.SurveyAdminListPage,
-                loader: m.surveyAdminListLoader,
-              };
-            },
-          },
-          {
-            path: 'surveys/:surveyId/edit',
-            lazy: async () => {
-              const m =
-                await import('../features/survey-admin/SurveyEditPage.tsx');
-              return {
-                Component: m.SurveyEditPage,
-                loader: m.surveyEditLoader,
-              };
-            },
-          },
-          {
-            path: 'surveys/:surveyId/results',
-            lazy: async () => {
-              const m =
-                await import('../features/survey-admin/SurveyResultsLayout.tsx');
-              return {
-                Component: m.SurveyResultsLayout,
-                loader: m.surveyResultsLoader,
-              };
-            },
-            children: [
-              {
-                index: true,
-                lazy: async () => ({
-                  Component: (
-                    await import('../features/survey-admin/SurveyResultsSummaryPage.tsx')
-                  ).SurveyResultsSummaryPage,
-                }),
-              },
-              {
-                path: 'questions',
-                lazy: async () => ({
-                  Component: (
-                    await import('../features/survey-admin/SurveyResultsQuestionPage.tsx')
-                  ).SurveyResultsQuestionPage,
-                }),
-              },
-              {
-                path: 'responses',
-                lazy: async () => ({
-                  Component: (
-                    await import('../features/survey-admin/SurveyResultsResponsePage.tsx')
-                  ).SurveyResultsResponsePage,
-                }),
-              },
-            ],
-          },
-          {
-            path: 'reports',
-            lazy: async () => {
-              const m = await import('../features/reports/ReportListPage.tsx');
-              return {
-                Component: m.ReportListPage,
-                loader: m.reportListLoader,
-              };
-            },
-          },
-          {
-            path: 'reports/new',
-            lazy: async () => {
-              const m = await import('../features/reports/NewReportPage.tsx');
-              return { Component: m.NewReportPage, loader: m.newReportLoader };
-            },
-          },
-          {
-            path: 'reports/:reportId',
-            lazy: async () => {
-              const m =
-                await import('../features/reports/ReportDetailPage.tsx');
-              return { Component: m.ReportDetailPage, loader: m.reportLoader };
-            },
-          },
-          {
-            path: 'publish',
-            lazy: async () => {
-              const m =
-                await import('../features/publish/PublishReviewPage.tsx');
-              return {
-                Component: m.PublishReviewPage,
-                loader: m.publishLoader,
-              };
-            },
-          },
-          {
-            path: 'members',
-            lazy: async () => {
-              const m = await import('../features/members/MemberListPage.tsx');
-              return {
-                Component: m.MemberListPage,
-                loader: m.memberListLoader,
-              };
-            },
-          },
-        ],
-      },
-    ],
+    children: [{ errorElement: <RouteErrorPage />, children: councilRoutes }],
   },
   ...devRoutes,
   {

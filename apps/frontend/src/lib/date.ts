@@ -10,10 +10,10 @@ export function formatDate(iso: string, withTime = false) {
     : day;
 }
 
-/** 10.12 */
+/** 10.12, 11.05 */
 export function formatShortDate(iso: string) {
   const date = new Date(iso);
-  return `${date.getMonth() + 1}.${date.getDate()}`;
+  return `${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
 /** 10.12 21:48 */

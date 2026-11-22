@@ -29,9 +29,9 @@ export async function memberListLoader() {
 }
 
 const permissionNote: Record<MemberPermission, string> = {
-  관리자: '모든 화면과 공개 검토',
-  '부서 관리': '부서의 안건·업무·설문 관리',
-  일반: '맡은 업무와 안건 보기',
+  관리자: '모든 화면과 권한 관리',
+  '부서 관리': '부서의 활동·업무·설문 관리',
+  일반: '맡은 업무와 활동 보기',
 };
 
 function PermissionCell({
@@ -76,7 +76,9 @@ function PermissionCell({
 export function MemberListPage() {
   const members = useLoaderData<typeof memberListLoader>();
   const session = useSession();
-  const canManage = session.councilRole === '회장단';
+  const canManage =
+    members.find((member) => member.name === session.name)?.permission ===
+    '관리자';
 
   const [department, setDepartment] = useState('');
   const [permission, setPermission] = useState('');

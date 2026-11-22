@@ -3,12 +3,12 @@ import styled, { css } from 'styled-components';
 import { VisuallyHidden } from '../components/ui/VisuallyHidden.ts';
 
 /* 화면 제목 */
-const Root = styled.header`
+const Root = styled.header<{ $tall?: boolean }>`
   display: flex;
-  align-items: flex-start;
+  align-items: ${({ $tall }) => ($tall ? 'flex-start' : 'center')};
+  min-height: ${({ $tall, theme }) => ($tall ? theme.height[400] : 'auto')};
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: ${({ theme }) => theme.spacing[400]};
 
   @media (max-width: 600px) {
     flex-direction: column;
@@ -16,17 +16,16 @@ const Root = styled.header`
 `;
 
 const Text = styled.div`
+  display: grid;
+  gap: ${({ theme }) => theme.spacing[150]};
   min-width: 0;
 `;
 
 const Title = styled.h1`
   ${({ theme: t }) => css`
+    ${t.text.titleStrong}
     margin: 0;
     color: ${t.colors.core.glyph.primary};
-    font-size: ${t.font.size.title};
-    font-weight: 800;
-    line-height: 1.3;
-    letter-spacing: -0.02em;
     overflow-wrap: break-word;
     text-wrap: balance;
   `}
@@ -34,10 +33,9 @@ const Title = styled.h1`
 
 const Description = styled.p`
   ${({ theme: t }) => css`
-    margin: 6px 0 0;
+    ${t.text.bodyWeak}
+    margin: 0;
     color: ${t.colors.core.glyph.secondary};
-    font-size: ${t.font.size.callout};
-    line-height: 1.6;
     text-wrap: pretty;
   `}
 `;
@@ -46,7 +44,7 @@ const Description = styled.p`
 export const PageHeaderActions = styled.div`
   display: flex;
   flex: none;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing[300]};
 
   /* 인쇄: 설문 결과처럼 본문만 남긴다 */
   @media print {
@@ -57,8 +55,10 @@ export const PageHeaderActions = styled.div`
 export interface PageHeaderProps {
   title: string;
   description?: ReactNode;
-  /** 오른쪽 위 주요 동작 (새 건의, 안건 등록 등) */
+  /** 오른쪽 위 주요 동작 (질의 작성하기, 활동 등록 등) */
   actions?: ReactNode;
+  /** Figma "Page heading"(높이 56)을 쓰는 상세·작성 화면 */
+  tall?: boolean;
   /** 화면에는 보이지 않고 탭 제목과 스크린 리더용 제목만 남긴다. 이때 description과 actions는 쓰지 않는다. */
   visuallyHidden?: boolean;
 }
@@ -69,6 +69,7 @@ export function PageHeader({
   description,
   actions,
   visuallyHidden = false,
+  tall = false,
 }: PageHeaderProps) {
   const documentTitle = <title>{`${title} | 디미고 학생회`}</title>;
   if (visuallyHidden) {
@@ -80,7 +81,7 @@ export function PageHeader({
     );
   }
   return (
-    <Root>
+    <Root $tall={tall}>
       {documentTitle}
       <Text>
         <Title>{title}</Title>

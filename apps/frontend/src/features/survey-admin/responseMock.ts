@@ -3,7 +3,6 @@ import type {
   Answers,
   MultipleChoiceQuestion,
   Question,
-  ScaleQuestion,
   SingleChoiceQuestion,
 } from '../surveys/types.ts';
 import type { AdminSurvey, SurveyResponse } from './types.ts';
@@ -14,12 +13,12 @@ import type { AdminSurvey, SurveyResponse } from './types.ts';
  * 문항별 경향(tendencies)은 결과 화면이 그럴듯해 보이도록 손으로 정했다.
  */
 
-/** 객관식·척도: 선택지별 상대 비중. 복수 선택: 선택지마다 고를 확률. 주관식: [답, 비중] */
+/** 단일 선택: 선택지별 상대 비중. 복수 선택: 선택지마다 고를 확률. 단답형·장문형: [답, 비중] */
 type QuestionTendency = number[] | [string, number][];
 type SurveyTendencies = Record<string, QuestionTendency>;
 
 const tendenciesBySurvey: Record<string, SurveyTendencies> = {
-  'lunch-2026-10': {
+  'lunch-2026-11': {
     q1: [6, 14, 34, 32, 14],
     q2: [0.32, 0.21, 0.47, 0.38, 0.12],
     q3: [
@@ -38,62 +37,45 @@ const tendenciesBySurvey: Record<string, SurveyTendencies> = {
       ['석식 양이 부족해요', 3],
     ],
   },
-  'sports-day-2026': {
-    q1: [24, 31, 12, 22, 11],
-    q2: [0.28, 0.36, 0.18, 0.41, 0.09],
-    q3: [5, 9, 28, 38, 20],
-    q4: [44, 31, 25],
-    q5: [38, 34, 28],
-    q6: [
-      ['반 대항 계주는 꼭 남겨주세요', 6],
-      ['반 대항 계주 꼭 남겨주세요', 3],
-      ['응원전 시간을 늘려주세요', 5],
-      ['그늘막을 더 설치해주세요', 4],
-      ['그늘막 더 설치해 주세요', 2],
-      ['물을 충분히 준비해주세요', 3],
-      ['결승은 전교생이 볼 수 있게 해주세요', 3],
-      ['심판을 공정하게 봐주세요', 2],
-    ],
-  },
-  'dorm-laundry-2026': {
-    q1: [9, 24, 52, 15],
-    q2: [48, 33, 19],
+  'dimi-sports-2026': {
+    q1: [46, 32, 16, 6],
+    q2: [0.54, 0.41, 0.23],
     q3: [
-      ['건조기가 부족해요', 8],
-      ['건조기가 부족해요.', 3],
-      ['건조기 부족', 4],
-      ['세탁기를 쓰려고 오래 기다려요', 6],
-      ['세탁기 대기 시간이 길어요', 4],
-      ['22시 이후에는 소리가 방까지 들려요', 3],
-      ['세제가 없을 때가 많아요', 3],
-      ['예약 기능이 있으면 좋겠어요', 4],
-      ['예약 기능이 있으면 좋겠어요!', 2],
-      ['빨래 바구니가 부족해요', 2],
+      ['계주', 9],
+      ['줄다리기', 7],
+      ['피구', 6],
+      ['축구', 5],
+      ['농구', 3],
+    ],
+    q4: [
+      [
+        '경기 사이에 쉬는 시간이 부족했어요. 종목을 이틀로 나누면 좋겠습니다.',
+        9,
+      ],
+      ['응원석에 그늘막과 물을 더 준비해 주세요.', 7],
+      ['학년별 대진표를 미리 공지해 주면 반별로 준비하기 쉬울 것 같아요.', 5],
+      ['응원전 시간을 늘려주세요', 4],
     ],
   },
-  'council-review-2026-1': { q1: [4, 10, 31, 40, 15] },
-  'festival-booth-2026': { q1: [12, 30, 58] },
+  'parcel-time-2026': {
+    q1: [21, 46, 25, 8],
+    q2: [
+      ['저녁 자습 끝나면 이미 닫혀 있어요', 7],
+      ['보관함이 꽉 차 있을 때가 많아요', 5],
+      ['찾는 시간이 너무 짧아요', 6],
+    ],
+  },
+  'sns-2026': { q1: [0.62, 0.48, 0.71, 0.33] },
+  'art-festival-2026': { q1: [41, 27, 14, 18] },
 };
-
-const sampleNames = [
-  '김도윤',
-  '이서연',
-  '박지호',
-  '최하은',
-  '정민준',
-  '강예린',
-  '조현우',
-  '윤소율',
-];
 
 const gradeWeights = [36, 34, 30];
 const classCount = 6;
-const studentsPerClass = 28;
 
 /** 성의 없이 첫 선택지만 골라 아주 빨리 내는 응답자의 비율 */
 const carelessRespondentChance = 0.03;
 
-/** 선택 문항을 건너뛸 확률. 주관식은 절반 넘게 비워 둔다. */
+/** 선택 문항을 건너뛸 확률. 단답형·장문형은 절반 넘게 비워 둔다. */
 const textSkipChance = 0.55;
 const choiceSkipChance = 0.08;
 
@@ -137,7 +119,9 @@ function equalWeights(items: unknown[], weight: number) {
 function skipsOptionalQuestion(question: Question, random: Random) {
   if (question.required) return false;
   const skipChance =
-    question.type === 'text' ? textSkipChance : choiceSkipChance;
+    question.type === 'short' || question.type === 'long'
+      ? textSkipChance
+      : choiceSkipChance;
   return random() < skipChance;
 }
 
@@ -147,9 +131,8 @@ function carelessAnswer(question: Question): AnswerValue {
       return question.options[0];
     case 'multiple':
       return [question.options[0]];
-    case 'scale':
-      return 1;
-    case 'text':
+    case 'short':
+    case 'long':
       return 'ㅇ';
   }
 }
@@ -178,16 +161,6 @@ function generateMultipleChoice(
   }
   if (!question.maxSelections) return chosen;
   return chosen.slice(0, question.maxSelections);
-}
-
-function generateScale(
-  question: ScaleQuestion,
-  weights: number[] | undefined,
-  random: Random,
-) {
-  const steps = Array.from({ length: question.steps }, (_, index) => index + 1);
-  const stepWeights = weights ?? equalWeights(steps, 1);
-  return pickWeighted(steps, stepWeights, random);
 }
 
 function generateText(
@@ -222,9 +195,8 @@ function generateAnswer(
         tendency as number[] | undefined,
         random,
       );
-    case 'scale':
-      return generateScale(question, tendency as number[] | undefined, random);
-    case 'text':
+    case 'short':
+    case 'long':
       return generateText(tendency as [string, number][] | undefined, random);
   }
 }
@@ -287,24 +259,13 @@ function generateResponse(
   const grade = pickWeighted<1 | 2 | 3>([1, 2, 3], gradeWeights, random);
   const answers = generateAnswers(survey, tendencies, random, isCareless);
   const classNumber = randomIntegerFrom(1, classCount, random);
-  const seatNumber = randomIntegerFrom(1, studentsPerClass, random);
   const durationSeconds = generateDurationSeconds(survey, isCareless, random);
-
-  let studentId: string | undefined;
-  if (survey.identity !== 'anonymous') {
-    studentId = `${grade}${classNumber}${String(seatNumber).padStart(2, '0')}`;
-  }
-  let name: string | undefined;
-  if (survey.identity === 'named') {
-    name = sampleNames[randomIntegerFrom(0, sampleNames.length, random)];
-  }
 
   return {
     submittedAt: submittedAt.toISOString(),
     durationSeconds,
     grade,
-    studentId,
-    name,
+    ...(survey.collectsClass && { classNumber }),
     answers,
     excluded: false,
   };

@@ -1,0 +1,336 @@
+import type { Activity } from './types.ts';
+
+/**
+ * 개발용 예시 활동. Figma(학생회 / 활동, 활동 상세)의 예시를 옮겼고,
+ * #025~#027은 설문 예시가 연결될 활동으로 만들었다. 설문은 연결 활동이 있어야 게시할 수 있다.
+ */
+
+const day = (date: string) => `${date}T12:00:00+09:00`;
+
+export const mockActivities: Activity[] = [
+  {
+    id: '27',
+    title: '택배 보관함 수령 시간 확대',
+    description:
+      '택배 보관함을 쓸 수 있는 시간이 짧다는 의견을 모아 행정실과 수령 시간 확대를 협의해요.',
+    status: '검토 중',
+    scope: '전체 공개',
+    department: '총무부',
+    owner: '정민준',
+    registeredAt: day('2026-11-08'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '회의',
+        at: day('2026-11-08'),
+        title: '11월 학생회 회의에서 검토하기로 결정',
+        body: '수령 시간대 의견을 설문으로 먼저 모으기로 했어요.',
+      },
+    ],
+  },
+  {
+    id: '26',
+    title: '11월 급식 만족도 조사',
+    description: '매달 급식 만족도를 조사해 급식실에 전달해요.',
+    status: '추진 중',
+    scope: '전체 공개',
+    department: '바른생활부',
+    owner: '최유나',
+    registeredAt: day('2026-11-07'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '추진',
+        at: day('2026-11-07'),
+        title: '11월 급식 만족도 설문 시작',
+        body: '메뉴, 양, 배식 시간에 대한 의견을 모아요.',
+      },
+      {
+        id: 'h2',
+        kind: '보고',
+        title: '설문 결과를 급식실에 전달',
+      },
+    ],
+  },
+  {
+    id: '25',
+    title: '수능 응원 이벤트 운영',
+    description: '수능을 보는 3학년 선배들을 응원하는 이벤트를 준비해요.',
+    status: '추진 중',
+    scope: '전체 공개',
+    department: '홍보부',
+    owner: '문세희',
+    registeredAt: day('2026-11-06'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '회의',
+        at: day('2026-11-06'),
+        title: '수능 응원 이벤트 운영 결정',
+        body: '하고 싶은 활동을 설문으로 고르기로 했어요.',
+      },
+    ],
+  },
+  {
+    id: '24',
+    title: '디미체전 운영 개선',
+    description:
+      '질의 내용을 검토하고 종목 수와 경기 일정을 조정할 수 있는지 확인해요.',
+    status: '추진 중',
+    scope: '전체 공개',
+    department: '생활스포츠부',
+    owner: '박성현',
+    registeredAt: day('2026-10-30'),
+    inquiryIds: ['128'],
+    history: [
+      {
+        id: 'h1',
+        kind: '질의',
+        at: day('2026-10-30'),
+        title: '학생 질의 #128 접수',
+        body: '‘디미체전 경기 일정이 너무 빡빡했어요’ 질의가 공감 86개를 받아 활동 후보로 올라왔어요.',
+      },
+      {
+        id: 'h2',
+        kind: '회의',
+        at: day('2026-11-01'),
+        title: '11월 학생회 회의에서 활동 채택',
+        body: '찬성 14 · 반대 1 · 기권 2로 채택했어요. 담당 부서는 생활스포츠부로 정해졌어요.',
+        link: { label: '회의록 보기', to: '/records/r7' },
+      },
+      {
+        id: 'h3',
+        kind: '협의',
+        at: day('2026-11-03'),
+        title: '체육 선생님과 운영 방안 협의',
+        body: '종목 수를 줄이고 경기 일정을 이틀로 나누는 방법을 협의했어요.',
+      },
+      {
+        id: 'h4',
+        kind: '추진',
+        at: day('2026-11-05'),
+        title: '디미체전 만족도 설문 진행',
+        body: '11.10부터 11.19까지 설문으로 학생 의견을 모아요.',
+      },
+      {
+        id: 'h5',
+        kind: '보고',
+        title: '설문 결과와 개선안 공개',
+        body: '설문 결과와 내년 운영 개선안을 정리해 전체 공개할 예정이에요.',
+      },
+    ],
+    plan: {
+      author: '박성현',
+      writtenAt: day('2026-11-04'),
+      period: '11.10(화) – 11.27(금)',
+      steps: [
+        {
+          title: '만족도 설문 · 11.10–11.19',
+          body: '종목, 경기 일정, 진행 방식에 대한 의견을 4문항으로 모아요.',
+        },
+        {
+          title: '결과 정리 · 11.20–11.24',
+          body: '생활스포츠부가 응답을 정리하고 체육 선생님과 검토해요.',
+        },
+        {
+          title: '학생회 회의 · 11.25',
+          body: '내년 종목 수와 경기 일정 개선안을 확정해요.',
+        },
+        {
+          title: '결과 공개 · 11.27',
+          body: '설문 결과와 개선안을 전체 공개해요.',
+        },
+      ],
+      cooperation: '체육 선생님께 일정 조정안 검토 요청 (11.03 협의 완료)',
+      staff: [
+        { role: '책임', name: '박성현' },
+        { role: '설문 제작', name: '조원' },
+        { role: '안내문 게시', name: '문세희' },
+      ],
+      cost: '0원',
+      concerns:
+        '설문 참여가 적을 수 있어요. 학급 단톡방과 홈 공지로 두 번 안내해요.',
+    },
+  },
+  {
+    id: '23',
+    title: '비 오는 날 아침 체육관 개방',
+    description:
+      '비 오는 날 아침에 운동할 곳이 없다는 의견을 검토하고 체육관을 열 수 있는지 확인해요.',
+    status: '검토 중',
+    scope: '전체 공개',
+    department: '생활스포츠부',
+    owner: '박성현',
+    registeredAt: day('2026-11-04'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '회의',
+        at: day('2026-11-04'),
+        title: '생활스포츠부 회의에서 검토 시작',
+      },
+    ],
+  },
+  {
+    id: '22',
+    title: '대화형 공부 공간 조성',
+    description: '함께 이야기하며 공부할 수 있는 공간을 만들어요.',
+    status: '완료',
+    scope: '전체 공개',
+    department: '바른생활부',
+    owner: '최유나',
+    registeredAt: day('2026-10-28'),
+    inquiryIds: ['102'],
+    history: [
+      {
+        id: 'h1',
+        kind: '질의',
+        at: day('2026-10-12'),
+        title: '학생 질의 #102 접수',
+        body: '‘대화형 공부 공간 조성 요청’ 질의를 활동으로 등록했어요.',
+      },
+      {
+        id: 'h2',
+        kind: '협의',
+        at: day('2026-10-20'),
+        title: '행정실과 공간 사용 협의',
+        body: '3층 세미나실을 저녁 자습 시간에 쓰기로 했어요.',
+      },
+      {
+        id: 'h3',
+        kind: '보고',
+        at: day('2026-11-03'),
+        title: '대화형 공부 공간 조성 결과 공개',
+        link: { label: '활동 기록 보기', to: '/records/r3' },
+      },
+    ],
+  },
+  {
+    id: '21',
+    title: '화장실 핸드타월 비치량 확대',
+    description: '화장실 핸드타월이 자주 떨어진다는 의견을 행정실에 전달해요.',
+    status: '추진 중',
+    scope: '전체 공개',
+    department: '총무부',
+    owner: '정민준',
+    registeredAt: day('2026-10-27'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '협의',
+        at: day('2026-10-29'),
+        title: '행정실과 비치량 확대 협의',
+      },
+      {
+        id: 'h2',
+        kind: '보고',
+        at: day('2026-11-04'),
+        title: '중간 점검 결과 공개',
+        link: { label: '활동 기록 보기', to: '/records/r4' },
+      },
+    ],
+  },
+  {
+    id: '20',
+    title: '용모 규정 완화 요청',
+    description: '용모 규정 완화 의견을 모아 학교와 협의해요.',
+    status: '보류',
+    scope: '전체 공개',
+    department: '문예창작부',
+    owner: '한도윤',
+    registeredAt: day('2026-10-20'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '회의',
+        at: day('2026-10-22'),
+        title: '학교 측 협의가 먼저 필요해 보류',
+      },
+    ],
+  },
+  {
+    id: '19',
+    title: '학생회 SNS 운영 방향 개선',
+    description:
+      '학생회 공식 계정에서 보고 싶은 콘텐츠를 조사해 운영 방향을 정해요.',
+    status: '완료',
+    scope: '전체 공개',
+    department: '홍보부',
+    owner: '문세희',
+    registeredAt: day('2026-10-15'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '추진',
+        at: day('2026-10-15'),
+        title: 'SNS 운영 방향 설문 진행',
+      },
+      {
+        id: 'h2',
+        kind: '보고',
+        at: day('2026-10-30'),
+        title: '운영 방향 개선 결과 공개',
+        link: { label: '활동 기록 보기', to: '/records/r2' },
+      },
+    ],
+  },
+  {
+    id: '18',
+    title: '예술제 운영 계획 수립',
+    description: '예술제에서 보고 싶은 프로그램을 조사하고 운영 계획을 세워요.',
+    status: '추진 중',
+    scope: '전체 공개',
+    department: '환경예술부',
+    owner: '김호태',
+    registeredAt: day('2026-10-12'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '회의',
+        at: day('2026-10-12'),
+        title: '예술제 준비 회의',
+      },
+      {
+        id: 'h2',
+        kind: '추진',
+        at: day('2026-10-20'),
+        title: '예술제 프로그램 수요 조사',
+      },
+      {
+        id: 'h3',
+        kind: '보고',
+        at: day('2026-11-04'),
+        title: '예술제 운영 계획 공개',
+        link: { label: '활동 기록 보기', to: '/records/r5' },
+      },
+    ],
+  },
+  {
+    id: '17',
+    title: '2학기 학생회 예산 집행 내역 검토',
+    description: '2학기 학생회 예산을 어디에 썼는지 정리하고 검토해요.',
+    status: '검토 중',
+    scope: '학생회',
+    department: '총무부',
+    owner: '정민준',
+    registeredAt: day('2026-10-10'),
+    inquiryIds: [],
+    history: [
+      {
+        id: 'h1',
+        kind: '회의',
+        at: day('2026-10-10'),
+        title: '영수증 정리 범위 논의',
+        body: '1학기 이월분까지 포함해 정리하기로 했어요.',
+      },
+    ],
+  },
+];

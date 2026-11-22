@@ -1,21 +1,17 @@
 import type { ReactNode } from 'react';
 import styled, { css } from 'styled-components';
+import { Icon } from '../../dimi-ui-kit/index.ts';
+import { iconCheck } from '../../dimi-ui-kit/icons';
 import { VisuallyHidden } from '../ui/VisuallyHidden.ts';
 
-export type StepState = 'done' | 'current' | 'todo';
+export type StepState = 'done' | 'todo';
 
 export interface StepItem {
   label: string;
   state: StepState;
-  /** 단계 아래 작은 글씨 (날짜, 담당 등) */
+  /** 단계 아래 작은 글씨 (날짜, 예정 등) */
   note?: ReactNode;
 }
-
-const stateText: Record<StepState, string> = {
-  done: '완료',
-  current: '현재 단계',
-  todo: '예정',
-};
 
 const List = styled.ol`
   display: grid;
@@ -29,72 +25,76 @@ const List = styled.ol`
 const Marker = styled.span`
   ${({ theme: t }) => css`
     position: relative;
-    width: 14px;
-    height: 14px;
-    margin-bottom: 8px;
-    border: 2px solid ${t.colors.core.line};
-    border-radius: 1px;
-    background: ${t.colors.background.primary};
+    z-index: 1;
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    margin-bottom: ${t.spacing[200]};
+    border-radius: ${t.radius.xs};
+    background: ${t.colors.components.fill.secondary};
+    color: ${t.colors.core.onColor.primary};
   `}
 `;
 
 const Label = styled.span`
-  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
-  font-size: ${({ theme }) => theme.font.size.callout};
+  ${({ theme: t }) => css`
+    ${t.text.footnoteWeak}
+    color: ${t.colors.core.glyph.tertiary};
+  `}
 `;
 
 const Note = styled.span`
-  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
-  font-size: ${({ theme }) => theme.font.size.footnote};
+  ${({ theme: t }) => css`
+    ${t.text.captionWeak}
+    color: ${t.colors.core.glyph.tertiary};
+  `}
 `;
 
-const Item = styled.li<{ $state: StepState }>`
-  ${({ theme: t, $state }) => css`
+const Item = styled.li<{ $state: StepState; $lineOn: boolean }>`
+  ${({ theme: t, $state, $lineOn }) => css`
     position: relative;
     display: grid;
-    gap: 2px;
-    padding-right: 8px;
+    justify-items: center;
+    text-align: center;
 
-    &::before {
+    /* 다음 단계까지 잇는 선 */
+    &::after {
       content: '';
       position: absolute;
-      top: 6px;
-      left: 14px;
-      right: 0;
+      top: 11px;
+      left: 50%;
+      width: 100%;
       height: 2px;
       background: ${
-        $state === 'done'
-          ? t.colors.components.fill.inverted.primary
-          : t.colors.core.outline
+        $lineOn
+          ? t.colors.core.status.accent
+          : t.colors.components.fill.secondary
       };
     }
-    &:last-child::before {
+    &:last-child::after {
       display: none;
     }
+    &:first-child {
+      justify-items: start;
+      text-align: left;
+    }
+    &:first-child::after {
+      left: 12px;
+    }
+    &:last-child {
+      justify-items: end;
+      text-align: right;
+    }
+
     ${
       $state === 'done' &&
       css`
         ${Marker} {
-          border-color: ${t.colors.components.fill.inverted.primary};
-          background: ${t.colors.components.fill.inverted.primary};
-        }
-      `
-    }
-    ${
-      $state === 'current' &&
-      css`
-        ${Marker} {
-          border-color: ${t.colors.core.glyph.primary};
+          background: ${t.colors.core.status.accent};
         }
         ${Label} {
-          font-weight: 700;
-        }
-      `
-    }
-    ${
-      $state !== 'todo' &&
-      css`
-        ${Label} {
+          ${t.text.footnoteStrong}
           color: ${t.colors.core.glyph.primary};
         }
       `
@@ -102,7 +102,7 @@ const Item = styled.li<{ $state: StepState }>`
   `}
 `;
 
-/** I-steps: 안건·건의의 단계. 지난 단계는 채운 사각형, 현재는 빈 사각형, 남은 단계는 흐리게. */
+/** 처리 단계 (접수 → 답변 완료 → 처리 완료). 지난 단계는 분홍 체크, 남은 단계는 회색. */
 export function Steps({
   items,
   'aria-label': ariaLabel,
@@ -110,18 +110,24 @@ export function Steps({
   items: StepItem[];
   'aria-label': string;
 }) {
+  const lastDone = items.map((item) => item.state).lastIndexOf('done');
   return (
     <List aria-label={ariaLabel}>
-      {items.map((item) => (
+      {items.map((item, index) => (
         <Item
           key={item.label}
           $state={item.state}
-          aria-current={item.state === 'current' ? 'step' : undefined}
+          $lineOn={index < lastDone}
+          aria-current={index === lastDone ? 'step' : undefined}
         >
-          <Marker aria-hidden="true" />
+          <Marker aria-hidden="true">
+            {item.state === 'done' && <Icon icon={iconCheck} size={18} />}
+          </Marker>
           <Label>
             {item.label}
-            <VisuallyHidden>, {stateText[item.state]}</VisuallyHidden>
+            <VisuallyHidden>
+              , {item.state === 'done' ? '완료' : '예정'}
+            </VisuallyHidden>
           </Label>
           {item.note && <Note>{item.note}</Note>}
         </Item>

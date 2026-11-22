@@ -1,4 +1,4 @@
-/* 업무공간 구성원·권한 */
+/* 학생회 구성원·권한 */
 import styled, { css } from 'styled-components';
 import { DataTable, SelectBox } from '../../components/ui/index.ts';
 

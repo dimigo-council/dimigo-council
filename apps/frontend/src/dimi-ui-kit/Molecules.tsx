@@ -295,6 +295,11 @@ const InputFieldSub = styled.p<{ $error?: boolean }>`
 const InputFieldRow = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.spacing[200]};
+
+  > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 `;
 
 /** DIMI UI KIT "Input/InputField" (Type=Single): title, input and helper text. */

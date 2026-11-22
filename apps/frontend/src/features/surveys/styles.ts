@@ -1,207 +1,265 @@
-/* 설문 목록 · 설문 응답 (업무공간 설문 미리보기·응답 보기도 함께 쓴다) */
+/* 설문 목록 · 설문 응답 (학생회 설문 미리보기·응답 보기도 함께 쓴다) */
 import styled, { css } from 'styled-components';
-import {
-  ChoiceInput,
-  FieldCount,
-  Notice,
-  OptionCardBox,
-  OptionCardText,
-} from '../../components/ui/index.ts';
 
-export const SurveyPanel = styled.div`
-  margin: 20px 0 24px;
+/* ---------- 설문 카드 (설문 목록 · 홈 마감 임박 설문) ---------- */
+
+/** Figma Grid: 384 카드 3열, 간격 24 */
+export const SurveyGrid = styled.ul`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: ${({ theme }) => theme.spacing[550]};
+  margin: 0;
+  padding: 0;
+  list-style: none;
 `;
 
-export const SurveyDday = styled.strong<{ $soon?: boolean }>`
-  ${({ theme: t, $soon }) => css`
-    color: ${$soon ? t.colors.core.glyph.accent : t.colors.core.glyph.primary};
-    font-size: ${t.font.size.body};
-    font-weight: 800;
+export const SurveyCardRoot = styled.article<{ $plain?: boolean }>`
+  ${({ theme: t, $plain }) => css`
+    display: flex;
+    flex-direction: column;
+    gap: ${t.spacing[400]};
+    box-sizing: border-box;
+    ${
+      !$plain &&
+      css`
+        height: 100%;
+        padding: ${t.spacing[550]};
+        border: 1px solid ${t.colors.core.outline};
+        border-radius: ${t.radius.m};
+        background: ${t.colors.background.primary};
+      `
+    }
   `}
 `;
 
-/* ---------- 응답 화면 ---------- */
-
-export const SurveyPage = styled.div`
-  max-width: 600px;
-  margin-inline: auto;
-`;
-
-export const SurveyIntro = styled.div`
-  display: grid;
-  gap: 20px;
-  margin-bottom: 16px;
-`;
-
-export const SurveyQuestions = styled.fieldset`
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-`;
-
-export const Question = styled.section`
+export const SurveyCardTitle = styled.h3`
   ${({ theme: t }) => css`
-    padding: 20px;
+    ${t.text.headlineStrong}
+    margin: 0;
+    color: ${t.colors.core.glyph.primary};
+  `}
+`;
+
+export const SurveyCardIntro = styled.p`
+  ${({ theme: t }) => css`
+    ${t.text.calloutRegular}
+    flex: 1;
+    margin: 0;
+    color: ${t.colors.core.glyph.secondary};
+  `}
+`;
+
+export const SurveyRate = styled.div`
+  ${({ theme: t }) => css`
+    display: grid;
+    gap: ${t.spacing[200]};
+  `}
+`;
+
+export const SurveyRateHead = styled.div`
+  ${({ theme: t }) => css`
+    ${t.text.footnoteRegular}
+    display: flex;
+    justify-content: space-between;
+    color: ${t.colors.core.glyph.tertiary};
+
+    > strong {
+      ${t.text.footnoteStrong}
+      color: ${t.colors.core.glyph.primary};
+    }
+  `}
+`;
+
+export const SurveyRateTrack = styled.div`
+  ${({ theme: t }) => css`
+    height: 6px;
+    overflow: hidden;
+    border-radius: ${t.radius.circle};
+    background: ${t.colors.components.fill.secondary};
+  `}
+`;
+
+export const SurveyRateBar = styled.div<{ $closed: boolean }>`
+  ${({ theme: t, $closed }) => css`
+    height: 100%;
+    border-radius: inherit;
+    background: ${
+      $closed ? t.colors.components.fill.tertiary : t.colors.core.status.accent
+    };
+  `}
+`;
+
+export const SurveyCardMore = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: -4px;
+`;
+
+export const SurveyToolbar = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing[550]};
+`;
+
+export const SurveyToolbarButtons = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing[300]};
+`;
+
+/** 목록 아래 "설문 기간이 아니어도 괜찮아요" */
+export const SurveyInquiryCta = styled.section`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: ${t.spacing[500]};
+    padding: ${t.spacing[600]} ${t.spacing[700]};
     border: 1px solid ${t.colors.core.outline};
     border-radius: ${t.radius.m};
     background: ${t.colors.background.primary};
 
-    ${OptionCardBox} {
-      align-items: center;
+    h2 {
+      ${t.text.bodyStrong}
+      margin: 0 0 ${t.spacing[100]};
+      color: ${t.colors.core.glyph.primary};
     }
-    ${OptionCardText} {
-      padding-top: 0;
+    p {
+      ${t.text.calloutRegular}
+      margin: 0;
+      color: ${t.colors.core.glyph.secondary};
     }
   `}
 `;
 
-export const QuestionTitle = styled.h2`
+/* ---------- 응답 화면 (Figma 학생 / 설문 참여) ---------- */
+
+/** 설문 카드: 안쪽 32, 모든 줄 사이 20 */
+export const SurveySheet = styled.form`
   ${({ theme: t }) => css`
     display: flex;
-    gap: 10px;
-    margin: 0;
-    color: ${t.colors.core.glyph.primary};
-    font-size: ${t.font.size.body};
-    font-weight: 700;
-    line-height: 1.5;
-  `}
-`;
-
-export const QuestionNumber = styled.span`
-  flex: none;
-  min-width: 1.2em;
-  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
-  font-variant-numeric: tabular-nums;
-`;
-
-export const QuestionRequired = styled.span`
-  margin-left: 6px;
-  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
-  font-size: ${({ theme }) => theme.font.size.footnote};
-  font-weight: 400;
-`;
-
-export const QuestionHint = styled.p`
-  margin: 4px 0 0;
-  padding-left: calc(1.2em + 10px);
-  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
-  font-size: ${({ theme }) => theme.font.size.footnote};
-`;
-
-export const QuestionOptions = styled.div`
-  margin-top: 14px;
-  display: grid;
-  gap: 8px;
-`;
-
-export const QuestionText = styled.div`
-  margin-top: 14px;
-  display: grid;
-  gap: 6px;
-
-  textarea {
-    min-height: 100px;
-    padding: 10px 12px;
-    line-height: 1.6;
-    resize: vertical;
-  }
-  ${FieldCount} {
-    font-size: ${({ theme }) => theme.font.size.footnote};
-    text-align: right;
-  }
-`;
-
-/* ---------- 척도 ---------- */
-
-export const Scale = styled.div`
-  margin-top: 14px;
-`;
-
-export const ScaleOptions = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
-  gap: 8px;
-`;
-
-export const ScaleItem = styled.label`
-  display: flex;
-  cursor: pointer;
-`;
-
-export const ScaleBox = styled.span`
-  ${({ theme: t }) => css`
-    display: grid;
-    flex: 1;
-    place-items: center;
-    min-height: 44px;
-    border: 1px solid ${t.colors.core.line};
+    flex-direction: column;
+    gap: ${t.spacing[500]};
+    padding: ${t.spacing[700]};
+    border: 1px solid ${t.colors.core.outline};
     border-radius: ${t.radius.m};
     background: ${t.colors.background.primary};
-    color: ${t.colors.core.glyph.primary};
-    font-size: ${t.font.size.callout};
-    font-variant-numeric: tabular-nums;
 
-    ${ScaleItem}:hover & {
-      background: ${t.colors.components.fill.primary};
-    }
-    ${ChoiceInput}:checked + & {
-      border-color: ${t.colors.components.fill.inverted.primary};
-      background: ${t.colors.components.fill.inverted.primary};
-      color: ${t.colors.core.glyph.inverted.primary};
-      font-weight: 700;
-    }
-    ${ChoiceInput}:focus-visible + & {
-      outline: 2px solid ${t.colors.core.status.accent};
-      outline-offset: 2px;
-    }
-    ${ChoiceInput}:disabled + & {
-      border-color: ${t.colors.core.outline};
-      cursor: not-allowed;
-    }
-    ${ChoiceInput}:disabled:not(:checked) + & {
-      background: ${t.colors.components.fill.primary};
-      color: ${t.colors.core.glyph.tertiary};
+    @media (max-width: 600px) {
+      padding: ${t.spacing[500]};
     }
   `}
 `;
 
-export const ScaleLabels = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 6px;
-  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
-  font-size: ${({ theme }) => theme.font.size.footnote};
+export const SurveyMeta = styled.p`
+  ${({ theme: t }) => css`
+    ${t.text.footnoteRegular}
+    margin: 0;
+    color: ${t.colors.core.glyph.tertiary};
+  `}
 `;
 
-/* ---------- 제출 줄 ---------- */
-
-export const SurveyError = styled(Notice)`
-  margin-top: 16px;
+export const SurveyTitle = styled.h2`
+  ${({ theme: t }) => css`
+    ${t.text.titleStrong}
+    margin: 0;
+    color: ${t.colors.core.glyph.primary};
+  `}
 `;
 
-export const SurveySubmit = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 16px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid ${({ theme }) => theme.colors.core.outline};
+export const SurveyLead = styled.p`
+  ${({ theme: t }) => css`
+    ${t.text.paragraphLarge}
+    margin: 0;
+    color: ${t.colors.core.glyph.secondary};
+  `}
 `;
 
-export const SurveySubmitHint = styled.p`
-  margin: 0;
-  color: ${({ theme }) => theme.colors.core.glyph.tertiary};
-  font-size: ${({ theme }) => theme.font.size.callout};
+/** 문항 하나: 제목과 선택지 사이도 카드와 같은 20 */
+export const Question = styled.div`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-direction: column;
+    gap: ${t.spacing[500]};
+    min-width: 0;
+  `}
 `;
 
-export const SurveySubmitActions = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-left: auto;
+export const QuestionHeading = styled.div`
+  ${({ theme: t }) => css`
+    display: grid;
+    gap: ${t.spacing[150]};
+
+    > span:first-child {
+      ${t.text.headlineStrong}
+      color: ${t.colors.core.glyph.primary};
+    }
+    > span + span {
+      ${t.text.footnoteRegular}
+      color: ${t.colors.core.glyph.secondary};
+    }
+  `}
+`;
+
+export const QuestionError = styled.p`
+  ${({ theme: t }) => css`
+    ${t.text.footnoteRegular}
+    margin: 0;
+    color: ${t.colors.core.status.negative};
+  `}
+`;
+
+/** 이전 · 다음 문항 (120 · 160) */
+export const SurveyActions = styled.div`
+  ${({ theme: t }) => css`
+    display: flex;
+    flex-wrap: wrap;
+    gap: ${t.spacing[300]};
+
+    > :first-child {
+      min-width: 120px;
+    }
+    > :last-child {
+      min-width: 160px;
+    }
+  `}
+`;
+
+export const SurveyNote = styled.p`
+  ${({ theme: t }) => css`
+    ${t.text.paragraphLarge}
+    margin: 0;
+    color: ${t.colors.core.glyph.secondary};
+  `}
+`;
+
+/** 답변 확인: 문항별 내 답 */
+export const ReviewList = styled.dl`
+  ${({ theme: t }) => css`
+    display: grid;
+    gap: ${t.spacing[500]};
+    margin: 0;
+
+    > div {
+      display: grid;
+      gap: ${t.spacing[200]};
+      padding-bottom: ${t.spacing[500]};
+      border-bottom: 1px solid ${t.colors.core.line};
+    }
+    > div:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+    dt {
+      ${t.text.headlineStrong}
+      color: ${t.colors.core.glyph.primary};
+    }
+    dd {
+      ${t.text.paragraphLarge}
+      margin: 0;
+      color: ${t.colors.core.glyph.secondary};
+      white-space: pre-wrap;
+    }
+  `}
 `;

@@ -16,50 +16,33 @@ import {
 export type StatusTone = NonNullable<BadgeProps['theme']>;
 
 /**
- * 도메인 상태 → kit Badge 테마.
- * grayscale: 기본·끝난 상태, solid(파랑): 진행, accent(분홍): 손이 필요한 상태, negative: 반려·지연.
+ * 도메인 상태 → kit Badge 테마 (Figma 기준).
+ * grayscale: 기다리는 상태, accent(분홍): 진행·답변, solid(파랑): 끝난 상태, negative: 보류·반려.
  */
 export const statusTone = {
-  suggestion: {
-    '접수 대기': 'grayscale',
-    '안건 채택': 'solid',
-    '검토 중': 'accent',
-    '답변 완료': 'grayscale',
+  activity: {
+    '검토 중': 'grayscale',
+    '추진 중': 'accent',
+    완료: 'solid',
+    보류: 'negative',
+  },
+  inquiry: {
+    접수: 'grayscale',
+    '답변 완료': 'accent',
+    '처리 완료': 'solid',
     반려: 'negative',
   },
-  agenda: {
-    등록: 'grayscale',
-    검토: 'solid',
-    결정: 'solid',
-    추진: 'solid',
-    보류: 'accent',
-    완료: 'grayscale',
-    부결: 'negative',
-  },
   task: {
-    '할 일': 'grayscale',
-    '진행 중': 'solid',
-    '검토 요청': 'accent',
-    완료: 'grayscale',
-    '마감 지남': 'negative',
+    예정됨: 'grayscale',
+    '진행 중': 'accent',
+    '검토 요청': 'solid',
+    완료: 'solid',
   },
   survey: {
     '작성 중': 'grayscale',
     '진행 중': 'solid',
     예약: 'accent',
     마감: 'grayscale',
-  },
-  report: {
-    '작성 중': 'grayscale',
-    '검토 요청': 'accent',
-    완료: 'grayscale',
-  },
-  visibility: {
-    '학생회 내부': 'grayscale',
-    '전체 공개': 'solid',
-    '공개 검토 중': 'accent',
-    게시됨: 'grayscale',
-    '수정 요청': 'negative',
   },
 } as const satisfies Record<string, Record<string, StatusTone>>;
 

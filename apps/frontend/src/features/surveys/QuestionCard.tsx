@@ -1,144 +1,130 @@
 import { useId } from 'react';
-import {
-  ChoiceInput,
-  FieldCount,
-  OptionCard,
-  VisuallyHidden,
-} from '../../components/ui/index.ts';
+import { Input } from '../../dimi-ui-kit/index.ts';
+import { CountedTextArea, OptionCard } from '../../components/ui/index.ts';
 import * as S from './styles.ts';
 import type { AnswerValue, Question } from './types.ts';
-import { TextArea } from '../../dimi-ui-kit/index.ts';
 
 interface QuestionCardProps {
   question: Question;
-  index: number;
+  /** 1부터 */
+  number: number;
+  total: number;
   value: AnswerValue | undefined;
   onChange: (value: AnswerValue) => void;
+  disabled?: boolean;
+  error?: string;
 }
 
+/**
+ * 설문 문항 하나 (Figma 학생 / 설문 참여).
+ * 단일 선택은 Radio, 복수 선택은 CheckFill 옵션 줄, 단답형은 Input, 장문형은 글자 수가 붙은 Textarea.
+ */
 export function QuestionCard({
   question,
-  index,
+  number,
+  total,
   value,
   onChange,
+  disabled = false,
+  error,
 }: QuestionCardProps) {
   const id = useId();
   const headingId = `${id}-title`;
-  const hintId = `${id}-hint`;
+  const errorId = `${id}-error`;
+  const describedBy = error ? errorId : undefined;
+  const title = `${number} / ${total} · ${question.title}`;
 
   return (
-    <S.Question aria-labelledby={headingId}>
-      <S.QuestionTitle id={headingId}>
-        <S.QuestionNumber>{index + 1}</S.QuestionNumber>
-        <span>
-          {question.title}
-          {question.required && <S.QuestionRequired>필수</S.QuestionRequired>}
-        </span>
-      </S.QuestionTitle>
+    <S.Question
+      role={
+        question.type === 'single'
+          ? 'radiogroup'
+          : question.type === 'multiple'
+            ? 'group'
+            : undefined
+      }
+      aria-labelledby={
+        question.type === 'single' || question.type === 'multiple'
+          ? headingId
+          : undefined
+      }
+      aria-describedby={describedBy}
+    >
+      <S.QuestionHeading>
+        <span id={headingId}>{title}</span>
+        {question.type === 'multiple' && (
+          <span>
+            {question.maxSelections
+              ? `최대 ${question.maxSelections}개까지 선택 가능`
+              : '복수 선택 가능'}
+          </span>
+        )}
+      </S.QuestionHeading>
 
-      {question.type === 'single' && (
-        <S.QuestionOptions role="radiogroup" aria-labelledby={headingId}>
-          {question.options.map((option) => (
+      {question.type === 'single' &&
+        question.options.map((option) => (
+          <OptionCard
+            key={option}
+            name={id}
+            value={option}
+            title={option}
+            checked={value === option}
+            disabled={disabled}
+            onChange={() => onChange(option)}
+          />
+        ))}
+
+      {question.type === 'multiple' &&
+        question.options.map((option) => {
+          const selected = Array.isArray(value) ? value : [];
+          const checked = selected.includes(option);
+          const full =
+            question.maxSelections !== undefined &&
+            selected.length >= question.maxSelections;
+          return (
             <OptionCard
               key={option}
-              name={id}
+              type="checkbox"
               value={option}
               title={option}
-              checked={value === option}
-              onChange={() => onChange(option)}
+              checked={checked}
+              disabled={disabled || (!checked && full)}
+              onChange={() =>
+                onChange(
+                  checked
+                    ? selected.filter((item) => item !== option)
+                    : [...selected, option],
+                )
+              }
             />
-          ))}
-        </S.QuestionOptions>
+          );
+        })}
+
+      {question.type === 'short' && (
+        <Input
+          aria-labelledby={headingId}
+          aria-describedby={describedBy}
+          maxLength={question.maxLength}
+          placeholder={question.placeholder ?? '답을 적어 주세요'}
+          value={typeof value === 'string' ? value : ''}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+        />
       )}
 
-      {question.type === 'multiple' && (
-        <>
-          {question.maxSelections && (
-            <S.QuestionHint id={hintId}>
-              최대 {question.maxSelections}개까지 선택
-            </S.QuestionHint>
-          )}
-          <S.QuestionOptions
-            role="group"
-            aria-labelledby={headingId}
-            aria-describedby={question.maxSelections ? hintId : undefined}
-          >
-            {question.options.map((option) => {
-              const selected = Array.isArray(value) ? value : [];
-              const checked = selected.includes(option);
-              const full =
-                question.maxSelections !== undefined &&
-                selected.length >= question.maxSelections;
-              return (
-                <OptionCard
-                  key={option}
-                  type="checkbox"
-                  value={option}
-                  title={option}
-                  checked={checked}
-                  disabled={!checked && full}
-                  onChange={() =>
-                    onChange(
-                      checked
-                        ? selected.filter((item) => item !== option)
-                        : [...selected, option],
-                    )
-                  }
-                />
-              );
-            })}
-          </S.QuestionOptions>
-        </>
+      {question.type === 'long' && (
+        <CountedTextArea
+          aria-labelledby={headingId}
+          aria-describedby={describedBy}
+          maxLength={question.maxLength}
+          placeholder={question.placeholder ?? '자유롭게 적어 주세요'}
+          value={typeof value === 'string' ? value : ''}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+        />
       )}
 
-      {question.type === 'scale' && (
-        <S.Scale>
-          <S.ScaleOptions role="radiogroup" aria-labelledby={headingId}>
-            {Array.from({ length: question.steps }, (_, i) => i + 1).map(
-              (step) => (
-                <S.ScaleItem key={step}>
-                  <ChoiceInput
-                    type="radio"
-                    name={id}
-                    value={step}
-                    checked={value === step}
-                    onChange={() => onChange(step)}
-                  />
-                  <S.ScaleBox>
-                    {step}
-                    {step === 1 && (
-                      <VisuallyHidden>, {question.minLabel}</VisuallyHidden>
-                    )}
-                    {step === question.steps && (
-                      <VisuallyHidden>, {question.maxLabel}</VisuallyHidden>
-                    )}
-                  </S.ScaleBox>
-                </S.ScaleItem>
-              ),
-            )}
-          </S.ScaleOptions>
-          <S.ScaleLabels aria-hidden="true">
-            <span>{question.minLabel}</span>
-            <span>{question.maxLabel}</span>
-          </S.ScaleLabels>
-        </S.Scale>
-      )}
-
-      {question.type === 'text' && (
-        <S.QuestionText>
-          <TextArea
-            aria-labelledby={headingId}
-            maxLength={question.maxLength}
-            placeholder={question.placeholder}
-            value={typeof value === 'string' ? value : ''}
-            onChange={(event) => onChange(event.target.value)}
-          />
-          <FieldCount>
-            {typeof value === 'string' ? value.length : 0} /{' '}
-            {question.maxLength}
-          </FieldCount>
-        </S.QuestionText>
-      )}
+      {error && <S.QuestionError id={errorId}>{error}</S.QuestionError>}
     </S.Question>
   );
 }

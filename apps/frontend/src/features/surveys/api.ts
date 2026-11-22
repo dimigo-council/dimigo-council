@@ -10,7 +10,7 @@ import type {
 /**
  * 설문 API.
  * TODO: 백엔드 설문 API가 생기면 아래 함수 본문만 fetch 호출로 바꾼다. 화면은 이 함수들만 쓴다.
- * 설문 자체는 업무공간 설문 관리(features/survey-admin)에서 공개한 것을 받는다.
+ * 설문 자체는 학생회 설문 관리(features/survey-admin)에서 공개한 것을 받는다.
  * 지금은 메모리에만 저장하므로 새로고침하면 응답이 처음 상태로 돌아간다.
  */
 export const isMockApi = true;

@@ -7,22 +7,19 @@ export type SurveyStage = 'draft' | 'scheduled' | 'published';
 /** KIT 상태 매핑의 설문 상태 */
 export type AdminSurveyStatus = keyof typeof statusTone.survey;
 
-/** 업무공간에서 보는 설문. 학생 화면 설문에 작성·공개 정보가 붙는다. */
-export interface AdminSurvey extends Omit<Survey, 'closesAt'> {
+/** 학생회 화면에서 보는 설문. 학생 화면 설문에 작성·공개 정보가 붙는다. */
+export interface AdminSurvey extends Omit<Survey, 'closesAt' | 'activity'> {
   stage: SurveyStage;
   /** 만든 사람 */
   owner: string;
-  /** 설문 맨 위 안내문 */
-  intro: string;
+  /** 연결 활동. 작성 중에는 비어 있을 수 있지만, 게시하려면 있어야 한다. */
+  activity?: Survey['activity'];
   opensAt?: string;
   closesAt?: string;
   /** 마감일 전에 "응답 받기"를 끈 시각. 있으면 마감으로 본다. */
   closedAt?: string;
   /** 마지막 자동 저장 시각 */
   savedAt: string;
-  responses: number;
-  /** 응답 대상 인원 */
-  target: number;
   /** 부서장에게 검토를 요청했는지 */
   reviewRequested: boolean;
 }
@@ -36,10 +33,8 @@ export interface SurveyResponse {
   /** 설문을 열고 제출하기까지 걸린 시간 */
   durationSeconds: number;
   grade: 1 | 2 | 3;
-  /** 학번만 수집하는 설문·실명 설문에서만 있다 */
-  studentId?: string;
-  /** 실명 설문에서만 있다 */
-  name?: string;
+  /** 학년·반을 수집하는 설문에서만 있다. 이름은 어떤 설문도 수집하지 않는다. */
+  classNumber?: number;
   answers: Answers;
   /** 성의 없는 응답 등으로 분석에서 뺀 응답. 응답 자체는 남는다. */
   excluded: boolean;
@@ -57,7 +52,8 @@ export type SurveyDraft = Pick<
   | 'title'
   | 'intro'
   | 'audience'
-  | 'identity'
+  | 'collectsClass'
+  | 'activity'
   | 'opensAt'
   | 'closesAt'
   | 'questions'
