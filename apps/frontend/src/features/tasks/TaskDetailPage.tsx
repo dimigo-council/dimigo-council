@@ -5,7 +5,6 @@ import {
   useRevalidator,
   type LoaderFunctionArgs,
 } from 'react-router';
-import { useSession } from '../../app/session.ts';
 import { Timeline } from '../../components/intranet/Timeline.tsx';
 import {
   Badge,
@@ -41,8 +40,9 @@ import { listActivities } from '../activities/api.ts';
 import { activityNo } from '../activities/format.ts';
 import * as A from '../activities/styles.ts';
 import type { Activity } from '../activities/types.ts';
-import { listMembers } from '../members/api.ts';
-import { departments, type Department, type Member } from '../members/types.ts';
+import { errorMessage } from '../../lib/api.ts';
+import { listDepartments, listMembers } from '../members/api.ts';
+import type { Department, Member } from '../members/types.ts';
 import { listSurveys } from '../surveys/api.ts';
 import { addTaskLog, getTask, listTasks, updateTask } from './api.ts';
 import { fromDateInput, toDateInput } from './format.ts';
@@ -51,23 +51,22 @@ import * as S from './styles.ts';
 
 export async function taskLoader({ params }: LoaderFunctionArgs) {
   const task = await getTask(params.taskId ?? '');
-  const [tasks, surveys, activities, members] = await Promise.all([
-    listTasks(),
-    listSurveys(),
-    listActivities(),
-    listMembers(),
-  ]);
   const activityId = task.activity?.id;
+  const [siblings, surveys, activities, members, departments] =
+    await Promise.all([
+      activityId ? listTasks({ activityId }) : Promise.resolve([]),
+      activityId ? listSurveys() : Promise.resolve([]),
+      listActivities(),
+      listMembers(),
+      listDepartments(),
+    ]);
   return {
     task,
-    siblings: activityId
-      ? tasks.filter((item) => item.activity?.id === activityId)
-      : [],
-    surveys: activityId
-      ? surveys.filter((survey) => survey.activity.id === activityId)
-      : [],
+    siblings,
+    surveys: surveys.filter((survey) => survey.activity?.id === activityId),
     activities,
     members,
+    departments: departments.map((item) => item.name),
   };
 }
 
@@ -82,6 +81,7 @@ function TaskDetail({
   surveys,
   activities,
   members,
+  departments,
 }: Awaited<ReturnType<typeof taskLoader>>) {
   const [editing, setEditing] = useState(false);
   const lastIndex = task.logs.length - 1;
@@ -100,6 +100,7 @@ function TaskDetail({
             task={task}
             activities={activities}
             members={members}
+            departments={departments}
             onDone={() => setEditing(false)}
           />
         ) : (
@@ -115,15 +116,15 @@ function TaskDetail({
               <A.HeadMeta>
                 <li>
                   <Icon icon={iconGroups} size={16} />
-                  담당 부서 {task.department}
+                  담당 부서 {task.department || '없음'}
                 </li>
                 <li>
                   <Icon icon={iconPerson} size={16} />
-                  담당자 {task.assignee}
+                  담당자 {task.assignee || '없음'}
                 </li>
                 <li>
                   <Icon icon={iconPersonAdd} size={16} />
-                  배정자 {task.assigner}
+                  배정자 {task.assigner || '없음'}
                 </li>
                 <li>
                   <Icon icon={iconCalendarToday} size={16} />
@@ -241,15 +242,19 @@ function LogForm({ task }: { task: Task }) {
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!text.trim() || saving) return;
     setSaving(true);
+    setError('');
     try {
       await addTaskLog(task.id, status, text);
       setText('');
       await revalidator.revalidate();
+    } catch (caught) {
+      setError(errorMessage(caught, '기록하지 못했어요.'));
     } finally {
       setSaving(false);
     }
@@ -284,6 +289,7 @@ function LogForm({ task }: { task: Task }) {
       >
         기록
       </Button>
+      {error && <S.EditError role="alert">{error}</S.EditError>}
     </S.LogForm>
   );
 }
@@ -292,19 +298,20 @@ function EditForm({
   task,
   activities,
   members,
+  departments,
   onDone,
 }: {
   task: Task;
   activities: Activity[];
   members: Member[];
+  departments: string[];
   onDone: () => void;
 }) {
-  const session = useSession();
   const revalidator = useRevalidator();
   const [title, setTitle] = useState(task.title);
   const [activityId, setActivityId] = useState(task.activity?.id ?? '');
   const [department, setDepartment] = useState<Department>(task.department);
-  const [assignee, setAssignee] = useState(task.assignee);
+  const [assignee, setAssignee] = useState(task.assigneeId ?? '');
   const [start, setStart] = useState(toDateInput(task.startAt));
   const [due, setDue] = useState(toDateInput(task.dueAt));
   const [error, setError] = useState('');
@@ -316,18 +323,19 @@ function EditForm({
       return;
     }
     const activity = activities.find((item) => item.id === activityId);
-    await updateTask(
-      task.id,
-      {
+    try {
+      await updateTask(task.id, {
         title,
         activity: activity && { id: activity.id, title: activity.title },
         department,
-        assignee,
+        assigneeId: assignee,
         startAt: fromDateInput(start),
         dueAt: fromDateInput(due),
-      },
-      session.name,
-    );
+      });
+    } catch (caught) {
+      setError(errorMessage(caught, '저장하지 못했어요.'));
+      return;
+    }
     await revalidator.revalidate();
     onDone();
   };
@@ -402,13 +410,9 @@ function EditForm({
             <SelectControl
               id="edit-department"
               value={department}
-              onChange={(event) => {
-                const next = departments.find(
-                  (item) => item === event.target.value,
-                );
-                if (next) setDepartment(next);
-              }}
+              onChange={(event) => setDepartment(event.target.value)}
             >
+              <option value="">부서 없음</option>
               {departments.map((item) => (
                 <option key={item}>{item}</option>
               ))}
@@ -423,8 +427,9 @@ function EditForm({
               value={assignee}
               onChange={(event) => setAssignee(event.target.value)}
             >
+              {!assignee && <option value="">담당자 없음</option>}
               {members.map((member) => (
-                <option key={member.id} value={member.name}>
+                <option key={member.id} value={member.id}>
                   {member.name}
                 </option>
               ))}

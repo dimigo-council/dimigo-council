@@ -13,6 +13,7 @@ import {
   OptionCard,
   SelectControl,
 } from '../../components/ui/index.ts';
+import { ApiError, errorMessage } from '../../lib/api.ts';
 import { listActivities } from '../activities/api.ts';
 import { activityNo } from '../activities/format.ts';
 import type { Activity } from '../activities/types.ts';
@@ -142,10 +143,25 @@ function SurveyEditor({
   const grades = gradesOf(draft.audience);
   const pageTitle = readOnly ? '설문 보기' : '설문 만들기';
 
+  /** 서버가 돌려준 이유(게시 조건 등)를 그대로 보여준다. */
+  const showError = (caught: unknown, fallback: string) => {
+    setStatus('idle');
+    setProblems(
+      caught instanceof ApiError && caught.status === 400
+        ? caught.messages
+        : [errorMessage(caught, fallback)],
+    );
+  };
+
   const onSave = async () => {
     setStatus('busy');
-    await saveSurveyDraft(survey.id, draft);
-    setStatus('saved');
+    setProblems([]);
+    try {
+      await saveSurveyDraft(survey.id, draft);
+      setStatus('saved');
+    } catch (caught) {
+      showError(caught, '저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
   };
 
   const onPublish = async () => {
@@ -153,9 +169,13 @@ function SurveyEditor({
     setProblems(found);
     if (found.length > 0) return;
     setStatus('busy');
-    await saveSurveyDraft(survey.id, draft);
-    await scheduleSurvey(survey.id);
-    await navigate('/work/surveys');
+    try {
+      await saveSurveyDraft(survey.id, draft);
+      await scheduleSurvey(survey.id);
+      await navigate('/work/surveys');
+    } catch (caught) {
+      showError(caught, '게시하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
   };
 
   return (

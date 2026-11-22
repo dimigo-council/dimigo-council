@@ -24,15 +24,18 @@ export interface Task {
   /** 활동이 없을 때 카드에 보이는 태그 (행사, 회의, 홍보 …) */
   tag?: string;
   activity?: { id: string; title: string };
-  /** 업무를 배정한 사람 */
+  /** 업무를 배정한 사람 이름 */
   assigner: string;
+  /** 담당 부서 이름. 없으면 빈 문자열 */
   department: Department;
-  /** 담당자 */
+  /** 담당자 이름. 없으면 빈 문자열 */
   assignee: string;
+  assigneeId?: string;
+  /** ISO 시각 (서버의 날짜에 서울 18시를 붙인 것) */
   startAt: string;
   dueAt: string;
   status: TaskStatus;
-  /** 오래된 기록이 앞 */
+  /** 오래된 기록이 앞. 목록에서는 비어 있다. */
   logs: TaskLog[];
 }
 
@@ -40,15 +43,15 @@ export interface NewTaskInput {
   title: string;
   activity?: { id: string; title: string };
   department: Department;
-  assignee: string;
+  /** 담당자 사용자 id */
+  assigneeId: string;
   startAt: string;
   dueAt: string;
   status: TaskStatus;
-  assigner: string;
 }
 
 /** 업무 수정에서 고칠 수 있는 것 */
 export type TaskEdit = Pick<
   Task,
-  'title' | 'activity' | 'department' | 'assignee' | 'startAt' | 'dueAt'
->;
+  'title' | 'activity' | 'department' | 'startAt' | 'dueAt'
+> & { assigneeId: string };

@@ -1,8 +1,42 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, redirect, type RouteObject } from 'react-router';
+import {
+  createBrowserRouter,
+  type LoaderFunctionArgs,
+  type RouteObject,
+} from 'react-router';
 import { RouteErrorPage } from '../pages/RouteErrorPage.tsx';
 import { AppLayout } from './AppLayout.tsx';
-import { getSession } from './session.ts';
+import {
+  redirectSignedIn,
+  requireCouncil,
+  requireMember,
+  requirePending,
+} from './session.ts';
+
+type Guard = (args: LoaderFunctionArgs) => Response | null;
+
+/**
+ * 부모 라우트의 가드와 자식 화면의 로더는 동시에 돈다. 가드에 걸리는 사람에게는
+ * 화면 로더가 API를 부르지 않도록, 화면 로더 앞에서도 같은 가드를 확인한다.
+ */
+function guarded(routes: RouteObject[], guard: Guard): RouteObject[] {
+  return routes.map((route) => {
+    const { lazy } = route;
+    if (typeof lazy !== 'function') return route;
+    return {
+      ...route,
+      lazy: async () => {
+        const loaded = await lazy();
+        const { loader } = loaded;
+        if (typeof loader !== 'function') return loaded;
+        return {
+          ...loaded,
+          loader: (args: LoaderFunctionArgs) => guard(args) ?? loader(args),
+        };
+      },
+    } as RouteObject;
+  });
+}
 
 const devRoutes: RouteObject[] = [];
 if (import.meta.env.DEV) {
@@ -33,12 +67,14 @@ const visitorRoutes: RouteObject[] = [
   },
   {
     path: 'login',
+    loader: redirectSignedIn,
     lazy: async () => ({
       Component: (await import('../features/auth/AuthPages.tsx')).LoginPage,
     }),
   },
   {
     path: 'login/code',
+    loader: redirectSignedIn,
     lazy: async () => {
       const { CodePage } = await import('../features/auth/AuthPages.tsx');
       return { Component: () => <CodePage flow="login" /> };
@@ -46,12 +82,14 @@ const visitorRoutes: RouteObject[] = [
   },
   {
     path: 'signup',
+    loader: redirectSignedIn,
     lazy: async () => ({
       Component: (await import('../features/auth/AuthPages.tsx')).SignupPage,
     }),
   },
   {
     path: 'signup/code',
+    loader: redirectSignedIn,
     lazy: async () => {
       const { CodePage } = await import('../features/auth/AuthPages.tsx');
       return { Component: () => <CodePage flow="signup" /> };
@@ -59,11 +97,21 @@ const visitorRoutes: RouteObject[] = [
   },
   {
     path: 'signup/info',
+    loader: requirePending,
     lazy: async () => ({
       Component: (await import('../features/auth/AuthPages.tsx'))
         .SignupInfoPage,
     }),
   },
+  ...(['signup', 'login'] as const).map((flow): RouteObject => ({
+    // Google이 돌려보내는 주소. 백엔드의 GOOGLE_*_REDIRECT_URI와 같아야 한다.
+    path: `google/${flow}/callback`,
+    lazy: async () => {
+      const { GoogleCallbackPage } =
+        await import('../features/auth/AuthPages.tsx');
+      return { Component: () => <GoogleCallbackPage flow={flow} /> };
+    },
+  })),
   {
     path: 'terms',
     lazy: async () => ({
@@ -252,17 +300,29 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
+    // 로그인하고 회원가입 정보까지 입력한 사람만
+    loader: requireMember,
     element: <AppLayout mode="student" />,
     HydrateFallback: () => null,
-    children: [{ errorElement: <RouteErrorPage />, children: studentRoutes }],
+    children: [
+      {
+        errorElement: <RouteErrorPage />,
+        children: guarded(studentRoutes, requireMember),
+      },
+    ],
   },
   {
     path: 'work',
-    // 학생회 임원만 들어온다.
-    loader: () => (getSession().councilRole ? null : redirect('/')),
+    // 학생회 임원(isStudentCouncil)만 들어온다.
+    loader: requireCouncil,
     element: <AppLayout mode="council" />,
     HydrateFallback: () => null,
-    children: [{ errorElement: <RouteErrorPage />, children: councilRoutes }],
+    children: [
+      {
+        errorElement: <RouteErrorPage />,
+        children: guarded(councilRoutes, requireCouncil),
+      },
+    ],
   },
   ...devRoutes,
   {

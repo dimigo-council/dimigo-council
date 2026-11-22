@@ -4,7 +4,7 @@ import {
   useNavigate,
   type LoaderFunctionArgs,
 } from 'react-router';
-import { getSession, useSession } from '../../app/session.ts';
+import { useSession } from '../../app/session.ts';
 import { Button, TextButton } from '../../dimi-ui-kit/index.ts';
 import {
   Breadcrumbs,
@@ -20,9 +20,10 @@ import {
   TextArea,
   TextField,
 } from '../../components/ui/index.ts';
-import { listCouncilInquiries, setInquiryActivity } from '../inquiries/api.ts';
-import { listMembers } from '../members/api.ts';
-import { departments, type Department } from '../members/types.ts';
+import { errorMessage } from '../../lib/api.ts';
+import { listCouncilInquiries } from '../inquiries/api.ts';
+import { listDepartments, listMembers } from '../members/api.ts';
+import type { Department } from '../members/types.ts';
 import { createActivity, getActivityDraft, saveActivityDraft } from './api.ts';
 import {
   activityScopes,
@@ -37,9 +38,10 @@ import * as S from './styles.ts';
  */
 export async function activityNewLoader({ request }: LoaderFunctionArgs) {
   const params = new URL(request.url).searchParams;
-  const [inquiries, members, draft] = await Promise.all([
-    listCouncilInquiries(getSession().name),
+  const [inquiries, members, departments, draft] = await Promise.all([
+    listCouncilInquiries(),
     listMembers(),
+    listDepartments(),
     params.has('draft') ? getActivityDraft() : Promise.resolve(null),
   ]);
   const inquiryId = params.get('inquiry');
@@ -52,13 +54,19 @@ export async function activityNewLoader({ request }: LoaderFunctionArgs) {
       : '',
     department: fromInquiry?.department,
   };
-  return { inquiries, members, initial, restored: draft !== null };
+  return {
+    inquiries,
+    members,
+    departments: departments.map((item) => item.name),
+    initial,
+    restored: draft !== null,
+  };
 }
 
 const NONE = '';
 
 export function ActivityNewPage() {
-  const { inquiries, members, initial, restored } =
+  const { inquiries, members, departments, initial, restored } =
     useLoaderData<typeof activityNewLoader>();
   const session = useSession();
   const navigate = useNavigate();
@@ -72,10 +80,14 @@ export function ActivityNewPage() {
   const [description, setDescription] = useState(initial.description ?? '');
   const [department, setDepartment] = useState<Department>(
     initial.department ??
-      (session.department as Department | undefined) ??
-      '회장단',
+      (session.department && departments.includes(session.department)
+        ? session.department
+        : ''),
   );
-  const [owner, setOwner] = useState(initial.owner ?? session.name);
+  const [ownerId, setOwnerId] = useState(
+    initial.ownerId ??
+      (members.some((member) => member.id === session.id) ? session.id : ''),
+  );
   const [scope, setScope] = useState<ActivityScope>(
     initial.scope ?? '전체 공개',
   );
@@ -83,6 +95,7 @@ export function ActivityNewPage() {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
     'idle',
   );
+  const [saveError, setSaveError] = useState('');
 
   const linked = inquiryIds.filter((id) => id !== NONE);
   const values = {
@@ -91,13 +104,18 @@ export function ActivityNewPage() {
     inquiryIds: linked,
     firstRecord,
     department,
-    owner,
+    ownerId,
     scope,
   };
 
   const onDraft = async () => {
-    await saveActivityDraft(values);
-    setStatus('saved');
+    try {
+      await saveActivityDraft(values);
+      setStatus('saved');
+    } catch (caught) {
+      setStatus('error');
+      setSaveError(errorMessage(caught, '임시 저장하지 못했습니다.'));
+    }
   };
 
   const onSubmit = async (event: FormEvent) => {
@@ -112,15 +130,14 @@ export function ActivityNewPage() {
     }
     setStatus('saving');
     try {
+      // 질의 연결과 질의 기록은 서버가 활동을 만들면서 함께 남긴다.
       const id = await createActivity(values);
-      await Promise.all(
-        linked.map((inquiryId) =>
-          setInquiryActivity(inquiryId, { id, title: title.trim() }),
-        ),
-      );
       await navigate(`/work/activities/${id}`);
-    } catch {
+    } catch (caught) {
       setStatus('error');
+      setSaveError(
+        errorMessage(caught, '등록하지 못했습니다. 잠시 후 다시 시도해주세요.'),
+      );
     }
   };
 
@@ -243,25 +260,24 @@ export function ActivityNewPage() {
             <Select
               label="담당 부서"
               value={department}
-              onChange={(event) => {
-                const next = departments.find(
-                  (item) => item === event.target.value,
-                );
-                if (next) setDepartment(next);
-              }}
+              onChange={(event) => setDepartment(event.target.value)}
             >
+              <option value="">부서 없음</option>
               {departments.map((item) => (
                 <option key={item}>{item}</option>
               ))}
             </Select>
             <Select
               label="담당자"
-              value={owner}
-              onChange={(event) => setOwner(event.target.value)}
+              value={ownerId}
+              onChange={(event) => setOwnerId(event.target.value)}
             >
+              {!ownerId && <option value="">나 (등록하는 사람)</option>}
               {members.map((member) => (
-                <option key={member.id} value={member.name}>
-                  {member.name} ({member.department})
+                <option key={member.id} value={member.id}>
+                  {member.department
+                    ? `${member.name} (${member.department})`
+                    : member.name}
                 </option>
               ))}
             </Select>
@@ -294,7 +310,7 @@ export function ActivityNewPage() {
 
         {status === 'error' && (
           <Notice tone="warn" role="alert">
-            등록하지 못했습니다. 잠시 후 다시 시도해주세요.
+            {saveError}
           </Notice>
         )}
 

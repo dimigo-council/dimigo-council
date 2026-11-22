@@ -9,8 +9,6 @@ import {
   FilterChips,
 } from '../../components/ui/index.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
-import { listSurveys } from '../surveys/api.ts';
-import { listTasks } from '../tasks/api.ts';
 import {
   getActivityDraft,
   listActivities,
@@ -23,15 +21,11 @@ import * as S from './styles.ts';
 
 /** 학생 화면: 전체 공개 활동과 연계 정보 */
 export async function activityListLoader() {
-  const [activities, surveys, tasks] = await Promise.all([
-    listPublicActivities(),
-    listSurveys(),
-    listTasks(),
-  ]);
+  const activities = await listPublicActivities();
   return {
     activities: activities.map((activity) => ({
       activity,
-      note: activityNote(activity, surveys, tasks),
+      note: activityNote(activity),
     })),
     hasDraft: false,
   };

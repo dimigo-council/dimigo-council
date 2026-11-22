@@ -68,10 +68,14 @@ export function SurveyCard({
             결과 보기
           </Button>
         )
+      ) : survey.myStatus === 'submitted' ? (
+        <Button fullWidth disabled>
+          응답 완료
+        </Button>
       ) : (
         <ButtonLink theme="accent" fullWidth to={respondTo}>
-          {survey.myStatus === 'submitted'
-            ? '응답 수정하기'
+          {!survey.canRespond
+            ? '설문 보기'
             : survey.myStatus === 'draft'
               ? '이어서 참여하기'
               : '참여하기'}

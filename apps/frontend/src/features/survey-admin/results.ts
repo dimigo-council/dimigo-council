@@ -1,79 +1,12 @@
 import { formatDateTime } from '../../lib/date.ts';
-import { isAnswered } from '../surveys/format.ts';
-import type {
-  AnswerValue,
-  MultipleChoiceQuestion,
-  Question,
-  SingleChoiceQuestion,
-  TextQuestion,
-} from '../surveys/types.ts';
+import type { AnswerValue } from '../surveys/types.ts';
 import { questionTypeLabel } from './format.ts';
 import type { AdminSurvey, SurveyResponse } from './types.ts';
 
 /**
- * 설문 결과 분석 (기능 명세서 SRV-R2, Figma 학생회 / 설문 결과).
- * 분석에서 뺀 응답은 호출하는 쪽에서 미리 걸러 넘긴다(responsesIncludedInAnalysis).
+ * 설문 결과 표시 (기능 명세서 SRV-R2, Figma 학생회 / 설문 결과).
+ * 문항별 분석은 서버가 하고(GET /surveys/:id/results), 여기서는 표시와 CSV만 만든다.
  */
-
-export function responsesIncludedInAnalysis(responses: SurveyResponse[]) {
-  return responses.filter((response) => !response.excluded);
-}
-
-/** 전체 가운데 몇 분의 몇인지(0~1). 전체가 0이면 0이다. */
-export function shareOf(count: number, total: number) {
-  if (total === 0) return 0;
-  return count / total;
-}
-
-export interface CountRow {
-  label: string;
-  count: number;
-  /** 0~1. 단일 선택은 응답 수 대비, 복수 선택은 응답자 대비라 합이 1을 넘을 수 있다. */
-  ratio: number;
-}
-
-export interface ChoiceSummary {
-  answered: number;
-  rows: CountRow[];
-}
-
-function answeredValues(question: Question, responses: SurveyResponse[]) {
-  return responses
-    .map((response) => response.answers[question.id])
-    .filter(isAnswered);
-}
-
-function valueContainsOption(value: AnswerValue, option: string) {
-  if (Array.isArray(value)) return value.includes(option);
-  return value === option;
-}
-
-export function summarizeChoice(
-  question: SingleChoiceQuestion | MultipleChoiceQuestion,
-  responses: SurveyResponse[],
-): ChoiceSummary {
-  const values = answeredValues(question, responses);
-  const rows = question.options.map((option) => {
-    const count = values.filter((value) =>
-      valueContainsOption(value, option),
-    ).length;
-    return { label: option, count, ratio: shareOf(count, values.length) };
-  });
-  return { answered: values.length, rows };
-}
-
-/** 단답형·장문형 문항에 실제로 글을 쓴 답 (제출 순서) */
-export function textAnswers(
-  question: TextQuestion,
-  responses: SurveyResponse[],
-): string[] {
-  return responses.flatMap((response) => {
-    const value = response.answers[question.id];
-    if (typeof value !== 'string') return [];
-    const text = value.trim();
-    return text ? [text] : [];
-  });
-}
 
 /** 0.553 → 55% */
 export function formatRatio(ratio: number) {
@@ -95,8 +28,8 @@ function toCsvLine(cells: (string | number)[]) {
 }
 
 function csvHeader(survey: AdminSurvey) {
-  const header = ['응답 번호', '제출 시각', '응답 시간(초)', '학년'];
-  if (survey.collectsClass) header.push('반');
+  const header = ['응답 번호', '제출 시각', '응답 시간(초)'];
+  if (survey.collectsClass) header.push('학년', '반');
   header.push('분석 제외');
   survey.questions.forEach((question, index) => {
     header.push(
@@ -116,10 +49,10 @@ function csvRow(survey: AdminSurvey, response: SurveyResponse) {
   const row: (string | number)[] = [
     response.number,
     formatDateTime(response.submittedAt),
-    response.durationSeconds,
-    response.grade,
+    response.durationSeconds ?? '',
   ];
-  if (survey.collectsClass) row.push(response.classNumber ?? '');
+  if (survey.collectsClass)
+    row.push(response.grade ?? '', response.classNumber ?? '');
   row.push(response.excluded ? '예' : '');
   for (const question of survey.questions) {
     row.push(answerAsCsvText(response.answers[question.id]));

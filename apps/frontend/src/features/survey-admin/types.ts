@@ -24,26 +24,51 @@ export interface AdminSurvey extends Omit<Survey, 'closesAt' | 'activity'> {
   reviewRequested: boolean;
 }
 
-/** 학생 한 명이 제출한 응답 (설문 결과의 개별 보기) */
+/** 학생 한 명이 제출한 응답 (결과 내보내기 CSV의 한 줄) */
 export interface SurveyResponse {
   id: string;
   /** 제출 순서. 1부터 */
   number: number;
   submittedAt: string;
-  /** 설문을 열고 제출하기까지 걸린 시간 */
-  durationSeconds: number;
-  grade: 1 | 2 | 3;
+  /** 설문을 열고 제출하기까지 걸린 시간. 모르면 비어 있다. */
+  durationSeconds?: number;
   /** 학년·반을 수집하는 설문에서만 있다. 이름은 어떤 설문도 수집하지 않는다. */
+  grade?: number;
   classNumber?: number;
   answers: Answers;
-  /** 성의 없는 응답 등으로 분석에서 뺀 응답. 응답 자체는 남는다. */
+  /** 분석에서 뺀 응답. 응답 자체는 남는다. */
   excluded: boolean;
 }
 
+/** 문항별 결과 (서버가 분석에서 뺀 응답을 빼고 계산한다) */
+export type QuestionResult =
+  | {
+      id: string;
+      title: string;
+      type: 'single' | 'multiple';
+      answered: number;
+      /** ratio는 이 문항에 답한 사람 대비라 복수 선택은 합이 1을 넘을 수 있다. */
+      rows: { label: string; count: number; ratio: number }[];
+    }
+  | {
+      id: string;
+      title: string;
+      type: 'short' | 'long';
+      answered: number;
+      /** 제출 순서 */
+      answers: string[];
+    };
+
 export interface SurveyResults {
   survey: AdminSurvey;
-  /** 제출 순서대로 */
-  responses: SurveyResponse[];
+  /** 분석에 들어간 응답 수 */
+  respondents: number;
+  target: number;
+  /** 0~1 */
+  participationRate: number;
+  /** 마감까지 남은 날. 마감일이 없으면 null */
+  daysLeft: number | null;
+  questions: QuestionResult[];
 }
 
 /** 편집 화면에서 고치는 부분 */

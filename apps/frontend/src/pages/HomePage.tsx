@@ -1,6 +1,6 @@
 import { useLoaderData } from 'react-router';
 import { PlusIcon } from '../app/icons.tsx';
-import { getSession, useSession } from '../app/session.ts';
+import { useSession } from '../app/session.ts';
 import { Badge } from '../dimi-ui-kit/index.ts';
 import {
   ButtonLink,
@@ -12,43 +12,36 @@ import {
   statusTone,
   TwoColumn,
 } from '../components/ui/index.ts';
+import { api } from '../lib/api.ts';
 import { formatShortDate } from '../lib/date.ts';
 import { listPublicActivities } from '../features/activities/api.ts';
 import { ActivityStatusCard } from '../features/activities/ActivityStatusCard.tsx';
 import { listStudentInquiries } from '../features/inquiries/api.ts';
 import { listSurveys } from '../features/surveys/api.ts';
-import {
-  openByDeadline,
-  UrgentSurveyCard,
-} from '../features/surveys/UrgentSurveyCard.tsx';
+import { UrgentSurveyCard } from '../features/surveys/UrgentSurveyCard.tsx';
 import * as S from './homeStyles.ts';
 
 /** 학생 홈 (HOM-01~04) */
 export async function homeLoader() {
-  const session = getSession();
-  const [activities, surveys, inquiries] = await Promise.all([
-    listPublicActivities(),
+  const [counts, activities, surveys, myInquiries] = await Promise.all([
+    api<{ openSurveyCount: number; answeredInquiryCount: number }>(
+      '/home/student',
+    ),
+    listPublicActivities({ hideOnHold: true }),
     listSurveys(),
-    listStudentInquiries(session.name),
+    listStudentInquiries({ mine: true }),
   ]);
-  return {
-    activities,
-    surveys,
-    myInquiries: inquiries.filter((inquiry) => inquiry.mine),
-  };
+  return { counts, activities, surveys, myInquiries };
 }
 
 export function HomePage() {
-  const { activities, surveys, myInquiries } =
+  const { counts, activities, surveys, myInquiries } =
     useLoaderData<typeof homeLoader>();
   const session = useSession();
 
-  const canJoin = openByDeadline(surveys).filter(
-    (survey) => survey.myStatus !== 'submitted',
-  ).length;
-  const answered = myInquiries.filter(
-    (inquiry) => inquiry.status === '답변 완료',
-  ).length;
+  // HOM-01: 응답할 수 있는 진행 중 설문과 답변이 달린 내 질의 (서버가 센다)
+  const canJoin = counts.openSurveyCount;
+  const answered = counts.answeredInquiryCount;
 
   return (
     <>

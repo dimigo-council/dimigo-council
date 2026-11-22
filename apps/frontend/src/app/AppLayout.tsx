@@ -1,4 +1,11 @@
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useNavigation,
+} from 'react-router';
 import styled, { css } from 'styled-components';
 import { ButtonLink, PersonAvatar } from '../components/ui/index.ts';
 import { IconButton, Icon } from '../dimi-ui-kit/index.ts';
@@ -9,7 +16,7 @@ import {
   iconNotifications,
   iconSearch,
 } from '../dimi-ui-kit/icons';
-import { useSession } from './session.ts';
+import { logout, useSession } from './session.ts';
 import { koreanWrap, SkipLink } from './shell.ts';
 
 /**
@@ -228,15 +235,57 @@ const ProfileMenu = styled.div`
     background: ${t.colors.background.primary};
     box-shadow: 0 8px 24px ${t.colors.core.shadow};
 
-    > a {
+    > a,
+    > button {
       ${t.text.calloutRegular}
       padding: ${t.spacing[200]} ${t.spacing[300]};
+      border: 0;
       border-radius: ${t.radius.s};
+      background: none;
       color: ${t.colors.core.glyph.primary};
+      text-align: left;
       text-decoration: none;
+      cursor: pointer;
     }
-    > a:hover {
+    > a:hover,
+    > button:hover {
       background: ${t.colors.components.interaction.hover};
+    }
+  `}
+`;
+
+/** 다음 화면을 불러오는 동안 GNB 아래에 보이는 막대 */
+const LoadingBar = styled.div`
+  ${({ theme: t }) => css`
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: 40%;
+      background: ${t.colors.core.status.accent};
+      animation: gnb-loading 1s ease-in-out infinite;
+    }
+    @keyframes gnb-loading {
+      from {
+        transform: translateX(-100%);
+      }
+      to {
+        transform: translateX(250%);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        width: 100%;
+        animation: none;
+        opacity: 0.5;
+      }
     }
   `}
 `;
@@ -414,6 +463,11 @@ function SiteFooter() {
 function ProfileButton({ mode }: { mode: 'student' | 'council' }) {
   const session = useSession();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const onLogout = async () => {
+    await logout();
+    await navigate('/login', { replace: true });
+  };
   return (
     // 다른 화면으로 가면 메뉴를 닫는다.
     <Profile key={pathname}>
@@ -428,13 +482,15 @@ function ProfileButton({ mode }: { mode: 'student' | 'council' }) {
         <Icon icon={iconKeyboardArrowDown} size={20} />
       </summary>
       <ProfileMenu>
-        {session.councilRole &&
+        {session.isCouncil &&
           (mode === 'council' ? (
             <Link to="/">학생 화면으로</Link>
           ) : (
             <Link to="/work">학생회 화면으로</Link>
           ))}
-        <Link to="/login">로그아웃</Link>
+        <button type="button" onClick={() => void onLogout()}>
+          로그아웃
+        </button>
       </ProfileMenu>
     </Profile>
   );
@@ -443,6 +499,7 @@ function ProfileButton({ mode }: { mode: 'student' | 'council' }) {
 /** 상단 GNB + 본문 + 푸터. 학생·학생회·방문자 화면이 함께 쓴다. */
 export function AppLayout({ mode }: { mode: AppMode }) {
   const nav = mode === 'council' ? councilNav : studentNav;
+  const loading = useNavigation().state === 'loading';
 
   return (
     <Shell>
@@ -498,9 +555,10 @@ export function AppLayout({ mode }: { mode: AppMode }) {
             )}
           </GnbActions>
         </GnbInner>
+        {loading && <LoadingBar role="progressbar" aria-label="불러오는 중" />}
       </Gnb>
 
-      <Main id="main" tabIndex={-1}>
+      <Main id="main" tabIndex={-1} aria-busy={loading}>
         <Outlet />
       </Main>
 

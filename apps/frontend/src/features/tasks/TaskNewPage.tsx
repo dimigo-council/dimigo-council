@@ -22,21 +22,24 @@ import {
 import { listActivities } from '../activities/api.ts';
 import { activityNo } from '../activities/format.ts';
 import * as A from '../activities/styles.ts';
-import { listMembers } from '../members/api.ts';
-import { departments, type Department } from '../members/types.ts';
+import { listDepartments, listMembers } from '../members/api.ts';
+import type { Department } from '../members/types.ts';
+import { errorMessage } from '../../lib/api.ts';
 import { createTask } from './api.ts';
 import { fromDateInput, toDateInput } from './format.ts';
 import { taskStatuses, type TaskStatus } from './types.ts';
 
 /** 업무 추가. 활동 상세의 "업무 배정"은 ?activity=24로 들어와 그 활동을 골라 둔다. */
 export async function taskNewLoader({ request }: LoaderFunctionArgs) {
-  const [activities, members] = await Promise.all([
+  const [activities, members, departments] = await Promise.all([
     listActivities(),
     listMembers(),
+    listDepartments(),
   ]);
   return {
     activities: activities.filter((activity) => activity.status !== '완료'),
     members,
+    departments: departments.map((item) => item.name),
     activityId: new URL(request.url).searchParams.get('activity') ?? '',
   };
 }
@@ -44,7 +47,7 @@ export async function taskNewLoader({ request }: LoaderFunctionArgs) {
 const NO_ACTIVITY = '';
 
 export function TaskNewPage() {
-  const { activities, members, activityId } =
+  const { activities, members, departments, activityId } =
     useLoaderData<typeof taskNewLoader>();
   const session = useSession();
   const navigate = useNavigate();
@@ -59,14 +62,19 @@ export function TaskNewPage() {
       : NO_ACTIVITY,
   );
   const [department, setDepartment] = useState<Department>(
-    (session.department as Department | undefined) ?? '회장단',
+    session.department && departments.includes(session.department)
+      ? session.department
+      : '',
   );
-  const [assignee, setAssignee] = useState(session.name);
+  const [assignee, setAssignee] = useState(
+    members.some((member) => member.id === session.id) ? session.id : '',
+  );
   const [start, setStart] = useState(today);
   const [due, setDue] = useState(toDateInput(nextWeek));
   const [status, setStatus] = useState<TaskStatus>('예정됨');
   const [error, setError] = useState<{ title?: string; due?: string }>({});
   const [saving, setSaving] = useState<'idle' | 'saving' | 'error'>('idle');
+  const [saveError, setSaveError] = useState('');
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -87,15 +95,17 @@ export function TaskNewPage() {
         title,
         ...(picked && { activity: { id: picked.id, title: picked.title } }),
         department,
-        assignee,
+        assigneeId: assignee,
         startAt: fromDateInput(start),
         dueAt: fromDateInput(due),
         status,
-        assigner: session.name,
       });
       await navigate(`/work/tasks/${id}`);
-    } catch {
+    } catch (caught) {
       setSaving('error');
+      setSaveError(
+        errorMessage(caught, '저장하지 못했습니다. 잠시 후 다시 시도해주세요.'),
+      );
     }
   };
 
@@ -141,13 +151,9 @@ export function TaskNewPage() {
             <Select
               label="담당 부서"
               value={department}
-              onChange={(event) => {
-                const next = departments.find(
-                  (item) => item === event.target.value,
-                );
-                if (next) setDepartment(next);
-              }}
+              onChange={(event) => setDepartment(event.target.value)}
             >
+              <option value="">부서 없음</option>
               {departments.map((item) => (
                 <option key={item}>{item}</option>
               ))}
@@ -157,9 +163,12 @@ export function TaskNewPage() {
               value={assignee}
               onChange={(event) => setAssignee(event.target.value)}
             >
+              {!assignee && <option value="">나 (배정자)</option>}
               {members.map((member) => (
-                <option key={member.id} value={member.name}>
-                  {member.name} ({member.department})
+                <option key={member.id} value={member.id}>
+                  {member.department
+                    ? `${member.name} (${member.department})`
+                    : member.name}
                 </option>
               ))}
             </Select>
@@ -205,7 +214,7 @@ export function TaskNewPage() {
 
         {saving === 'error' && (
           <Notice tone="warn" role="alert">
-            저장하지 못했습니다. 잠시 후 다시 시도해주세요.
+            {saveError}
           </Notice>
         )}
 

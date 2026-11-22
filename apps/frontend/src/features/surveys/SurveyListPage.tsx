@@ -3,17 +3,15 @@ import { useLoaderData, useNavigate } from 'react-router';
 import { PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { useBasePath, useIsCouncil } from '../../app/mode.ts';
-import { useSession } from '../../app/session.ts';
 import { Button } from '../../dimi-ui-kit/index.ts';
 import {
   ButtonLink,
   ChipSelect,
   EmptyState,
+  Notice,
 } from '../../components/ui/index.ts';
-import {
-  createSurveyDraft,
-  getLatestSurveyDraft,
-} from '../survey-admin/api.ts';
+import { errorMessage } from '../../lib/api.ts';
+import { createSurveyDraft } from '../survey-admin/api.ts';
 import { listSurveys } from './api.ts';
 import { participation } from './format.ts';
 import { SurveyCard } from './SurveyCard.tsx';
@@ -24,13 +22,12 @@ export async function surveyListLoader() {
   return { surveys: await listSurveys(), draftId: null as string | null };
 }
 
-/** 학생회 설문 목록: 같은 카드에 "불러오기"(임시 저장한 설문)와 "설문 만들기"가 붙는다. */
+/**
+ * 학생회 설문 목록: "설문 만들기"가 붙는다.
+ * "불러오기"(최근 임시 저장 설문, GET /surveys/drafts/latest)는 아직 연결하지 않아 보이지 않는다.
+ */
 export async function councilSurveyListLoader() {
-  const [surveys, draft] = await Promise.all([
-    listSurveys(),
-    getLatestSurveyDraft(),
-  ]);
-  return { surveys, draftId: draft?.id ?? null };
+  return { surveys: await listSurveys(), draftId: null as string | null };
 }
 
 type Sort = 'deadline' | 'rate';
@@ -57,19 +54,19 @@ export function SurveyListPage() {
   const { surveys, draftId } = useLoaderData<typeof surveyListLoader>();
   const council = useIsCouncil();
   const base = useBasePath();
-  const session = useSession();
   const navigate = useNavigate();
   const [sort, setSort] = useState<Sort>('deadline');
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
 
   const onCreate = async () => {
     setCreating(true);
+    setError('');
     try {
-      const id = await createSurveyDraft(
-        session.name,
-        session.department ?? '회장단',
-      );
+      const id = await createSurveyDraft();
       await navigate(`/work/surveys/${id}/edit`);
+    } catch (caught) {
+      setError(errorMessage(caught, '설문을 만들지 못했어요.'));
     } finally {
       setCreating(false);
     }
@@ -115,6 +112,12 @@ export function SurveyListPage() {
         }
       />
 
+      {error && (
+        <Notice tone="warn" role="alert">
+          {error}
+        </Notice>
+      )}
+
       {sorted.length > 0 ? (
         <S.SurveyGrid aria-label="설문 목록">
           {sorted.map((survey) => (
@@ -130,7 +133,7 @@ export function SurveyListPage() {
           ))}
         </S.SurveyGrid>
       ) : (
-        <EmptyState>지금 진행 중인 설문이 없습니다.</EmptyState>
+        <EmptyState>아직 게시된 설문이 없습니다.</EmptyState>
       )}
 
       <S.SurveyInquiryCta aria-labelledby="survey-inquiry-cta">

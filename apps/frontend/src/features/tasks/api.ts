@@ -1,6 +1,8 @@
-import { formatShortDate } from '../../lib/date.ts';
-import { withIGa, withRo } from '../../lib/korean.ts';
-import { mockTasks } from './mockData.ts';
+import { api, listAll, notFoundAs } from '../../lib/api.ts';
+import { withIGa } from '../../lib/korean.ts';
+import { numericId } from '../activities/api.ts';
+import { departmentIdOf } from '../members/api.ts';
+import type { DepartmentRef } from '../members/types.ts';
 import type {
   NewTaskInput,
   Task,
@@ -10,65 +12,112 @@ import type {
 } from './types.ts';
 
 /**
- * 업무 API.
- * TODO: 백엔드 업무 API가 생기면 아래 함수 본문만 fetch 호출로 바꾼다. 화면은 이 함수들만 쓴다.
- * 지금은 메모리에만 저장하므로 새로고침하면 처음 상태로 돌아간다.
+ * 업무 API (백엔드 /tasks, 학생회만). 진행 기록(배정·수정)과 연결 활동의 추진 이력은 서버가 남긴다.
+ * 서버의 날짜(YYYY-MM-DD, 서울)는 화면에서 그날 18시(서울)로 다룬다.
  */
-export const isMockApi = true;
 
-const tasks = structuredClone(mockTasks);
-
-function find(id: string) {
-  const task = tasks.find((item) => item.id === id);
-  if (!task) {
-    throw new Response('업무를 찾을 수 없습니다.', { status: 404 });
-  }
-  return task;
+interface PersonRef {
+  id: string;
+  name: string | null;
 }
 
-function log(task: Task, entry: Omit<TaskLog, 'id' | 'at'>) {
-  const numbers = task.logs.map((item) => Number(item.id.slice(1)) || 0);
-  task.logs.push({
-    id: `l${Math.max(0, ...numbers) + 1}`,
-    at: new Date().toISOString(),
-    ...entry,
+interface TaskResponse {
+  id: number;
+  title: string;
+  tag: string | null;
+  activity: { id: number; title: string } | null;
+  assigner: PersonRef | null;
+  department: DepartmentRef | null;
+  assignee: PersonRef | null;
+  startAt: string;
+  dueAt: string;
+  status: TaskStatus;
+  logs?: {
+    id: number;
+    at: string;
+    kind: string;
+    text: string;
+    status: TaskStatus | null;
+  }[];
+}
+
+const notFound = notFoundAs('업무를 찾을 수 없습니다.');
+
+/** 서버 날짜 → 화면 시각 */
+function fromDay(day: string) {
+  return `${day}T18:00:00+09:00`;
+}
+
+/** 화면 시각 → 서버 날짜 (서울 기준) */
+export function toDay(iso: string) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(iso));
+}
+
+function toTask(row: TaskResponse): Task {
+  return {
+    id: String(row.id),
+    title: row.title,
+    ...(row.tag && { tag: row.tag }),
+    ...(row.activity && {
+      activity: { id: String(row.activity.id), title: row.activity.title },
+    }),
+    assigner: row.assigner?.name ?? '',
+    department: row.department?.name ?? '',
+    assignee: row.assignee?.name ?? '',
+    ...(row.assignee && { assigneeId: row.assignee.id }),
+    startAt: fromDay(row.startAt),
+    dueAt: fromDay(row.dueAt),
+    status: row.status,
+    logs: (row.logs ?? []).map((log): TaskLog => ({
+      id: String(log.id),
+      at: log.at,
+      label: log.kind,
+      text: log.text,
+      ...(log.status && { status: log.status }),
+    })),
+  };
+}
+
+export interface TaskQuery {
+  activityId?: string;
+  /** 나의 업무 */
+  mine?: boolean;
+}
+
+/** 업무 목록 (마감일순) */
+export async function listTasks(query: TaskQuery = {}): Promise<Task[]> {
+  const rows = await listAll<TaskResponse>('/tasks', {
+    activityId: query.activityId && numericId(query.activityId),
+    mine: query.mine,
   });
-  // 가장 최근에 기록된 상태가 업무의 현재 상태다.
-  if (entry.status) task.status = entry.status;
-}
-
-export async function listTasks(): Promise<Task[]> {
-  return structuredClone(tasks).sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  return rows.map(toTask);
 }
 
 export async function getTask(id: string): Promise<Task> {
-  return structuredClone(find(id));
+  return toTask(
+    await api<TaskResponse>(`/tasks/${numericId(id)}`).catch(notFound),
+  );
 }
 
 export async function createTask(input: NewTaskInput): Promise<string> {
-  const id = String(Math.max(...tasks.map((item) => Number(item.id))) + 1);
-  const task: Task = {
-    id,
-    title: input.title.trim(),
-    ...(input.activity && { activity: input.activity }),
-    assigner: input.assigner,
-    department: input.department,
-    assignee: input.assignee,
-    startAt: input.startAt,
-    dueAt: input.dueAt,
-    status: input.status,
-    logs: [],
-  };
-  log(task, {
-    label: '배정',
-    text:
-      input.assignee === input.assigner
-        ? `${withIGa(input.assigner)} 업무를 만들었어요.`
-        : `${withIGa(input.assigner)} ${input.assignee}에게 업무를 배정했어요.`,
-    status: input.status,
+  const created = await api<TaskResponse>('/tasks', {
+    method: 'POST',
+    body: {
+      title: input.title.trim(),
+      activityId: input.activity ? numericId(input.activity.id) : null,
+      departmentId: await departmentIdOf(input.department),
+      ...(input.assigneeId && { assigneeId: input.assigneeId }),
+      startAt: toDay(input.startAt),
+      dueAt: toDay(input.dueAt),
+      status: input.status,
+    },
   });
-  tasks.push(task);
-  return id;
+  return String(created.id);
 }
 
 /** 기록 추가. 한 줄 내용과 그때의 상태를 남기고, 그 상태를 업무의 현재 상태로 삼는다. */
@@ -77,39 +126,24 @@ export async function addTaskLog(
   status: TaskStatus,
   text: string,
 ): Promise<void> {
-  log(find(id), { label: status, text: text.trim(), status });
+  await api(`/tasks/${numericId(id)}/logs`, {
+    method: 'POST',
+    body: { text: text.trim(), status },
+  });
 }
 
-/** 업무 수정. 바뀐 내용은 진행 기록에 자동으로 남긴다. */
-export async function updateTask(
-  id: string,
-  edit: TaskEdit,
-  by: string,
-): Promise<void> {
-  const task = find(id);
-  const changes: string[] = [];
-  if (edit.title.trim() !== task.title) changes.push('제목을');
-  if (edit.activity?.id !== task.activity?.id) changes.push('연결된 활동을');
-  if (edit.department !== task.department) changes.push('담당 부서를');
-  if (edit.assignee !== task.assignee) {
-    changes.push(`담당자를 ${task.assignee}에서 ${withRo(edit.assignee)}`);
-  }
-  if (formatShortDate(edit.startAt) !== formatShortDate(task.startAt)) {
-    changes.push(
-      `시작일을 ${formatShortDate(task.startAt)}에서 ${formatShortDate(edit.startAt)}로`,
-    );
-  }
-  if (formatShortDate(edit.dueAt) !== formatShortDate(task.dueAt)) {
-    changes.push(
-      `마감일을 ${formatShortDate(task.dueAt)}에서 ${formatShortDate(edit.dueAt)}로`,
-    );
-  }
-  if (changes.length === 0) return;
-  Object.assign(task, { ...edit, title: edit.title.trim() });
-  if (!edit.activity) delete task.activity;
-  log(task, {
-    label: '수정',
-    text: `${withIGa(by)} ${changes.join(', ')} 바꿨어요.`,
+/** 업무 수정. 바뀐 내용은 서버가 진행 기록에 남긴다. */
+export async function updateTask(id: string, edit: TaskEdit): Promise<void> {
+  await api(`/tasks/${numericId(id)}`, {
+    method: 'PATCH',
+    body: {
+      title: edit.title.trim(),
+      activityId: edit.activity ? numericId(edit.activity.id) : null,
+      departmentId: await departmentIdOf(edit.department),
+      ...(edit.assigneeId && { assigneeId: edit.assigneeId }),
+      startAt: toDay(edit.startAt),
+      dueAt: toDay(edit.dueAt),
+    },
   });
 }
 
@@ -119,11 +153,11 @@ export async function setTaskDone(
   done: boolean,
   by: string,
 ): Promise<void> {
-  log(find(id), {
-    label: done ? '완료' : '진행 중',
-    text: done
+  await addTaskLog(
+    id,
+    done ? '완료' : '진행 중',
+    done
       ? `${withIGa(by)} 업무를 완료했어요.`
       : `${withIGa(by)} 업무를 다시 열었어요.`,
-    status: done ? '완료' : '진행 중',
-  });
+  );
 }

@@ -1,12 +1,12 @@
 import { useLoaderData } from 'react-router';
 import { ButtonLink } from '../components/ui/index.ts';
-import { listPublicActivities } from '../features/activities/api.ts';
+import { listLandingActivities } from '../features/activities/api.ts';
 import { ActivityStatusCard } from '../features/activities/ActivityStatusCard.tsx';
 import * as S from './homeStyles.ts';
 
 /** 랜딩 (LND-01~03). 로그인하지 않은 방문자에게 보이는 첫 화면. */
 export async function landingLoader() {
-  return listPublicActivities();
+  return listLandingActivities();
 }
 
 export function LandingPage() {

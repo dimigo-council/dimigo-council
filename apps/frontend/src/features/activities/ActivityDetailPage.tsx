@@ -6,7 +6,6 @@ import {
   type LoaderFunctionArgs,
 } from 'react-router';
 import { useBasePath, useIsCouncil } from '../../app/mode.ts';
-import { getSession, useSession } from '../../app/session.ts';
 import { Timeline } from '../../components/intranet/Timeline.tsx';
 import { Badge, Button, Icon, TextButton } from '../../dimi-ui-kit/index.ts';
 import {
@@ -39,11 +38,9 @@ import {
   TwoColumn,
   VisuallyHidden,
 } from '../../components/ui/index.ts';
+import { errorMessage } from '../../lib/api.ts';
 import { formatFullDate, formatShortDate } from '../../lib/date.ts';
-import {
-  listCouncilInquiries,
-  listStudentInquiries,
-} from '../inquiries/api.ts';
+import { getInquiry } from '../inquiries/api.ts';
 import type { InquiryView } from '../inquiries/types.ts';
 import { listSurveys } from '../surveys/api.ts';
 import type { SurveySummary } from '../surveys/types.ts';
@@ -52,9 +49,10 @@ import type { Task } from '../tasks/types.ts';
 import {
   addHistory,
   deleteHistory,
-  getActivity,
-  getPublicActivity,
+  getActivityDetail,
+  getPublicActivityDetail,
   setActivityScope,
+  type ActivityDetail as Detail,
 } from './api.ts';
 import { activityNo } from './format.ts';
 import {
@@ -66,38 +64,32 @@ import {
 } from './types.ts';
 import * as S from './styles.ts';
 
-async function linked(activity: Activity, inquiries: InquiryView[]) {
-  const surveys = await listSurveys();
+/** 연결된 질의(공감 수 포함)와 게시된 설문을 붙인다. 볼 수 있는 것만 서버가 준다. */
+async function linked(detail: Detail) {
+  const [inquiries, surveys] = await Promise.all([
+    Promise.all(detail.inquiries.map((inquiry) => getInquiry(inquiry.id))),
+    detail.surveyIds.length > 0 ? listSurveys() : Promise.resolve([]),
+  ]);
   return {
-    activity,
-    inquiries: inquiries.filter((inquiry) =>
-      activity.inquiryIds.includes(inquiry.id),
-    ),
-    surveys: surveys.filter((survey) => survey.activity.id === activity.id),
+    activity: detail.activity,
+    inquiries,
+    surveys: surveys.filter((survey) => detail.surveyIds.includes(survey.id)),
   };
 }
 
 /** 학생 화면: 전체 공개 활동만. 업무는 보여주지 않는다. */
 export async function activityLoader({ params }: LoaderFunctionArgs) {
-  const session = getSession();
-  const activity = await getPublicActivity(params.activityId ?? '');
-  return {
-    ...(await linked(activity, await listStudentInquiries(session.name))),
-    tasks: [] as Task[],
-  };
+  const detail = await getPublicActivityDetail(params.activityId ?? '');
+  return { ...(await linked(detail)), tasks: [] as Task[] };
 }
 
 export async function councilActivityLoader({ params }: LoaderFunctionArgs) {
-  const session = getSession();
-  const [activity, inquiries, tasks] = await Promise.all([
-    getActivity(params.activityId ?? ''),
-    listCouncilInquiries(session.name),
-    listTasks(),
+  const activityId = params.activityId ?? '';
+  const [detail, tasks] = await Promise.all([
+    getActivityDetail(activityId),
+    listTasks({ activityId }),
   ]);
-  return {
-    ...(await linked(activity, inquiries)),
-    tasks: tasks.filter((task) => task.activity?.id === activity.id),
-  };
+  return { ...(await linked(detail)), tasks };
 }
 
 export function ActivityDetailPage() {
@@ -149,11 +141,11 @@ function ActivityDetail({
           <S.HeadMeta>
             <li>
               <Icon icon={iconGroups} size={16} />
-              담당 {activity.department}
+              담당 {activity.department || '부서 미정'}
             </li>
             <li>
               <Icon icon={iconPerson} size={16} />
-              담당자 {activity.owner}
+              담당자 {activity.owner || '미정'}
             </li>
             <li>
               <Icon icon={iconCalendarToday} size={16} />
@@ -429,7 +421,7 @@ function TasksCard({ activity, tasks }: { activity: Activity; tasks: Task[] }) {
                 {task.title}
                 <VisuallyHidden>, {task.status}</VisuallyHidden>
               </S.MiniTitle>
-              <S.MiniAside>{task.assignee}</S.MiniAside>
+              <S.MiniAside>{task.assignee || '담당자 없음'}</S.MiniAside>
             </li>
           ))}
         </S.MiniList>
@@ -446,18 +438,18 @@ const scopeDescription: Record<ActivityScope, string> = {
 };
 
 function ScopeCard({ activity }: { activity: Activity }) {
-  const session = useSession();
   const revalidator = useRevalidator();
   const [error, setError] = useState('');
-  const editable = activity.owner === session.name;
+  // 담당자만 (담당자가 없으면 학생회 누구나). 서버가 알려준다.
+  const editable = activity.canChangeScope ?? false;
 
   const onChange = async (scope: ActivityScope) => {
     try {
-      await setActivityScope(activity.id, scope, session.name);
+      await setActivityScope(activity.id, scope);
       setError('');
       await revalidator.revalidate();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '바꾸지 못했어요.');
+      setError(errorMessage(caught, '바꾸지 못했어요.'));
     }
   };
 
@@ -519,9 +511,9 @@ function DeleteHistoryButton({
         theme="negative"
         variant="primary"
         onClick={() =>
-          void deleteHistory(activityId, historyId).then(() =>
-            revalidator.revalidate(),
-          )
+          void deleteHistory(activityId, historyId)
+            .catch(() => undefined)
+            .then(() => revalidator.revalidate())
         }
       >
         삭제
@@ -549,11 +541,13 @@ function HistoryForm({
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!title.trim() || saving) return;
     setSaving(true);
+    setError('');
     try {
       await addHistory(activityId, {
         kind,
@@ -563,6 +557,8 @@ function HistoryForm({
       });
       await revalidator.revalidate();
       onDone();
+    } catch (caught) {
+      setError(errorMessage(caught, '이력을 추가하지 못했어요.'));
     } finally {
       setSaving(false);
     }
@@ -606,6 +602,11 @@ function HistoryForm({
         value={body}
         onChange={(event) => setBody(event.target.value)}
       />
+      {error && (
+        <Notice tone="warn" role="alert">
+          {error}
+        </Notice>
+      )}
       <FormActions>
         <Button onClick={onDone}>취소</Button>
         <Button

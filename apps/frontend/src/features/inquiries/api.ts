@@ -1,124 +1,118 @@
-import type { Department } from '../members/types.ts';
-import { mockInquiries } from './mockData.ts';
+import { api, listAll, notFoundAs } from '../../lib/api.ts';
+import { numericId } from '../activities/api.ts';
+import { departmentIdOf } from '../members/api.ts';
+import type { Department, DepartmentRef } from '../members/types.ts';
 import type {
-  Inquiry,
+  InquiryScope,
   InquiryStatus,
   InquiryView,
   NewInquiryInput,
 } from './types.ts';
 
 /**
- * 질의(질문과 건의) API.
- * TODO: 백엔드 질의 API가 생기면 아래 함수 본문만 fetch 호출로 바꾼다. 화면은 이 함수들만 쓴다.
- * 익명 작성자 가리기, 답변 노출 범위, 공개 범위 거르기는 서버가 해야 한다. 지금은 toView가 흉내 낸다.
- * 메모리에만 저장하므로 새로고침하면 처음 상태로 돌아간다.
+ * 질의(질문과 건의) API (백엔드 /inquiries).
+ * 익명 작성자 가리기, 답변 노출 범위, 공개 범위 거르기는 서버가 한다.
  */
-export const isMockApi = true;
 
-const inquiries = structuredClone(mockInquiries);
-
-function find(id: string) {
-  const inquiry = inquiries.find((item) => item.id === id);
-  if (!inquiry) {
-    throw new Response('질의를 찾을 수 없습니다.', { status: 404 });
-  }
-  return inquiry;
+interface InquiryResponse {
+  id: number;
+  title: string;
+  body: string;
+  scope: InquiryScope;
+  anonymous: boolean;
+  author: string | null;
+  authorClass: string | null;
+  status: InquiryStatus;
+  department: DepartmentRef | null;
+  answer: { department: DepartmentRef | null; body: string; at: string } | null;
+  rejectReason: string | null;
+  statusDates: Partial<Record<InquiryStatus, string>>;
+  submittedAt: string;
+  likes: number;
+  liked: boolean;
+  mine: boolean;
+  activity: { id: number; title: string } | null;
 }
 
-const byNewest = (a: Inquiry, b: Inquiry) => Number(b.id) - Number(a.id);
+const notFound = notFoundAs('질의를 찾을 수 없습니다.');
 
-/**
- * viewer: 보는 사람 이름. council이면 학생회 화면이다.
- * 익명 질의는 작성자 본인이 아니면 이름·학년·반을 모두 비운다 (학생회 화면도 마찬가지).
- * 답변은 학생회와 작성자에게만 보인다.
- */
-function toView(
-  inquiry: Inquiry,
-  viewer: string,
-  council: boolean,
-): InquiryView {
-  const { authorName, authorClass, likedBy, answer, ...rest } =
-    structuredClone(inquiry);
-  const mine = authorName === viewer;
-  const showAuthor = mine || !inquiry.anonymous;
+function toView(row: InquiryResponse): InquiryView {
+  const department = row.department?.name;
+  // 화면에는 답변 말풍선 하나만 있어, 반려되면 반려 사유를 그 자리에 보여준다.
+  const answer =
+    row.status === '반려' && row.rejectReason
+      ? {
+          department: department ?? '학생회',
+          body: row.rejectReason,
+          at: row.statusDates.반려 ?? row.submittedAt,
+        }
+      : row.answer && {
+          department: row.answer.department?.name ?? department ?? '학생회',
+          body: row.answer.body,
+          at: row.answer.at,
+        };
   return {
-    ...rest,
-    author: showAuthor ? authorName : null,
-    authorClass: showAuthor ? authorClass : null,
-    ...((council || mine) && answer && { answer }),
-    mine,
-    liked: likedBy.includes(viewer),
+    id: String(row.id),
+    title: row.title,
+    body: row.body,
+    scope: row.scope,
+    anonymous: row.anonymous,
+    author: row.author,
+    authorClass: row.authorClass,
+    status: row.status,
+    ...(department && { department }),
+    ...(answer && { answer }),
+    statusDates: row.statusDates,
+    submittedAt: row.submittedAt,
+    likes: row.likes,
+    liked: row.liked,
+    mine: row.mine,
+    ...(row.activity && {
+      activity: { id: String(row.activity.id), title: row.activity.title },
+    }),
   };
 }
 
-/** 학생 질의함: 전체 공개 질의와 내 질의 */
+/** 학생 질의함: 전체 공개 질의와 내 질의 (서버가 거른다) */
 export async function listStudentInquiries(
-  viewer: string,
+  query: { mine?: boolean } = {},
 ): Promise<InquiryView[]> {
-  return inquiries
-    .filter(
-      (inquiry) =>
-        inquiry.scope === '전체 공개' || inquiry.authorName === viewer,
-    )
-    .sort(byNewest)
-    .map((inquiry) => toView(inquiry, viewer, false));
+  return (await listAll<InquiryResponse>('/inquiries', query)).map(toView);
 }
 
-/** 학생회 질의함: 모든 질의 */
-export async function listCouncilInquiries(
-  viewer: string,
-): Promise<InquiryView[]> {
-  return [...inquiries]
-    .sort(byNewest)
-    .map((inquiry) => toView(inquiry, viewer, true));
+/** 학생회 질의함: 모든 질의 (학생회 임원이 부르면 서버가 모두 준다) */
+export async function listCouncilInquiries(): Promise<InquiryView[]> {
+  return (await listAll<InquiryResponse>('/inquiries')).map(toView);
 }
 
-export async function createInquiry(
-  input: NewInquiryInput,
-  author: { name: string; affiliation: string },
-): Promise<string> {
-  const id = String(Math.max(...inquiries.map((item) => Number(item.id))) + 1);
-  const now = new Date().toISOString();
-  inquiries.push({
-    id,
-    title: input.title.trim(),
-    body: input.body.trim(),
-    scope: input.scope,
-    // 익명은 전체 공개일 때만 고를 수 있다.
-    anonymous: input.scope === '전체 공개' && input.anonymous,
-    authorName: author.name,
-    authorClass: author.affiliation,
-    status: '접수',
-    statusDates: { 접수: now },
-    submittedAt: now,
-    likedBy: [],
-    likes: 0,
+export async function getInquiry(id: string): Promise<InquiryView> {
+  return toView(
+    await api<InquiryResponse>(`/inquiries/${numericId(id)}`).catch(notFound),
+  );
+}
+
+export async function createInquiry(input: NewInquiryInput): Promise<string> {
+  const created = await api<InquiryResponse>('/inquiries', {
+    method: 'POST',
+    body: {
+      title: input.title.trim(),
+      body: input.body.trim(),
+      scope: input.scope,
+      // 익명은 전체 공개일 때만 고를 수 있다.
+      anonymous: input.scope === '전체 공개' && input.anonymous,
+    },
   });
-  return id;
+  return String(created.id);
 }
 
-/** 공감 켜기·끄기 */
-export async function toggleLike(id: string, viewer: string): Promise<void> {
-  const inquiry = find(id);
-  if (inquiry.likedBy.includes(viewer)) {
-    inquiry.likedBy = inquiry.likedBy.filter((name) => name !== viewer);
-    inquiry.likes -= 1;
-  } else {
-    inquiry.likedBy.push(viewer);
-    inquiry.likes += 1;
-  }
-}
-
-export async function setInquiryDepartment(
-  id: string,
-  department: Department,
-): Promise<void> {
-  find(id).department = department;
+/** 공감 켜기·끄기 (전체 공개 질의만) */
+export async function toggleLike(id: string): Promise<void> {
+  await api(`/inquiries/${numericId(id)}/like`, { method: 'POST' });
 }
 
 /**
- * 학생회 처리. 답변 보내기 → 답변 완료, 처리 완료, 반려하기(사유 필수) → 반려.
- * 답변이나 사유를 함께 보내면 답변을 새로 쓴다.
+ * 학생회 처리. 답변 보내기 → 답변 완료, 처리 완료(답변이 있어야 한다), 반려하기(사유 필수) → 반려.
+ * 반려는 body가 사유다. 처리 완료와 반려는 되돌릴 수 없다.
  */
 export async function answerInquiry(
   id: string,
@@ -126,23 +120,13 @@ export async function answerInquiry(
   body: string,
   department: Department,
 ): Promise<void> {
-  const inquiry = find(id);
-  const now = new Date().toISOString();
-  if (body.trim()) {
-    inquiry.answer = { department, body: body.trim(), at: now };
-    inquiry.statusDates['답변 완료'] ??= now;
-  }
-  if (status === '반려' && !inquiry.answer) {
-    throw new Error('반려 사유를 적어주세요.');
-  }
-  inquiry.department = department;
-  inquiry.status = status;
-  inquiry.statusDates[status] ??= now;
-}
-
-export async function setInquiryActivity(
-  id: string,
-  activity: { id: string; title: string },
-): Promise<void> {
-  find(id).activity = activity;
+  const departmentId = await departmentIdOf(department);
+  await api(`/inquiries/${numericId(id)}/answer`, {
+    method: 'POST',
+    body: {
+      status,
+      ...(body.trim() && { body: body.trim() }),
+      ...(departmentId !== null && { departmentId }),
+    },
+  });
 }

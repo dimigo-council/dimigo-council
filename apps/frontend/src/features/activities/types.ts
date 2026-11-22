@@ -40,17 +40,26 @@ export interface Activity {
   description: string;
   status: ActivityStatus;
   scope: ActivityScope;
+  /** 담당 부서 이름. 없으면 빈 문자열 */
   department: Department;
-  /** 담당자. 공개 범위는 담당자만 바꿀 수 있다. */
+  /** 담당자 이름. 없으면 빈 문자열 */
   owner: string;
+  ownerId?: string;
   registeredAt: string;
-  /** 공감 수 (Figma 활동 목록의 하트. 기능 명세서에는 없다) */
+  /**
+   * 공감 수 (Figma 활동 목록의 하트. 기능 명세서와 서버에는 없다).
+   * 하트는 화면 안에서만 켜고 끈다.
+   */
   likes?: number;
   /** 연결된 질의 번호 (여러 개) */
   inquiryIds: string[];
-  /** 오래된 이력이 앞. 예정된 이력은 맨 뒤. */
+  /** 연결된 설문 번호 */
+  surveyIds: string[];
+  /** 오래된 이력이 앞. 예정된 이력은 맨 뒤. 목록에서는 비어 있다. */
   history: ActivityHistory[];
   plan?: ActivityPlan;
+  /** 공개 범위를 바꿀 수 있는지 (담당자, 담당자가 없으면 학생회 누구나). 상세에서만 온다. */
+  canChangeScope?: boolean;
 }
 
 export interface NewActivityInput {
@@ -59,7 +68,8 @@ export interface NewActivityInput {
   inquiryIds: string[];
   firstRecord: string;
   department: Department;
-  owner: string;
+  /** 담당자 사용자 id. 비우면 등록한 사람이 담당자가 된다. */
+  ownerId: string;
   scope: ActivityScope;
 }
 

@@ -8,15 +8,19 @@ import {
 } from '../../dimi-ui-kit/index.ts';
 import { TextButtonLink } from '../../components/ui/index.ts';
 import { GoogleLogo } from './GoogleLogo.tsx';
+import type { Session } from '../../app/session.ts';
+import { errorMessage } from '../../lib/api.ts';
 import {
   isSchoolEmail,
   requestCode,
   RESEND_SECONDS,
+  startGoogle,
   verifyCode,
+  type AuthFlow,
 } from './api.ts';
 import * as S from './styles.ts';
 
-export type AuthFlow = 'login' | 'signup';
+export type { AuthFlow };
 
 const copy = {
   login: {
@@ -44,28 +48,51 @@ const copy = {
 } as const;
 
 /** 로그인·회원가입 첫 단계: Google 계정 또는 학교 이메일로 인증 코드 받기 */
-export function EmailStep({
-  flow,
-  onGoogle,
-}: {
-  flow: AuthFlow;
-  onGoogle: () => void;
-}) {
+export function EmailStep({ flow }: { flow: AuthFlow }) {
   const text = copy[flow];
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [googleError, setGoogleError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     const value = email.trim();
     if (!isSchoolEmail(value)) {
       setError('@dimigo.hs.kr 계정만 사용할 수 있어요.');
       return;
     }
-    await requestCode(value);
-    // 이메일은 주소창에 남기지 않고 화면 상태로 넘긴다.
-    await navigate(`/${flow}/code`, { state: { email: value } });
+    setBusy(true);
+    try {
+      await requestCode(flow, value);
+      // 이메일은 주소창에 남기지 않고 화면 상태로 넘긴다.
+      await navigate(`/${flow}/code`, { state: { email: value } });
+    } catch (caught) {
+      setError(
+        errorMessage(
+          caught,
+          '인증 코드를 보내지 못했어요. 잠시 후 다시 시도해 주세요.',
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onGoogle = async () => {
+    setGoogleError('');
+    try {
+      await startGoogle(flow);
+    } catch (caught) {
+      setGoogleError(
+        errorMessage(
+          caught,
+          'Google 로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.',
+        ),
+      );
+    }
   };
 
   return (
@@ -75,10 +102,11 @@ export function EmailStep({
         <p>{text.description}</p>
       </S.AuthHeading>
       <S.GoogleSlot>
-        <Button size="large" fullWidth onClick={onGoogle}>
+        <Button size="large" fullWidth onClick={() => void onGoogle()}>
           <GoogleLogo />
           {text.google}
         </Button>
+        {googleError && <S.AuthError role="alert">{googleError}</S.AuthError>}
       </S.GoogleSlot>
       <S.Inset>
         <Divider />
@@ -104,6 +132,7 @@ export function EmailStep({
             theme="accent"
             variant="primary"
             fullWidth
+            disabled={busy}
           >
             인증 코드 받기
           </Button>
@@ -137,29 +166,48 @@ export function CodeStep({
 }: {
   flow: AuthFlow;
   email: string;
-  onVerified: () => void;
+  onVerified: (session: Session | null) => void;
 }) {
   const text = copy[flow];
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
   const [left, restart] = useCountdown(RESEND_SECONDS);
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     if (!/^\d{6}$/.test(code)) {
       setError('숫자 6자리를 입력해 주세요.');
       return;
     }
-    if (!(await verifyCode(email, code))) {
-      setError('코드가 맞지 않아요. 다시 확인해 주세요.');
-      return;
+    setBusy(true);
+    try {
+      onVerified(await verifyCode(flow, email, code));
+    } catch (caught) {
+      setError(
+        errorMessage(caught, '확인하지 못했어요. 잠시 후 다시 시도해 주세요.'),
+      );
+    } finally {
+      setBusy(false);
     }
-    onVerified();
   };
 
   const onResend = async () => {
-    await requestCode(email);
-    restart();
+    setNotice('');
+    try {
+      await requestCode(flow, email);
+      setNotice('코드를 다시 보냈어요. 새 코드를 입력해 주세요.');
+      restart();
+    } catch (caught) {
+      setError(
+        errorMessage(
+          caught,
+          '코드를 다시 보내지 못했어요. 잠시 후 다시 시도해 주세요.',
+        ),
+      );
+    }
   };
 
   return (
@@ -181,7 +229,9 @@ export function CodeStep({
           value={code}
           error={error !== ''}
           subLabel={
-            error || '코드는 10분 동안 유효하고, 5번까지 입력할 수 있어요.'
+            error ||
+            notice ||
+            '코드는 10분 동안 유효하고, 5번까지 입력할 수 있어요.'
           }
           onChange={(event) => {
             setCode(event.target.value.replace(/\D/g, ''));
@@ -195,6 +245,7 @@ export function CodeStep({
             theme="accent"
             variant="primary"
             fullWidth
+            disabled={busy}
           >
             {text.submit}
           </Button>
@@ -202,7 +253,7 @@ export function CodeStep({
       </S.AuthForm>
       <S.AuthLinks>
         <TextButtonLink to={`/${flow}`}>이메일 변경</TextButtonLink>
-        <TextButton disabled={left > 0} onClick={onResend}>
+        <TextButton disabled={left > 0} onClick={() => void onResend()}>
           {left > 0 ? `${left}초 후 다시 받기` : '코드 다시 받기'}
         </TextButton>
       </S.AuthLinks>

@@ -2,22 +2,14 @@ import { useState, type ReactNode } from 'react';
 import { useLoaderData, type LoaderFunctionArgs } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
 import { Button, TextButton } from '../../dimi-ui-kit/index.ts';
-import { Breadcrumbs, ButtonLink } from '../../components/ui/index.ts';
+import { Breadcrumbs, ButtonLink, Notice } from '../../components/ui/index.ts';
+import { errorMessage } from '../../lib/api.ts';
 import { formatShortDate } from '../../lib/date.ts';
 import { activityNo } from '../activities/format.ts';
-import { daysLeft } from '../surveys/format.ts';
-import type { Question, TextQuestion } from '../surveys/types.ts';
-import { getSurveyResults } from './api.ts';
-import { hasChoices, questionTypeLabel } from './format.ts';
-import {
-  formatRatio,
-  responsesCsv,
-  responsesIncludedInAnalysis,
-  shareOf,
-  summarizeChoice,
-  textAnswers,
-} from './results.ts';
-import type { SurveyResponse, SurveyResults } from './types.ts';
+import { getSurveyResults, listResponsesForExport } from './api.ts';
+import { questionTypeLabel } from './format.ts';
+import { formatRatio, responsesCsv } from './results.ts';
+import type { AdminSurvey, QuestionResult } from './types.ts';
 import * as S from './styles.ts';
 
 export async function surveyResultsLoader({ params }: LoaderFunctionArgs) {
@@ -27,7 +19,8 @@ export async function surveyResultsLoader({ params }: LoaderFunctionArgs) {
 /** 단답형·장문형은 처음에 이만큼만 보여주고 "더보기"로 늘린다. */
 const TEXT_PAGE = 3;
 
-function downloadCsv({ survey, responses }: SurveyResults) {
+async function downloadCsv(survey: AdminSurvey) {
+  const responses = await listResponsesForExport(survey.id);
   const blob = new Blob([responsesCsv(survey, responses)], {
     type: 'text/csv;charset=utf-8',
   });
@@ -44,19 +37,29 @@ function periodText(opensAt?: string, closesAt?: string) {
   return `응답 기간 ${formatShortDate(opensAt)}–${formatShortDate(closesAt)}`;
 }
 
-function remainingText(closesAt?: string, closedAt?: string) {
-  if (closedAt || !closesAt) return '마감';
-  const days = daysLeft(closesAt);
-  if (days < 0) return '마감';
-  return days === 0 ? '오늘 마감' : `${days}일`;
+function remainingText(daysLeft: number | null, closedAt?: string) {
+  if (closedAt || daysLeft === null || daysLeft < 0) return '마감';
+  return daysLeft === 0 ? '오늘 마감' : `${daysLeft}일`;
 }
 
 /** 학생회 / 설문 결과 (SRV-R2) */
 export function SurveyResultsPage() {
   const results = useLoaderData<typeof surveyResultsLoader>();
   const { survey } = results;
-  const responses = responsesIncludedInAnalysis(results.responses);
-  const rate = shareOf(responses.length, survey.target);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+
+  const onExport = async () => {
+    setExporting(true);
+    setExportError('');
+    try {
+      await downloadCsv(survey);
+    } catch (caught) {
+      setExportError(errorMessage(caught, '결과를 내보내지 못했어요.'));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <>
@@ -73,30 +76,36 @@ export function SurveyResultsPage() {
         <S.Stats>
           <div>
             <dt>응답자</dt>
-            <dd>{responses.length}명</dd>
+            <dd>{results.respondents}명</dd>
           </div>
           <div>
             <dt>참여율</dt>
-            <dd>{formatRatio(rate)}</dd>
+            <dd>{formatRatio(Math.min(1, results.participationRate))}</dd>
           </div>
           <div>
             <dt>마감까지</dt>
-            <dd>{remainingText(survey.closesAt, survey.closedAt)}</dd>
+            <dd>{remainingText(results.daysLeft, survey.closedAt)}</dd>
           </div>
         </S.Stats>
       </S.Sheet>
 
-      {survey.questions.map((question, index) => (
-        <QuestionResult
+      {results.questions.map((question, index) => (
+        <QuestionResultCard
           key={question.id}
           number={index + 1}
           question={question}
-          responses={responses}
         />
       ))}
 
+      {exportError && (
+        <Notice tone="warn" role="alert">
+          {exportError}
+        </Notice>
+      )}
       <S.PageActions>
-        <Button onClick={() => downloadCsv(results)}>결과 내보내기</Button>
+        <Button disabled={exporting} onClick={() => void onExport()}>
+          결과 내보내기
+        </Button>
         {survey.activity && (
           <ButtonLink
             theme="accent"
@@ -111,14 +120,12 @@ export function SurveyResultsPage() {
   );
 }
 
-function QuestionResult({
+function QuestionResultCard({
   number,
   question,
-  responses,
 }: {
   number: number;
-  question: Question;
-  responses: SurveyResponse[];
+  question: QuestionResult;
 }) {
   const titleId = `result-${question.id}-title`;
   const heading = (answered: number, note?: string) => (
@@ -134,17 +141,16 @@ function QuestionResult({
     </S.QuestionHeading>
   );
 
-  if (hasChoices(question)) {
-    const summary = summarizeChoice(question, responses);
+  if ('rows' in question) {
     return (
       <S.Sheet aria-labelledby={titleId}>
         {heading(
-          summary.answered,
+          question.answered,
           question.type === 'multiple'
             ? '응답자 대비 비율이라 합계가 100%를 넘을 수 있습니다'
             : undefined,
         )}
-        {summary.rows.map((row) => (
+        {question.rows.map((row) => (
           <S.ResultRow key={row.label}>
             <span>{row.label}</span>
             <S.ResultBar
@@ -162,8 +168,8 @@ function QuestionResult({
 
   return (
     <TextResult
-      question={question}
-      answers={textAnswers(question, responses)}
+      long={question.type === 'long'}
+      answers={question.answers}
       titleId={titleId}
       heading={heading}
     />
@@ -171,12 +177,12 @@ function QuestionResult({
 }
 
 function TextResult({
-  question,
+  long,
   answers,
   titleId,
   heading,
 }: {
-  question: TextQuestion;
+  long: boolean;
   answers: string[];
   titleId: string;
   heading: (answered: number) => ReactNode;
@@ -186,7 +192,7 @@ function TextResult({
     <S.Sheet aria-labelledby={titleId}>
       {heading(answers.length)}
       {answers.length > 0 ? (
-        <S.TextAnswers $long={question.type === 'long'}>
+        <S.TextAnswers $long={long}>
           {answers.slice(0, shown).map((answer, index) => (
             <li key={index}>{answer}</li>
           ))}

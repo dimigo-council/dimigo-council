@@ -6,7 +6,7 @@ import {
   useSearchParams,
 } from 'react-router';
 import { PageHeader } from '../../app/PageHeader.tsx';
-import { getSession } from '../../app/session.ts';
+import { useSession } from '../../app/session.ts';
 import { Button, Icon, TextButton } from '../../dimi-ui-kit/index.ts';
 import { iconArrowForwardIos } from '../../dimi-ui-kit/icons';
 import {
@@ -22,16 +22,14 @@ import {
   TextLink,
   TwoColumn,
 } from '../../components/ui/index.ts';
+import { errorMessage } from '../../lib/api.ts';
 import { formatFullDate } from '../../lib/date.ts';
 import { linkInquiry, listActivities } from '../activities/api.ts';
 import { activityNo } from '../activities/format.ts';
 import type { Activity } from '../activities/types.ts';
-import { departments, type Department } from '../members/types.ts';
-import {
-  answerInquiry,
-  listCouncilInquiries,
-  setInquiryActivity,
-} from './api.ts';
+import { listDepartments } from '../members/api.ts';
+import type { Department } from '../members/types.ts';
+import { answerInquiry, listCouncilInquiries } from './api.ts';
 import { inquiryNo } from './format.ts';
 import { InquiryItem, InquiryThread, StatusBadge } from './InquiryItem.tsx';
 import {
@@ -43,18 +41,24 @@ import * as S from './styles.ts';
 
 /** 학생회 질의함: 모든 질의. 익명 질의는 학생회에도 작성자가 보이지 않는다. */
 export async function inquiryInboxLoader() {
-  const [inquiries, activities] = await Promise.all([
-    listCouncilInquiries(getSession().name),
+  const [inquiries, activities, departments] = await Promise.all([
+    listCouncilInquiries(),
     listActivities(),
+    listDepartments(),
   ]);
-  return { inquiries, activities };
+  return {
+    inquiries,
+    activities,
+    departments: departments.map((item) => item.name),
+  };
 }
 
 type Filter = 'all' | InquiryStatus;
 const filters: Filter[] = ['all', ...inquiryStatuses];
 
 export function InquiryInboxPage() {
-  const { inquiries, activities } = useLoaderData<typeof inquiryInboxLoader>();
+  const { inquiries, activities, departments } =
+    useLoaderData<typeof inquiryInboxLoader>();
   const { pathname } = useLocation();
   const [params, setParams] = useSearchParams();
 
@@ -127,6 +131,7 @@ export function InquiryInboxPage() {
             key={selected.id}
             inquiry={selected}
             activities={activities}
+            departments={departments}
           />
         )}
       </TwoColumn>
@@ -138,22 +143,27 @@ export function InquiryInboxPage() {
 function HandlePanel({
   inquiry,
   activities,
+  departments,
 }: {
   inquiry: InquiryView;
   activities: Activity[];
+  departments: string[];
 }) {
   const revalidator = useRevalidator();
-  const session = getSession();
+  const session = useSession();
   const [department, setDepartment] = useState<Department>(
     inquiry.department ??
-      (session.department as Department | undefined) ??
-      '회장단',
+      (session.department && departments.includes(session.department)
+        ? session.department
+        : ''),
   );
   const [answer, setAnswer] = useState('');
   const [linking, setLinking] = useState(false);
   const [activityId, setActivityId] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // 처리 완료와 반려는 되돌릴 수 없다.
+  const final = inquiry.status === '처리 완료' || inquiry.status === '반려';
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
@@ -163,14 +173,14 @@ function HandlePanel({
       setAnswer('');
       await revalidator.revalidate();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '처리하지 못했어요.');
+      setError(errorMessage(caught, '처리하지 못했어요.'));
     } finally {
       setBusy(false);
     }
   };
 
   const onReject = () => {
-    if (!answer.trim() && !inquiry.answer) {
+    if (!answer.trim()) {
       setError('반려 사유를 답변에 적어주세요.');
       return;
     }
@@ -182,10 +192,6 @@ function HandlePanel({
     if (!activity) return;
     void run(async () => {
       await linkInquiry(activity.id, inquiry);
-      await setInquiryActivity(inquiry.id, {
-        id: activity.id,
-        title: activity.title,
-      });
       setLinking(false);
     });
   };
@@ -226,11 +232,9 @@ function HandlePanel({
       <Select
         label="담당 부서"
         value={department}
-        onChange={(event) => {
-          const next = departments.find((item) => item === event.target.value);
-          if (next) setDepartment(next);
-        }}
+        onChange={(event) => setDepartment(event.target.value)}
       >
+        <option value="">담당 부서 미정</option>
         {departments.map((item) => (
           <option key={item}>{item}</option>
         ))}
@@ -251,13 +255,13 @@ function HandlePanel({
       <S.Actions>
         <TextButton
           theme="negative"
-          disabled={busy || inquiry.status === '반려'}
+          disabled={busy || final}
           onClick={onReject}
         >
           반려하기
         </TextButton>
         <Button
-          disabled={busy || !answer.trim()}
+          disabled={busy || final || !answer.trim()}
           onClick={() =>
             void run(() =>
               answerInquiry(inquiry.id, '답변 완료', answer, department),
@@ -267,7 +271,7 @@ function HandlePanel({
           답변 보내기
         </Button>
         <Button
-          disabled={busy || inquiry.status === '처리 완료'}
+          disabled={busy || final || (!answer.trim() && !inquiry.answer)}
           onClick={() =>
             void run(() =>
               answerInquiry(inquiry.id, '처리 완료', answer, department),

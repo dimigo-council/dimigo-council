@@ -9,7 +9,6 @@ import {
 } from 'react-router';
 import { PlusIcon } from '../../app/icons.tsx';
 import { PageHeader } from '../../app/PageHeader.tsx';
-import { getSession, useSession } from '../../app/session.ts';
 import { Button, Control, Icon, Input } from '../../dimi-ui-kit/index.ts';
 import { iconArrowForwardIos } from '../../dimi-ui-kit/icons';
 import {
@@ -24,6 +23,7 @@ import {
   TextLink,
   TwoColumn,
 } from '../../components/ui/index.ts';
+import { errorMessage } from '../../lib/api.ts';
 import { createInquiry, listStudentInquiries, toggleLike } from './api.ts';
 import { InquiryItem, LikeToggle } from './InquiryItem.tsx';
 import {
@@ -36,7 +36,7 @@ import * as S from './styles.ts';
 
 /** 학생 질의함: 전체 공개 질의와 내 질의. /inquiries/new면 오른쪽에 새 질의 작성이 열린다. */
 export async function inquiryListLoader() {
-  return listStudentInquiries(getSession().name);
+  return listStudentInquiries();
 }
 
 type Filter = 'all' | InquiryStatus;
@@ -46,8 +46,8 @@ const BODY_MAX = 1000;
 
 export function InquiryPage() {
   const inquiries = useLoaderData<typeof inquiryListLoader>();
-  const session = useSession();
   const revalidator = useRevalidator();
+  const [likeError, setLikeError] = useState('');
   const { pathname } = useLocation();
   const [params, setParams] = useSearchParams();
   const composing = pathname.endsWith('/new');
@@ -81,8 +81,17 @@ export function InquiryPage() {
     return `${pathname}${query ? `?${query}` : ''}`;
   };
 
-  const onLike = (id: string) =>
-    void toggleLike(id, session.name).then(() => revalidator.revalidate());
+  const onLike = (id: string) => {
+    setLikeError('');
+    void toggleLike(id)
+      .catch((caught: unknown) =>
+        setLikeError(errorMessage(caught, '공감하지 못했어요.')),
+      )
+      .then(() => revalidator.revalidate());
+  };
+  /** 공감은 전체 공개 질의에만 있다. */
+  const likeHandler = (inquiry: { id: string; scope: string }) =>
+    inquiry.scope === '전체 공개' ? () => onLike(inquiry.id) : undefined;
 
   const list = (
     <S.ListCard aria-labelledby="inquiry-list-title">
@@ -109,6 +118,11 @@ export function InquiryPage() {
           />
         </S.ListTools>
       </S.ListHead>
+      {likeError && (
+        <Notice tone="warn" role="alert">
+          {likeError}
+        </Notice>
+      )}
       {visible.length > 0 ? (
         <S.List aria-label="질의 목록">
           {visible.map((inquiry) => (
@@ -117,12 +131,12 @@ export function InquiryPage() {
               inquiry={inquiry}
               open={openId === inquiry.id}
               to={linkFor(inquiry.id)}
-              onToggleLike={() => onLike(inquiry.id)}
+              onToggleLike={likeHandler(inquiry)}
               footer={
                 <>
                   <LikeToggle
                     inquiry={inquiry}
-                    onToggle={() => onLike(inquiry.id)}
+                    onToggle={likeHandler(inquiry)}
                   />
                   {inquiry.activity && (
                     <TextLink to={`/activities/${inquiry.activity.id}`}>
@@ -179,7 +193,6 @@ const scopeHint: Record<InquiryScope, string> = {
 };
 
 function ComposeCard() {
-  const session = useSession();
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -187,6 +200,7 @@ function ComposeCard() {
   const [anonymous, setAnonymous] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; body?: string }>({});
   const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle');
+  const [error, setError] = useState('');
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -199,13 +213,13 @@ function ComposeCard() {
     if (next.title || next.body) return;
     setStatus('saving');
     try {
-      const id = await createInquiry(
-        { title, body, scope, anonymous },
-        session,
-      );
+      const id = await createInquiry({ title, body, scope, anonymous });
       await navigate(`/inquiries?id=${id}`, { replace: true });
-    } catch {
+    } catch (caught) {
       setStatus('error');
+      setError(
+        errorMessage(caught, '보내지 못했습니다. 잠시 후 다시 시도해주세요.'),
+      );
     }
   };
 
@@ -298,7 +312,7 @@ function ComposeCard() {
       )}
       {status === 'error' && (
         <Notice tone="warn" role="alert">
-          보내지 못했습니다. 잠시 후 다시 시도해주세요.
+          {error}
         </Notice>
       )}
       <Button

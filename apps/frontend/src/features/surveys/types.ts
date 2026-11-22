@@ -29,6 +29,7 @@ export type Question =
 export type AnswerValue = string | string[];
 export type Answers = Record<string, AnswerValue>;
 
+/** draft는 이 화면 안에서만 이어 쓰는 답이다 (서버에는 제출한 응답만 남는다). */
 export type MyResponseStatus = 'none' | 'draft' | 'submitted';
 
 /**
@@ -43,8 +44,11 @@ export interface Survey {
   department: string;
   audience: string;
   collectsClass: boolean;
-  /** 연결 활동. 연결된 활동이 있어야 설문을 게시할 수 있다. */
-  activity: { id: string; title: string };
+  /**
+   * 연결 활동. 연결된 활동이 있어야 설문을 게시할 수 있다.
+   * 학생에게는 학생회 공개 범위의 활동이면 비어 있다.
+   */
+  activity?: { id: string; title: string };
   /** ISO 8601. 이 시각까지 응답을 받는다. */
   closesAt: string;
   questions: Question[];
@@ -57,10 +61,13 @@ export interface SurveySummary extends Omit<Survey, 'questions'> {
   questionCount: number;
   isClosed: boolean;
   myStatus: MyResponseStatus;
+  /** 지금 응답할 수 있는지 (진행 중, 아직 응답하지 않았고, 응답 대상 학년·반) */
+  canRespond: boolean;
 }
 
 export interface SurveyWithResponse extends Survey {
   isClosed: boolean;
   myStatus: MyResponseStatus;
+  canRespond: boolean;
   myAnswers: Answers;
 }

@@ -9,6 +9,7 @@ import {
 import {
   DataCell,
   EmptyState,
+  Notice,
   Owner,
   PersonAvatar,
   SelectControl,
@@ -23,6 +24,7 @@ import {
 import * as S from './styles.ts';
 import { Input } from '../../dimi-ui-kit/index.ts';
 import { iconSearch } from '../../dimi-ui-kit/icons';
+import { errorMessage } from '../../lib/api.ts';
 
 export async function memberListLoader() {
   return listMembers();
@@ -34,6 +36,10 @@ const permissionNote: Record<MemberPermission, string> = {
   일반: '맡은 업무와 활동 보기',
 };
 
+const editablePermissions = memberPermissions.filter(
+  (item): item is Exclude<MemberPermission, '관리자'> => item !== '관리자',
+);
+
 function PermissionCell({
   member,
   editable,
@@ -43,48 +49,68 @@ function PermissionCell({
 }) {
   const revalidator = useRevalidator();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  if (!editable) return <>{member.permission}</>;
+  // 관리자 권한은 데이터베이스에서만 바꾼다. 부서가 없으면 부서 관리·일반을 나눌 수 없다.
+  if (
+    !editable ||
+    member.permission === '관리자' ||
+    member.departmentId === undefined
+  )
+    return <>{member.permission}</>;
 
-  const onChange = async (permission: MemberPermission) => {
+  const onChange = async (permission: Exclude<MemberPermission, '관리자'>) => {
     setSaving(true);
+    setError('');
     try {
-      await updatePermission(member.id, permission);
+      await updatePermission(member, permission);
       await revalidator.revalidate();
+    } catch (caught) {
+      setError(errorMessage(caught, '권한을 바꾸지 못했어요.'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <SelectControl
-      aria-label={`${member.name} 권한`}
-      value={member.permission}
-      disabled={saving}
-      onChange={(event) => {
-        const next = memberPermissions.find((p) => p === event.target.value);
-        if (next) void onChange(next);
-      }}
-    >
-      {memberPermissions.map((permission) => (
-        <option key={permission}>{permission}</option>
-      ))}
-    </SelectControl>
+    <>
+      <SelectControl
+        aria-label={`${member.name} 권한`}
+        value={member.permission}
+        disabled={saving}
+        onChange={(event) => {
+          const next = editablePermissions.find(
+            (p) => p === event.target.value,
+          );
+          if (next) void onChange(next);
+        }}
+      >
+        {editablePermissions.map((permission) => (
+          <option key={permission}>{permission}</option>
+        ))}
+      </SelectControl>
+      {error && (
+        <Notice tone="warn" role="alert">
+          {error}
+        </Notice>
+      )}
+    </>
   );
 }
 
 export function MemberListPage() {
   const members = useLoaderData<typeof memberListLoader>();
   const session = useSession();
-  const canManage =
-    members.find((member) => member.name === session.name)?.permission ===
-    '관리자';
+  // 권한을 바꾸는 API는 관리자(isAdmin)만 쓸 수 있다.
+  const canManage = session.isAdmin;
 
   const [department, setDepartment] = useState('');
   const [permission, setPermission] = useState('');
   const [query, setQuery] = useState('');
 
-  const departments = [...new Set(members.map((m) => m.department))];
+  const departments = [
+    ...new Set(members.map((m) => m.department).filter(Boolean)),
+  ];
   const keyword = query.trim();
   const visible = members.filter(
     (m) =>
@@ -148,7 +174,7 @@ export function MemberListPage() {
                       <Owner>
                         <PersonAvatar name={member.name} aria-hidden="true" />
                         <strong>{member.name}</strong>
-                        {member.name === session.name && (
+                        {member.id === session.id && (
                           <DataCell as="span" $muted>
                             나
                           </DataCell>
@@ -156,12 +182,12 @@ export function MemberListPage() {
                       </Owner>
                     </th>
                     <DataCell $muted>{member.classLabel}</DataCell>
-                    <td>{member.department}</td>
+                    <td>{member.department || '부서 없음'}</td>
                     <td>{member.position}</td>
                     <td>
                       <PermissionCell
                         member={member}
-                        editable={canManage && member.name !== session.name}
+                        editable={canManage && member.id !== session.id}
                       />
                     </td>
                   </tr>
@@ -170,7 +196,11 @@ export function MemberListPage() {
             </S.MemberTable>
           </TableWrap>
         ) : (
-          <EmptyState>조건에 맞는 구성원이 없습니다.</EmptyState>
+          <EmptyState>
+            {members.length === 0
+              ? '아직 학생회 구성원이 없습니다.'
+              : '조건에 맞는 구성원이 없습니다.'}
+          </EmptyState>
         )}
 
         <S.PermissionNotes>

@@ -13,14 +13,18 @@ import {
 } from '../../components/ui/index.ts';
 import { useSearchParamOption } from '../../lib/useSearchParamOption.ts';
 import { activityNo } from '../activities/format.ts';
-import { departments } from '../members/types.ts';
+import { listDepartments } from '../members/api.ts';
 import { listTasks } from './api.ts';
 import { dueLabel, isDueSoon, taskTag } from './format.ts';
 import { taskStatuses, type Task } from './types.ts';
 import * as S from './styles.ts';
 
 export async function taskListLoader() {
-  return listTasks();
+  const [tasks, departments] = await Promise.all([
+    listTasks(),
+    listDepartments(),
+  ]);
+  return { tasks, departments: departments.map((item) => item.name) };
 }
 
 type Scope = 'mine' | 'all';
@@ -46,7 +50,7 @@ function TaskCard({ task }: { task: Task }) {
       <S.CardFoot $soon={isDueSoon(task)}>
         <Icon icon={iconCalendarToday} size={16} />
         {dueLabel(task)}
-        <PersonAvatar name={task.assignee} />
+        {task.assignee && <PersonAvatar name={task.assignee} />}
       </S.CardFoot>
     </S.TaskCard>
   );
@@ -54,7 +58,7 @@ function TaskCard({ task }: { task: Task }) {
 
 /** 업무 보드: 예정됨 · 진행 중 · 검토 요청 · 완료 열 */
 export function TaskListPage() {
-  const tasks = useLoaderData<typeof taskListLoader>();
+  const { tasks, departments } = useLoaderData<typeof taskListLoader>();
   const session = useSession();
   const [scope, setScope] = useSearchParamOption('view', scopes, 'mine');
   const [department, setDepartment] = useState('');
@@ -70,7 +74,7 @@ export function TaskListPage() {
 
   const visible = tasks.filter(
     (task) =>
-      (scope === 'all' || task.assignee === session.name) &&
+      (scope === 'all' || task.assigneeId === session.id) &&
       (!department || task.department === department) &&
       (!activity || task.activity?.id === activity),
   );

@@ -70,7 +70,7 @@ export function ActivityRow({
   note?: string;
   headingLevel?: 2 | 3;
 }) {
-  // TODO: 공감 API가 생기면 서버 값으로 바꾼다. 지금은 화면 안에서만 켜고 끈다.
+  // 활동 공감은 서버에 없어(기능 명세서 밖) 화면 안에서만 켜고 끈다.
   const [liked, setLiked] = useState(false);
   const likes = (activity.likes ?? 0) + (liked ? 1 : 0);
   return (
@@ -87,8 +87,9 @@ export function ActivityRow({
         </ListRowTitle>
         <ListRowMeta>
           <span>
-            {activity.department}
-            {note && ` · ${note}`}
+            {[activity.department || '담당 부서 미정', note]
+              .filter(Boolean)
+              .join(' · ')}
           </span>
         </ListRowMeta>
       </ListRowMain>

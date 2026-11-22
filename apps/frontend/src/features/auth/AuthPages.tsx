@@ -1,5 +1,12 @@
-import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  Navigate,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router';
+import type { Session } from '../../app/session.ts';
+import { errorMessage } from '../../lib/api.ts';
 import {
   Button,
   InputField,
@@ -11,7 +18,7 @@ import {
   ChoiceGroup,
   TextButtonLink,
 } from '../../components/ui/index.ts';
-import { signup, type SignupInput } from './api.ts';
+import { finishGoogle, signup, type SignupInput } from './api.ts';
 import { CodeStep, EmailStep, type AuthFlow } from './AuthSteps.tsx';
 import * as S from './styles.ts';
 
@@ -29,26 +36,85 @@ function Title({ children }: { children: string }) {
   return <title>{`${children} | 디미고 학생회`}</title>;
 }
 
+/** 로그인·가입을 마친 뒤 갈 곳: 정보 입력이 남았으면 정보 입력, 아니면 홈 */
+function homeOf(session: Session | null) {
+  if (!session) return '/login';
+  return session.onboarded ? '/' : '/signup/info';
+}
+
 /** 공통 / 로그인 */
 export function LoginPage() {
-  const navigate = useNavigate();
   return (
     <>
       <Title>로그인</Title>
-      {/* TODO: Google 로그인 연동. 지금은 바로 홈으로 간다. */}
-      <EmailStep flow="login" onGoogle={() => void navigate('/')} />
+      <EmailStep flow="login" />
     </>
   );
 }
 
 /** 공통 / 회원가입 */
 export function SignupPage() {
-  const navigate = useNavigate();
   return (
     <>
       <Title>회원가입</Title>
-      {/* TODO: Google 가입 연동. 지금은 정보 입력 단계로 간다. */}
-      <EmailStep flow="signup" onGoogle={() => void navigate('/signup/info')} />
+      <EmailStep flow="signup" />
+    </>
+  );
+}
+
+/** Google에서 돌아오는 주소 (/google/signup/callback, /google/login/callback) */
+export function GoogleCallbackPage({ flow }: { flow: AuthFlow }) {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const [error, setError] = useState('');
+  const started = useRef(false);
+
+  useEffect(() => {
+    // StrictMode에서 두 번 불려도 code는 한 번만 쓴다.
+    if (started.current) return;
+    started.current = true;
+    const code = params.get('code');
+    const state = params.get('state');
+    const iss = params.get('iss') ?? undefined;
+    if (!code || !state) {
+      setError(
+        params.get('error') === 'access_denied'
+          ? 'Google 로그인을 취소했어요.'
+          : 'Google 로그인 정보를 받지 못했어요. 처음부터 다시 시도해 주세요.',
+      );
+      return;
+    }
+    finishGoogle(flow, { code, state, iss })
+      .then((session) => navigate(homeOf(session), { replace: true }))
+      .catch((caught: unknown) =>
+        setError(
+          errorMessage(
+            caught,
+            'Google 로그인을 마치지 못했어요. 잠시 후 다시 시도해 주세요.',
+          ),
+        ),
+      );
+  }, [flow, navigate, params]);
+
+  return (
+    <>
+      <Title>{flowLabel[flow]}</Title>
+      <S.AuthCard aria-labelledby="auth-title" aria-busy={!error}>
+        <S.AuthHeading>
+          <h1 id="auth-title">{flowLabel[flow]}</h1>
+          <p>{error ? '' : 'Google 계정을 확인하고 있어요.'}</p>
+        </S.AuthHeading>
+        {error && (
+          <>
+            <S.AuthError role="alert">{error}</S.AuthError>
+            <S.Inset>
+              <TextButtonLink theme="accent" to={`/${flow}`}>
+                {flowLabel[flow]} 화면으로
+              </TextButtonLink>
+            </S.Inset>
+          </>
+        )}
+      </S.AuthCard>
     </>
   );
 }
@@ -75,10 +141,8 @@ export function CodePage({ flow }: { flow: AuthFlow }) {
       <CodeStep
         flow={flow}
         email={email}
-        onVerified={() =>
-          void navigate(flow === 'login' ? '/' : '/signup/info', {
-            replace: true,
-          })
+        onVerified={(session) =>
+          void navigate(homeOf(session), { replace: true })
         }
       />
     </>
@@ -99,6 +163,8 @@ export function SignupInfoPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [tried, setTried] = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const gradeValue = Number(grade);
   const classValue = Number(classNumber);
@@ -115,16 +181,26 @@ export function SignupInfoPage() {
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setTried(true);
-    if (!valid) return;
-    await signup({
-      nickname: nickname.trim(),
-      ...(withProfile && {
-        grade: grade ? gradeValue : undefined,
-        classNumber: classNumber ? classValue : undefined,
-        gender,
-      }),
-    });
-    await navigate('/', { replace: true });
+    if (!valid || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      await signup({
+        nickname: nickname.trim(),
+        ...(withProfile && {
+          grade: grade ? gradeValue : undefined,
+          classNumber: classNumber ? classValue : undefined,
+          gender,
+        }),
+      });
+      await navigate('/', { replace: true });
+    } catch (caught) {
+      setError(
+        errorMessage(caught, '가입하지 못했어요. 잠시 후 다시 시도해 주세요.'),
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -233,6 +309,7 @@ export function SignupInfoPage() {
               </S.AuthError>
             )}
           </S.CheckRows>
+          {error && <S.AuthError role="alert">{error}</S.AuthError>}
           <S.Inset>
             <Button
               type="submit"
@@ -240,6 +317,7 @@ export function SignupInfoPage() {
               theme="accent"
               variant="primary"
               fullWidth
+              disabled={busy}
             >
               가입 완료
             </Button>

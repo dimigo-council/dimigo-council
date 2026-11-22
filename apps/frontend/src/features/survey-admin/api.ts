@@ -1,229 +1,169 @@
-import type { Survey } from '../surveys/types.ts';
-import { mockAdminSurveys } from './mockData.ts';
-import { mockResponses } from './responseMock.ts';
+import { api, listAll, notFoundAs } from '../../lib/api.ts';
+import { numericId } from '../activities/api.ts';
+import { fetchSurvey, type SurveyResponseBody } from '../surveys/api.ts';
+import type { Question } from '../surveys/types.ts';
 import type {
   AdminSurvey,
+  QuestionResult,
   SurveyDraft,
   SurveyResponse,
   SurveyResults,
 } from './types.ts';
 
 /**
- * 설문 관리 API (학생회 화면).
- * TODO: 백엔드 설문 API가 생기면 아래 함수 본문만 fetch 호출로 바꾼다. 화면은 이 함수들만 쓴다.
- * 지금은 메모리에만 저장한다. 공개한 설문은 listPublishedSurveys로 학생 화면 설문(features/surveys)에 나간다.
+ * 설문 관리 API (학생회 화면, 백엔드 /surveys).
+ * 새 설문은 작성 중으로 만들어지고, 게시하면 학생 화면 설문(features/surveys)에 나간다.
+ * 서버에는 부서장 검토 요청, 최근 임시 저장 불러오기, 개별 응답 보기·분석 제외도 있지만 화면에서 뺐다.
  */
-export const isMockApi = true;
 
-const surveys = structuredClone(mockAdminSurveys);
-let nextNumber = 1;
-/** 설문 id → 응답. 결과를 처음 열 때 예시 응답으로 채운다. */
-const responses = new Map<string, SurveyResponse[]>();
+const notFound = notFoundAs('설문을 찾을 수 없습니다.');
 
-function find(id: string) {
-  const survey = surveys.find((item) => item.id === id);
-  if (!survey) {
-    throw new Response('설문을 찾을 수 없습니다.', { status: 404 });
-  }
-  return survey;
-}
-
-function editable(survey: AdminSurvey) {
-  if (survey.stage === 'published') {
-    throw new Error('공개된 설문은 고칠 수 없습니다.');
-  }
-  return survey;
-}
-
-export async function listAdminSurveys(): Promise<AdminSurvey[]> {
-  return structuredClone(surveys);
+function toAdminSurvey(row: SurveyResponseBody): AdminSurvey {
+  const deadline = row.deadline ?? row.closesAt;
+  // 마감일 전에 응답 받기를 끄면 closesAt이 그 시각으로 앞당겨진다.
+  const closedEarly =
+    row.closesAt && deadline && row.closesAt !== deadline
+      ? row.closesAt
+      : undefined;
+  return {
+    id: String(row.id),
+    title: row.title,
+    intro: row.intro,
+    department: row.department?.name ?? '',
+    owner: row.owner?.name ?? '',
+    audience: row.audience,
+    collectsClass: row.collectsClass,
+    ...(row.activity && {
+      activity: { id: String(row.activity.id), title: row.activity.title },
+    }),
+    ...(row.opensAt && { opensAt: row.opensAt }),
+    ...(deadline && { closesAt: deadline }),
+    ...(closedEarly && { closedAt: closedEarly }),
+    stage: row.stage,
+    savedAt: row.savedAt,
+    reviewRequested: row.reviewRequested,
+    questions: row.questions ?? [],
+    responses: row.responses,
+    target: row.target,
+  };
 }
 
 export async function getAdminSurvey(id: string): Promise<AdminSurvey> {
-  return structuredClone(find(id));
+  return toAdminSurvey(await fetchSurvey(id));
 }
 
-export async function createSurveyDraft(
-  owner: string,
-  department: string,
-): Promise<string> {
-  const id = `new-survey-${nextNumber++}`;
-  surveys.push({
-    id,
-    title: '',
-    department,
-    owner,
-    audience: '전교생',
-    collectsClass: false,
-    stage: 'draft',
-    intro: '',
-    savedAt: new Date().toISOString(),
-    responses: 0,
-    target: 640,
-    reviewRequested: false,
-    questions: [
-      {
-        id: 'q1',
-        type: 'single',
-        title: '',
-        required: true,
-        options: ['', ''],
-      },
-    ],
+const firstQuestion: Question = {
+  id: 'q1',
+  type: 'single',
+  title: '',
+  required: true,
+  options: ['', ''],
+};
+
+/** 설문 만들기: 빈 작성 중 설문을 만든다. 부서는 서버가 만든 사람의 부서로 정한다. */
+export async function createSurveyDraft(): Promise<string> {
+  const created = await api<SurveyResponseBody>('/surveys', {
+    method: 'POST',
+    body: {
+      title: '',
+      intro: '',
+      grades: [1, 2, 3],
+      collectsClass: false,
+      questions: [firstQuestion],
+    },
   });
-  return id;
+  return String(created.id);
 }
 
-/** 자동 저장. 저장한 시각을 돌려준다. */
+/** 응답 대상 글자("전교생", "1학년, 2학년") → 학년 */
+function gradesOf(audience: string): (1 | 2 | 3)[] {
+  const all = [1, 2, 3] as const;
+  if (audience === '전교생') return [...all];
+  const picked = all.filter((grade) => audience.includes(`${grade}학년`));
+  return picked.length > 0 ? picked : [...all];
+}
+
+/** 임시 저장. 저장한 시각을 돌려준다. */
 export async function saveSurveyDraft(
   id: string,
   draft: SurveyDraft,
 ): Promise<string> {
-  const survey = editable(find(id));
-  Object.assign(survey, structuredClone(draft));
-  survey.savedAt = new Date().toISOString();
-  return survey.savedAt;
-}
-
-export async function requestSurveyReview(id: string): Promise<void> {
-  editable(find(id)).reviewRequested = true;
-}
-
-/** 작성 중인 설문 가운데 가장 최근에 저장한 것 (설문 목록의 "불러오기") */
-export async function getLatestSurveyDraft(): Promise<AdminSurvey | null> {
-  const drafts = surveys
-    .filter((survey) => survey.stage === 'draft')
-    .sort((a, b) => b.savedAt.localeCompare(a.savedAt));
-  return drafts[0] ? structuredClone(drafts[0]) : null;
-}
-
-/** 공개 예약. 공개일이 이미 지났으면 바로 공개한다. 연결 활동이 없으면 게시할 수 없다. */
-export async function scheduleSurvey(id: string): Promise<void> {
-  const survey = editable(find(id));
-  if (!survey.activity) {
-    throw new Error('연결 활동을 골라야 설문을 게시할 수 있습니다.');
-  }
-  const opensAt = survey.opensAt ?? new Date().toISOString();
-  survey.opensAt = opensAt;
-  survey.stage = new Date(opensAt) > new Date() ? 'scheduled' : 'published';
-}
-
-/** 공개 예약을 취소하고 작성 중으로 돌린다. */
-export async function unscheduleSurvey(id: string): Promise<void> {
-  const survey = find(id);
-  if (survey.stage !== 'scheduled') {
-    throw new Error('예약된 설문만 취소할 수 있습니다.');
-  }
-  survey.stage = 'draft';
-}
-
-/** 학생 화면에 나가는 설문: 공개된 설문을 학생 화면 모양으로 바꾼다. features/surveys가 이 함수로 설문을 받는다. */
-export async function listPublishedSurveys(): Promise<Survey[]> {
-  return structuredClone(
-    surveys.flatMap(
-      ({
-        id,
-        title,
-        intro,
-        department,
-        audience,
-        collectsClass,
-        activity,
-        closesAt,
-        closedAt,
-        questions,
-        stage,
-        responses,
-        target,
-      }) =>
-        stage === 'published' && closesAt && activity
-          ? [
-              {
-                id,
-                title,
-                intro,
-                department,
-                audience,
-                collectsClass,
-                activity,
-                closesAt: closedAt ?? closesAt,
-                questions,
-                responses,
-                target,
-              },
-            ]
-          : [],
-    ),
-  );
-}
-
-function responsesOf(survey: AdminSurvey) {
-  let list = responses.get(survey.id);
-  if (!list) {
-    list = mockResponses(survey);
-    responses.set(survey.id, list);
-  }
-  return list;
-}
-
-function published(id: string) {
-  const survey = find(id);
-  if (survey.stage !== 'published') {
-    throw new Response('아직 공개하지 않은 설문입니다.', { status: 404 });
-  }
-  return survey;
-}
-
-/** 설문 결과: 설문과 제출된 응답 전체. 분석(요약·교차표)은 화면에서 계산한다. */
-export async function getSurveyResults(id: string): Promise<SurveyResults> {
-  const survey = published(id);
-  return structuredClone({ survey, responses: responsesOf(survey) });
+  const saved = await api<SurveyResponseBody>(`/surveys/${numericId(id)}`, {
+    method: 'PATCH',
+    body: {
+      title: draft.title.trim(),
+      intro: draft.intro.trim(),
+      activityId: draft.activity ? numericId(draft.activity.id) : null,
+      grades: gradesOf(draft.audience),
+      collectsClass: draft.collectsClass,
+      opensAt: draft.opensAt ?? null,
+      closesAt: draft.closesAt ?? null,
+      questions: draft.questions,
+    },
+  });
+  return saved.savedAt;
 }
 
 /**
- * 응답 받기 켜기·끄기. 끄면 마감일 전이어도 바로 마감되고 학생 화면에도 마감으로 보인다.
- * 마감일이 지난 설문은 다시 켤 수 없다.
+ * 게시. 시작일이 오늘 이후면 그날 공개되도록 예약되고, 아니면 바로 공개된다.
+ * 서버가 제목·연결 활동·마감일·문항을 확인하고, 모자라면 이유를 돌려준다.
  */
-export async function setAcceptingResponses(
+export async function scheduleSurvey(id: string): Promise<void> {
+  await api(`/surveys/${numericId(id)}/publish`, { method: 'POST' });
+}
+
+interface ResultsResponse {
+  survey: SurveyResponseBody;
+  respondents: number;
+  target: number;
+  participationRate: number;
+  daysLeft: number | null;
+  questions: QuestionResult[];
+}
+
+/** 설문 결과: 서버가 분석한 문항별 결과 */
+export async function getSurveyResults(id: string): Promise<SurveyResults> {
+  const [results, survey] = await Promise.all([
+    api<ResultsResponse>(`/surveys/${numericId(id)}/results`).catch(notFound),
+    getAdminSurvey(id),
+  ]);
+  return {
+    survey,
+    respondents: results.respondents,
+    target: results.target,
+    participationRate: results.participationRate,
+    daysLeft: results.daysLeft,
+    questions: results.questions,
+  };
+}
+
+interface ResponseRow {
+  id: string;
+  submittedAt: string;
+  durationSeconds: number | null;
+  grade: number | null;
+  classNumber: number | null;
+  answers: SurveyResponse['answers'];
+  excluded: boolean;
+}
+
+/** 결과 내보내기(CSV)용 응답 전체. 제출 순서대로. */
+export async function listResponsesForExport(
   id: string,
-  accepting: boolean,
-): Promise<void> {
-  const survey = published(id);
-  if (!accepting) {
-    survey.closedAt ??= new Date().toISOString();
-    return;
-  }
-  if (survey.closesAt && new Date(survey.closesAt) < new Date()) {
-    throw new Error('마감일이 지난 설문은 다시 열 수 없습니다.');
-  }
-  survey.closedAt = undefined;
-}
-
-export async function setResponseExcluded(
-  surveyId: string,
-  responseId: string,
-  excluded: boolean,
-): Promise<void> {
-  const response = responsesOf(published(surveyId)).find(
-    (item) => item.id === responseId,
+): Promise<SurveyResponse[]> {
+  const rows = await listAll<ResponseRow>(
+    `/surveys/${numericId(id)}/responses`,
   );
-  if (!response) throw new Error('응답을 찾을 수 없습니다.');
-  response.excluded = excluded;
-}
-
-/** 응답 하나를 지운다. 되돌릴 수 없다. 응답 번호는 그대로 둔다. */
-export async function deleteResponse(
-  surveyId: string,
-  responseId: string,
-): Promise<void> {
-  const survey = published(surveyId);
-  const list = responsesOf(survey).filter((item) => item.id !== responseId);
-  responses.set(survey.id, list);
-  survey.responses = list.length;
-}
-
-export async function deleteAllResponses(surveyId: string): Promise<void> {
-  const survey = published(surveyId);
-  responses.set(survey.id, []);
-  survey.responses = 0;
+  return rows.map((row, index) => ({
+    id: row.id,
+    number: index + 1,
+    submittedAt: row.submittedAt,
+    ...(row.durationSeconds != null && {
+      durationSeconds: row.durationSeconds,
+    }),
+    ...(row.grade != null && { grade: row.grade }),
+    ...(row.classNumber != null && { classNumber: row.classNumber }),
+    answers: row.answers,
+    excluded: row.excluded,
+  }));
 }
