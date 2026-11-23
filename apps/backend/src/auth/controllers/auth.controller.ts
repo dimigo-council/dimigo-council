@@ -5,22 +5,24 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   Req,
   Res,
   StandardSchemaValidationPipe,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { parseCookie } from 'cookie';
 import type { Request, Response } from 'express';
 import {
   emailCodeDtoSchema,
   emailDtoSchema,
   googleCallbackDtoSchema,
+  googleStartDtoSchema,
   onboardingDtoSchema,
   type EmailCodeDto,
   type EmailDto,
   type GoogleCallbackDto,
+  type GoogleStartDto,
   type OnboardingDto,
 } from '../dto/auth.dto.ts';
 import { AuthService } from '../providers/auth.service.ts';
@@ -50,7 +52,6 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly user: UserService,
-    private readonly config: ConfigService,
   ) {}
 
   @AllowPending()
@@ -67,8 +68,18 @@ export class AuthController {
 
   @Public()
   @Get('/signup/google')
-  async signupWithGoogle(@Res({ passthrough: true }) response: Response) {
-    const { url, state } = await this.auth.startGoogle('signup');
+  async signupWithGoogle(
+    @Query({
+      schema: googleStartDtoSchema,
+      pipes: [StandardSchemaValidationPipe],
+    })
+    query: GoogleStartDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { url, state } = await this.auth.startGoogle(
+      'signup',
+      query.redirectUri,
+    );
     response.cookie('oauth_state', state, {
       ...OAUTH_STATE_COOKIE_OPTIONS,
       maxAge: 10 * 60 * 1000,
@@ -93,8 +104,18 @@ export class AuthController {
 
   @Public()
   @Get('/login/google')
-  async loginWithGoogle(@Res({ passthrough: true }) response: Response) {
-    const { url, state } = await this.auth.startGoogle('login');
+  async loginWithGoogle(
+    @Query({
+      schema: googleStartDtoSchema,
+      pipes: [StandardSchemaValidationPipe],
+    })
+    query: GoogleStartDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { url, state } = await this.auth.startGoogle(
+      'login',
+      query.redirectUri,
+    );
     response.cookie('oauth_state', state, {
       ...OAUTH_STATE_COOKIE_OPTIONS,
       maxAge: 10 * 60 * 1000,
@@ -125,22 +146,7 @@ export class AuthController {
   ) {
     const state = parseCookie(request.headers.cookie ?? '')['oauth_state'];
     response.clearCookie('oauth_state', OAUTH_STATE_COOKIE_OPTIONS);
-    const callbackUrl = new URL(
-      this.config.getOrThrow<string>(
-        purpose === 'signup'
-          ? 'GOOGLE_SIGNUP_REDIRECT_URI'
-          : 'GOOGLE_LOGIN_REDIRECT_URI',
-      ),
-    );
-    callbackUrl.searchParams.set('code', body.code);
-    callbackUrl.searchParams.set('state', body.state);
-    if (body.iss) callbackUrl.searchParams.set('iss', body.iss);
-    const tokens = await this.auth.finishGoogle(
-      purpose,
-      callbackUrl,
-      body.state,
-      state,
-    );
+    const tokens = await this.auth.finishGoogle(purpose, body, state);
     response.cookie('refresh_token', tokens.refreshToken, {
       ...REFRESH_TOKEN_COOKIE_OPTIONS,
       maxAge: tokens.refreshMaxAge,

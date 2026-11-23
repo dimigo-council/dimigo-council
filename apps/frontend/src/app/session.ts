@@ -241,6 +241,13 @@ export function requireCouncil({ request }: { request: Request }) {
   return current?.isCouncil ? null : redirect('/');
 }
 
+/** 구성원·권한(/work/members): 학생회 임원과, 학생회가 아니어도 관리자 */
+export function requireCouncilOrAdmin({ request }: { request: Request }) {
+  const blocked = requireMember({ request });
+  if (blocked) return blocked;
+  return current?.isCouncil || current?.isAdmin ? null : redirect('/');
+}
+
 /** 로그인·회원가입 첫 화면: 이미 로그인했으면 홈으로 */
 export function redirectSignedIn() {
   if (!current) return null;

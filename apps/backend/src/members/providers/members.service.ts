@@ -103,6 +103,7 @@ const memberColumns = {
 // Constants are inlined so PostgreSQL types the bit operators as integer.
 const COUNCIL_BIT = sql.raw(String(Permission.isStudentCouncil));
 const hasCouncilBit = sql`(${users.permissions} & ${COUNCIL_BIT}) <> 0`;
+const lacksCouncilBit = sql`(${users.permissions} & ${COUNCIL_BIT}) = 0`;
 
 @Injectable()
 export class MembersService {
@@ -154,6 +155,11 @@ export class MembersService {
     return this.listUsers(
       and(
         isNotNull(users.onboardingCompletedAt),
+        query.council === undefined
+          ? undefined
+          : query.council
+            ? hasCouncilBit
+            : lacksCouncilBit,
         search
           ? or(ilike(users.name, search), ilike(users.email, search))
           : undefined,

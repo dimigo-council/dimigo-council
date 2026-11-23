@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { queryRowId, rowId } from '#/common/ids';
 import { departmentRoles } from '#/db/schema/index';
-import { paginationQuerySchema } from '#/common/pagination';
+import { paginationQuerySchema, queryBoolean } from '#/common/pagination';
 
 export const departmentDtoSchema = z.object({
   name: z.string().trim().min(1).max(40),
@@ -15,6 +15,8 @@ export type MemberListQuery = z.infer<typeof memberListQuerySchema>;
 
 export const userListQuerySchema = paginationQuerySchema.extend({
   search: z.string().trim().min(1).max(80).optional(),
+  /** true: council members only, false: everyone else. */
+  council: queryBoolean.optional(),
 });
 export type UserListQuery = z.infer<typeof userListQuerySchema>;
 

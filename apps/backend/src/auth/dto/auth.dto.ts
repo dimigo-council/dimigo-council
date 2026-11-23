@@ -10,6 +10,11 @@ export const emailCodeDtoSchema = emailDtoSchema.extend({
 });
 export type EmailCodeDto = z.infer<typeof emailCodeDtoSchema>;
 
+export const googleStartDtoSchema = z.object({
+  redirectUri: z.url(),
+});
+export type GoogleStartDto = z.infer<typeof googleStartDtoSchema>;
+
 export const googleCallbackDtoSchema = z.object({
   code: z.string().min(1),
   state: z.string().min(1),

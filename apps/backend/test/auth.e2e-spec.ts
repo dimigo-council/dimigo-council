@@ -82,8 +82,6 @@ describe('authentication routes (e2e)', () => {
   };
   const settings: Record<string, string> = {
     ACCESS_TOKEN_SECRET: 'a'.repeat(32),
-    GOOGLE_SIGNUP_REDIRECT_URI: 'http://localhost:5173/google/signup/callback',
-    GOOGLE_LOGIN_REDIRECT_URI: 'http://localhost:5173/google/login/callback',
   };
 
   beforeAll(async () => {
@@ -168,10 +166,14 @@ describe('authentication routes (e2e)', () => {
   });
 
   it('returns Google authorization URLs and completes the matching callback', async () => {
+    const redirectUri = 'http://localhost:5173/google/signup/callback';
+    await request(app.getHttpServer()).get('/auth/signup/google').expect(400);
     const start = await request(app.getHttpServer())
       .get('/auth/signup/google')
+      .query({ redirectUri })
       .expect(200);
     expect(start.body).toEqual({ url: 'https://accounts.google.com/example' });
+    expect(auth.startGoogle).toHaveBeenCalledWith('signup', redirectUri);
     expect(start.headers['set-cookie'][0]).toMatch(/^oauth_state=/);
     const callback = await request(app.getHttpServer())
       .post('/auth/signup/google/callback')
@@ -185,10 +187,7 @@ describe('authentication routes (e2e)', () => {
     expect(callback.body.accessToken).toBe(tokens.accessToken);
     expect(auth.finishGoogle).toHaveBeenCalledWith(
       'signup',
-      new URL(
-        'http://localhost:5173/google/signup/callback?code=code&state=state&iss=https%3A%2F%2Faccounts.google.com',
-      ),
-      'state',
+      { state: 'state', code: 'code', iss: 'https://accounts.google.com' },
       'state',
     );
     await request(app.getHttpServer())

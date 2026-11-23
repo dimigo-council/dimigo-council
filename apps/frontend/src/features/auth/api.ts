@@ -42,7 +42,9 @@ export async function verifyCode(flow: AuthFlow, email: string, code: string) {
 
 /** Google 로그인 주소로 이동한다. 서버가 OAuth state 쿠키를 함께 심는다. */
 export async function startGoogle(flow: AuthFlow) {
+  const redirectUri = `${window.location.origin}/google/${flow}/callback`;
   const { url } = await api<{ url: string }>(`/auth/${flow}/google`, {
+    query: { redirectUri },
     auth: false,
   });
   window.location.assign(url);

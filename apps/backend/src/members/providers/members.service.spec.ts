@@ -1,4 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { Permission } from '#/db/schema/index';
 import { mockDatabase } from '../../../test/mock-db.ts';
 import { MembersService, toMember } from './members.service.ts';
@@ -47,6 +49,28 @@ describe('toMember', () => {
 });
 
 describe('MembersService', () => {
+  it('filters the admin user list by the council bit', async () => {
+    const whereFor = async (council: boolean | undefined) => {
+      const mock = mockDatabase()
+        .on('select', 'users', [])
+        .on('select', 'users', [{ total: 0 }]);
+      await new MembersService(mock.database).listAllUsers({
+        page: 1,
+        pageSize: 20,
+        council,
+      });
+      const [rows, total] = mock.queries('select', 'users');
+      const sql = new PgDialect().sqlToQuery(rows.arg('where') as SQL).sql;
+      expect(new PgDialect().sqlToQuery(total.arg('where') as SQL).sql).toBe(
+        sql,
+      );
+      return sql;
+    };
+    expect(await whereFor(true)).toMatch(/& 4\) <> 0\)$/);
+    expect(await whereFor(false)).toMatch(/& 4\) = 0\)$/);
+    expect(await whereFor(undefined)).not.toContain('& 4');
+  });
+
   it('assigns departments only to council members', async () => {
     const mock = mockDatabase().on('select', 'users', [
       memberRow({ permissions: 0, departmentId: null, departmentName: null }),

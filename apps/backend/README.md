@@ -10,7 +10,7 @@ Run `npm install` from the repository root. Copy `.env.template` to `.env` in th
 - `ACCESS_TOKEN_SECRET`: random secret of at least 32 bytes for signing access JWTs.
 - `EMAIL_CODE_SECRET`: a different random secret of at least 32 bytes for hashing email codes.
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: the Google OAuth web client for school sign-in.
-- `GOOGLE_SIGNUP_REDIRECT_URI` and `GOOGLE_LOGIN_REDIRECT_URI`: frontend callback URLs; register both exact URLs as authorized redirect URIs for that Google client. For local development, use the `http://localhost:5173` values in `.env.template`.
+- `GOOGLE_REDIRECT_ORIGINS`: comma-separated frontend origins allowed to start Google sign-in (for example, `http://localhost:5173,https://app.example.com`). The frontend sends its current `/google/signup/callback` or `/google/login/callback` URL; register both exact callback URLs for each origin as authorized redirect URIs in the Google OAuth web client. Production origins must use HTTPS.
 - `GMAIL_SMTP_USER` and `GMAIL_APP_PASSWORD`: the sending Google account address and its app password. The server connects to `smtp.gmail.com` on port 465 using TLS.
 - `FRONTEND_ORIGIN`: the frontend's public origin (for example, `https://app.example.com`) when it calls the API on a different origin. This enables credentialed CORS for that exact origin. Leave it empty when using a same-origin reverse proxy.
 
@@ -26,7 +26,7 @@ All routes are under `/auth`. Email sign-up and login use a school email address
 
 | Route | Purpose |
 | --- | --- |
-| `GET /signup/google` and `GET /login/google` | Return `{ url }` for the client to open and set an OAuth state cookie. |
+| `GET /signup/google?redirectUri=...` and `GET /login/google?redirectUri=...` | Validate the frontend callback URL, return `{ url }` for the client to open, and set an OAuth state cookie. |
 | `POST /signup/google/callback` and `POST /login/google/callback` | Exchange Google's `code`, `state`, and optional `iss` response parameters from the frontend for app tokens. |
 | `POST /signup/email` and `POST /login/email` | Request an email code with `{ "email": "..." }`; return 202. |
 | `POST /signup/email/callback` and `POST /login/email/callback` | Exchange `{ "email": "...", "code": "123456" }` for tokens. |
@@ -37,7 +37,7 @@ All routes are under `/auth`. Email sign-up and login use a school email address
 | `POST /refresh` | Rotate the refresh token and return a new access token. |
 | `POST /logout` | Revoke the current session. |
 
-Google redirects the browser to `/google/signup/callback` or `/google/login/callback` on the frontend. The frontend POSTs the returned code and state to the matching API callback. The API verifies the OAuth state cookie and exchanges the code with Google. The Google client secret and PKCE verifier stay on the backend.
+Google redirects the browser to `/google/signup/callback` or `/google/login/callback` on the frontend origin sent when the flow began. The frontend POSTs the returned code and state to the matching API callback. The API verifies the OAuth state cookie, retrieves the stored redirect URI, and exchanges the code with Google. The Google client secret and PKCE verifier stay on the backend.
 
 Successful token exchanges return `{ accessToken, tokenType: "Bearer", expiresIn }` as JSON and set a `refresh_token` HTTP-only, Secure cookie scoped to `/auth/refresh`. Send the access token as `Authorization: Bearer <accessToken>` on protected requests. Access tokens expire after 15 minutes; refresh tokens expire after seven days. The guard verifies access tokens without a database lookup. Logging out deletes the database session and prevents refresh, while an already issued access token remains valid until it expires.
 
@@ -61,7 +61,7 @@ List routes take `page` (from 1) and `pageSize` (1 to 100, default 20) and retur
 | `POST /departments`, `PATCH /departments/:id` | Admin | Create or rename a department with `{ name }`. Names are unique. |
 | `DELETE /departments/:id` | Admin | Delete a department and its memberships. Activities, tasks, inquiries and surveys keep no department. |
 | `GET /members` | Council | List council members with their department, `role` (`member` or `head`), `position`, and the frontend `permission` label (`관리자`, `부서 관리`, `일반`). Filter with `departmentId`. |
-| `GET /admin/users` | Admin | List onboarded users, with an optional `search` on name or email. |
+| `GET /admin/users` | Admin | List onboarded users, with an optional `search` on name or email and `council=true` (or `false`) for council members only (or everyone else). |
 | `PUT /members/:userId/council` | Admin | Grant or revoke the council bit with `{ isStudentCouncil }`. Revoking also removes the department membership. |
 | `PUT /members/:userId/department` | Admin | Put a council member in a department with `{ departmentId, role, position }`. Each person belongs to one department. |
 | `DELETE /members/:userId/department` | Admin | Remove a member from their department. |

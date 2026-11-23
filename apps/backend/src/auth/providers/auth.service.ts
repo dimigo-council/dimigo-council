@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -11,7 +12,7 @@ import * as oidc from 'openid-client';
 import { DatabaseService } from '#/db/database.service';
 import { oauthFlows, sessions, users } from '#/db/schema/index';
 import { EmailCodeService } from './email-code.service.ts';
-import type { OnboardingDto } from '../dto/auth.dto.ts';
+import type { GoogleCallbackDto, OnboardingDto } from '../dto/auth.dto.ts';
 import {
   SCHOOL_DOMAIN,
   schoolEmail,
@@ -196,12 +197,36 @@ export class AuthService {
     return this.googleConfig;
   }
 
-  async startGoogle(purpose: Purpose): Promise<{ url: string; state: string }> {
-    const redirectUri = this.config.getOrThrow<string>(
-      purpose === 'signup'
-        ? 'GOOGLE_SIGNUP_REDIRECT_URI'
-        : 'GOOGLE_LOGIN_REDIRECT_URI',
-    );
+  private googleRedirectUri(purpose: Purpose, input: string): string {
+    const redirectUri = new URL(input);
+    const allowedOrigins = this.config
+      .getOrThrow<string>('GOOGLE_REDIRECT_ORIGINS')
+      .split(',')
+      .map((origin) => origin.trim());
+    if (
+      redirectUri.href !== input ||
+      redirectUri.pathname !== `/google/${purpose}/callback` ||
+      redirectUri.search ||
+      redirectUri.hash ||
+      redirectUri.username ||
+      redirectUri.password ||
+      (redirectUri.protocol !== 'https:' &&
+        !(
+          redirectUri.protocol === 'http:' &&
+          ['localhost', '127.0.0.1'].includes(redirectUri.hostname)
+        )) ||
+      !allowedOrigins.includes(redirectUri.origin)
+    ) {
+      throw new BadRequestException('Invalid Google redirect URI');
+    }
+    return redirectUri.href;
+  }
+
+  async startGoogle(
+    purpose: Purpose,
+    redirectUriInput: string,
+  ): Promise<{ url: string; state: string }> {
+    const redirectUri = this.googleRedirectUri(purpose, redirectUriInput);
     const config = await this.configuration();
     const state = oidc.randomState();
     const nonce = oidc.randomNonce();
@@ -231,10 +256,10 @@ export class AuthService {
 
   async finishGoogle(
     purpose: Purpose,
-    callbackUrl: URL,
-    state: string,
+    callback: GoogleCallbackDto,
     cookieState: string | undefined,
   ) {
+    const { state } = callback;
     if (!cookieState || state !== cookieState)
       throw new UnauthorizedException('Invalid Google sign-in state');
     const [flow] = await this.db
@@ -248,8 +273,10 @@ export class AuthService {
       )
       .returning();
     if (!flow) throw new UnauthorizedException('Google sign-in expired');
-    if (callbackUrl.origin + callbackUrl.pathname !== flow.redirectUri)
-      throw new UnauthorizedException('Invalid Google callback URL');
+    const callbackUrl = new URL(flow.redirectUri);
+    callbackUrl.searchParams.set('code', callback.code);
+    callbackUrl.searchParams.set('state', state);
+    if (callback.iss) callbackUrl.searchParams.set('iss', callback.iss);
     const config = await this.configuration();
     const tokens = await oidc.authorizationCodeGrant(config, callbackUrl, {
       pkceCodeVerifier: flow.codeVerifier,

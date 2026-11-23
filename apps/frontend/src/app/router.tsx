@@ -5,10 +5,11 @@ import {
   type RouteObject,
 } from 'react-router';
 import { RouteErrorPage } from '../pages/RouteErrorPage.tsx';
-import { AppLayout } from './AppLayout.tsx';
+import { AppLayout, CouncilOrStudentLayout } from './AppLayout.tsx';
 import {
   redirectSignedIn,
   requireCouncil,
+  requireCouncilOrAdmin,
   requireMember,
   requirePending,
 } from './session.ts';
@@ -282,9 +283,12 @@ const councilRoutes: RouteObject[] = [
   },
   sharedPages.records,
   sharedPages.record,
+];
+
+/** 구성원·권한: GNB에는 없고 주소와 프로필 메뉴(관리자)로 들어간다. */
+const memberRoutes: RouteObject[] = [
   {
-    // 구성원·권한: GNB에는 없고 주소로만 들어간다.
-    path: 'members',
+    index: true,
     lazy: async () => {
       const m = await import('../features/members/MemberListPage.tsx');
       return { Component: m.MemberListPage, loader: m.memberListLoader };
@@ -321,6 +325,20 @@ export const router = createBrowserRouter([
       {
         errorElement: <RouteErrorPage />,
         children: guarded(councilRoutes, requireCouncil),
+      },
+    ],
+  },
+  {
+    // 구성원·권한은 학생회 임원과 관리자가 들어온다. 관리자는 학생회가 아니어도 부서와
+    // 학생회 권한을 관리해야 하므로, /work의 다른 화면과 달리 따로 가드를 둔다.
+    path: 'work/members',
+    loader: requireCouncilOrAdmin,
+    element: <CouncilOrStudentLayout />,
+    HydrateFallback: () => null,
+    children: [
+      {
+        errorElement: <RouteErrorPage />,
+        children: guarded(memberRoutes, requireCouncilOrAdmin),
       },
     ],
   },

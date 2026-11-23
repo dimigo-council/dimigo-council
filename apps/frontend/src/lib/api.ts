@@ -205,6 +205,8 @@ const koreanMessages: Record<string, string> = {
     'Google 로그인 시간이 지났어요. 처음부터 다시 시도해 주세요.',
   'Invalid Google callback URL':
     'Google 로그인 주소가 맞지 않아요. 처음부터 다시 시도해 주세요.',
+  'Invalid Google redirect URI':
+    'Google 로그인 주소가 허용되지 않았어요. 설정을 확인해 주세요.',
   'A verified school Google account is required':
     '인증된 @dimigo.hs.kr Google 계정만 사용할 수 있어요.',
   'Complete onboarding first': '회원가입 정보를 먼저 입력해 주세요.',
@@ -227,6 +229,9 @@ const koreanMessages: Record<string, string> = {
     '익명은 전체 공개 질의에서만 고를 수 있어요.',
   '담당자 must be a student council member': '담당자는 학생회 임원이어야 해요.',
   'User is not a student council member': '학생회 임원이 아니에요.',
+  'Department name already exists': '이미 있는 부서 이름이에요.',
+  'Department not found': '부서를 찾지 못했어요. 새로고침해 주세요.',
+  'User not found': '사용자를 찾지 못했어요. 새로고침해 주세요.',
   Forbidden: '권한이 없어요.',
   Unauthorized: '다시 로그인해 주세요.',
 };

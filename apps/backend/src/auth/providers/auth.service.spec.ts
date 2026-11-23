@@ -81,6 +81,43 @@ describe('AuthService Google account lookup', () => {
   });
 });
 
+describe('AuthService Google redirect URI', () => {
+  const service = new AuthService(
+    {} as DatabaseService,
+    {
+      getOrThrow: () => 'http://localhost:5173,https://council.example.com',
+    } as unknown as ConfigService,
+    {} as EmailCodeService,
+  );
+
+  it('accepts the configured origin and exact callback for each purpose', () => {
+    expect(
+      service['googleRedirectUri'](
+        'signup',
+        'http://localhost:5173/google/signup/callback',
+      ),
+    ).toBe('http://localhost:5173/google/signup/callback');
+    expect(
+      service['googleRedirectUri'](
+        'login',
+        'https://council.example.com/google/login/callback',
+      ),
+    ).toBe('https://council.example.com/google/login/callback');
+  });
+
+  it.each([
+    'https://other.example.com/google/login/callback',
+    'https://council.example.com/google/signup/callback',
+    'https://council.example.com/google/login/callback?next=evil',
+    'http://council.example.com/google/login/callback',
+    'https://council.example.com/google/login/callback#fragment',
+  ])('rejects an unapproved callback: %s', (redirectUri) => {
+    expect(() => service['googleRedirectUri']('login', redirectUri)).toThrow(
+      'Invalid Google redirect URI',
+    );
+  });
+});
+
 describe('AuthService tokens', () => {
   it('signs an updated user snapshot for the existing session after onboarding', async () => {
     const userId = '00000000-0000-0000-0000-000000000001';

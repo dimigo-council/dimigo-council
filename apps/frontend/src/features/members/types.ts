@@ -24,3 +24,20 @@ export interface Member {
   customPosition?: string;
   permission: MemberPermission;
 }
+
+/** 부서 안 역할. head(부서장)는 권한 '부서 관리', member(부서원)는 '일반'으로 보인다. */
+export type DepartmentRole = 'member' | 'head';
+
+/** 관리자 화면의 사용자. 학생회가 아닌 사람도 있다. */
+export interface ManagedUser extends Omit<
+  Member,
+  'department' | 'customPosition'
+> {
+  email: string;
+  department: DepartmentRef | null;
+  role: DepartmentRole | null;
+  /** 따로 정한 직책 (없으면 null) */
+  customPosition: string | null;
+  isAdmin: boolean;
+  isStudentCouncil: boolean;
+}

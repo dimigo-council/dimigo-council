@@ -488,6 +488,7 @@ function ProfileButton({ mode }: { mode: 'student' | 'council' }) {
           ) : (
             <Link to="/work">학생회 화면으로</Link>
           ))}
+        {session.isAdmin && <Link to="/work/members">구성원·권한</Link>}
         <button type="button" onClick={() => void onLogout()}>
           로그아웃
         </button>
@@ -565,4 +566,13 @@ export function AppLayout({ mode }: { mode: AppMode }) {
       <SiteFooter />
     </Shell>
   );
+}
+
+/**
+ * 학생회 임원에게는 학생회 화면 틀, 학생회가 아닌 관리자에게는 학생 화면 틀.
+ * 학생회가 아닌 관리자는 학생회 메뉴의 화면에 들어갈 수 없다.
+ */
+export function CouncilOrStudentLayout() {
+  const session = useSession();
+  return <AppLayout mode={session.isCouncil ? 'council' : 'student'} />;
 }

@@ -117,6 +117,19 @@ describe('members and departments routes (e2e)', () => {
       .set('Authorization', tokens.admin)
       .expect(200);
     await request(app.getHttpServer())
+      .get('/admin/users?council=true&pageSize=100')
+      .set('Authorization', tokens.admin)
+      .expect(200);
+    expect(members.listAllUsers).toHaveBeenLastCalledWith({
+      council: true,
+      page: 1,
+      pageSize: 100,
+    });
+    await request(app.getHttpServer())
+      .get('/admin/users?council=yes')
+      .set('Authorization', tokens.admin)
+      .expect(400);
+    await request(app.getHttpServer())
       .put(`/members/${ids.student}/council`)
       .set('Authorization', tokens.admin)
       .send({ isStudentCouncil: true })
