@@ -21,6 +21,7 @@ RUN npm ci --omit=dev --workspace @dimigo-council/backend --include-workspace-ro
     && npm cache clean --force
 
 COPY --from=build /app/apps/backend/dist apps/backend/dist
+COPY --from=build /app/apps/backend/drizzle apps/backend/drizzle
 USER node
 EXPOSE 3000
 CMD ["node", "apps/backend/dist/main.js"]

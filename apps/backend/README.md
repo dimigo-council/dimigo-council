@@ -18,7 +18,7 @@ Run `sh apps/backend/scripts/generate-secrets.sh` from the repository root to ge
 
 The sender uses [Gmail SMTP](https://support.google.com/mail/answer/7104828?hl=en-GB) with [Google's app password](https://support.google.com/accounts/answer/185833?hl=en). Keep the app password and both application secrets out of Git.
 
-Apply migrations with `npm --workspace @dimigo-council/backend run db:migrate`, then start the API with `npm --workspace @dimigo-council/backend run dev`.
+Start the API with `npm --workspace @dimigo-council/backend run dev`. The API applies pending migrations before it starts serving requests or running scheduled jobs. The production image includes the migration files and does the same on startup. The database user needs permission to create the `drizzle` schema and application tables. You can also apply migrations manually with `npm --workspace @dimigo-council/backend run db:migrate`.
 
 ## Authentication API
 
