@@ -12,6 +12,10 @@ const Root = styled.span`
     width: auto;
     height: 100%;
   }
+
+  ${({ theme }) =>
+    theme.mode === 'dark' &&
+    `svg path[fill="#20202E"] { fill: ${theme.colors.core.glyph.primary}; }`}
 `;
 
 /** GNB·푸터의 학생자치회 로고 (kit Logo/COUNCIL color 32) */
