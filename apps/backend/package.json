@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run start:dev",
-    "build": "nest build",
+    "build": "npm run check:auth-routes && nest build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -16,7 +16,8 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "oxlint --type-aware src/ test/",
+    "lint": "npm run check:auth-routes && oxlint --type-aware src/ test/",
+    "check:auth-routes": "node scripts/check-public-auth.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
