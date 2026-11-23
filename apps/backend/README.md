@@ -10,7 +10,7 @@ Run `npm install` from the repository root. Copy `.env.template` to `.env` in th
 - `ACCESS_TOKEN_SECRET`: random secret of at least 32 bytes for signing access JWTs.
 - `EMAIL_CODE_SECRET`: a different random secret of at least 32 bytes for hashing email codes.
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: the Google OAuth web client for school sign-in.
-- `GOOGLE_REDIRECT_ORIGINS`: comma-separated frontend origins allowed to start Google sign-in (for example, `http://localhost:5173,https://app.example.com`). The frontend sends its current `/google/signup/callback` or `/google/login/callback` URL; register both exact callback URLs for each origin as authorized redirect URIs in the Google OAuth web client. Production origins must use HTTPS.
+- Google sign-in uses the frontend's current `/google/signup/callback` or `/google/login/callback` URL. Register both exact callback URLs for each frontend origin as authorized redirect URIs in the Google OAuth web client. No backend redirect URL setting is needed.
 - `GMAIL_SMTP_USER` and `GMAIL_APP_PASSWORD`: the sending Google account address and its app password. The server connects to `smtp.gmail.com` on port 465 using TLS.
 - `FRONTEND_ORIGIN`: the frontend's public origin (for example, `https://app.example.com`) when it calls the API on a different origin. This enables credentialed CORS for that exact origin. Leave it empty when using a same-origin reverse proxy.
 
@@ -26,7 +26,7 @@ All routes are under `/auth`. Email sign-up and login use a school email address
 
 | Route | Purpose |
 | --- | --- |
-| `GET /signup/google?redirectUri=...` and `GET /login/google?redirectUri=...` | Validate the frontend callback URL, return `{ url }` for the client to open, and set an OAuth state cookie. |
+| `GET /signup/google?redirectUri=...` and `GET /login/google?redirectUri=...` | Return `{ url }` for the client to open and set an OAuth state cookie. |
 | `POST /signup/google/callback` and `POST /login/google/callback` | Exchange Google's `code`, `state`, and optional `iss` response parameters from the frontend for app tokens. |
 | `POST /signup/email` and `POST /login/email` | Request an email code with `{ "email": "..." }`; return 202. |
 | `POST /signup/email/callback` and `POST /login/email/callback` | Exchange `{ "email": "...", "code": "123456" }` for tokens. |

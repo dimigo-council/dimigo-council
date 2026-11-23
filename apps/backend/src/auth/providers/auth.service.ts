@@ -1,6 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -197,36 +196,10 @@ export class AuthService {
     return this.googleConfig;
   }
 
-  private googleRedirectUri(purpose: Purpose, input: string): string {
-    const redirectUri = new URL(input);
-    const allowedOrigins = this.config
-      .getOrThrow<string>('GOOGLE_REDIRECT_ORIGINS')
-      .split(',')
-      .map((origin) => origin.trim());
-    if (
-      redirectUri.href !== input ||
-      redirectUri.pathname !== `/google/${purpose}/callback` ||
-      redirectUri.search ||
-      redirectUri.hash ||
-      redirectUri.username ||
-      redirectUri.password ||
-      (redirectUri.protocol !== 'https:' &&
-        !(
-          redirectUri.protocol === 'http:' &&
-          ['localhost', '127.0.0.1'].includes(redirectUri.hostname)
-        )) ||
-      !allowedOrigins.includes(redirectUri.origin)
-    ) {
-      throw new BadRequestException('Invalid Google redirect URI');
-    }
-    return redirectUri.href;
-  }
-
   async startGoogle(
     purpose: Purpose,
-    redirectUriInput: string,
+    redirectUri: string,
   ): Promise<{ url: string; state: string }> {
-    const redirectUri = this.googleRedirectUri(purpose, redirectUriInput);
     const config = await this.configuration();
     const state = oidc.randomState();
     const nonce = oidc.randomNonce();
