@@ -93,7 +93,7 @@ export async function saveSurveyDraft(
       title: draft.title.trim(),
       intro: draft.intro.trim(),
       activityId: draft.activity ? numericId(draft.activity.id) : null,
-      grades: gradesOf(draft.audience),
+      grades: draft.collectsClass ? gradesOf(draft.audience) : [1, 2, 3],
       collectsClass: draft.collectsClass,
       opensAt: draft.opensAt ?? null,
       closesAt: draft.closesAt ?? null,

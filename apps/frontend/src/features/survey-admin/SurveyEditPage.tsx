@@ -298,7 +298,9 @@ function SurveyEditor({
                 title="학년/반 비수집"
                 checked={!draft.collectsClass}
                 disabled={readOnly}
-                onChange={() => update({ collectsClass: false })}
+                onChange={() =>
+                  update({ collectsClass: false, audience: '전교생' })
+                }
               />
               <OptionCard
                 name="collects-class"
@@ -309,35 +311,37 @@ function SurveyEditor({
                 onChange={() => update({ collectsClass: true })}
               />
             </S.RadioGroup>
-            <S.Field>
-              <span id="grades-label">응답 학년</span>
-              <S.GradePicker role="group" aria-labelledby="grades-label">
-                {allGrades.map((grade) => {
-                  const on = grades.includes(grade);
-                  return (
-                    <Option
-                      key={grade}
-                      role="checkbox"
-                      aria-checked={on}
-                      selected={on}
-                      disabled={readOnly || (on && grades.length === 1)}
-                      onClick={() =>
-                        update({
-                          audience: audienceOf(
-                            on
-                              ? grades.filter((g) => g !== grade)
-                              : [...grades, grade].sort((a, b) => a - b),
-                          ),
-                        })
-                      }
-                    >
-                      {grade}학년
-                    </Option>
-                  );
-                })}
-              </S.GradePicker>
-              <p>선택한 학년의 학생만 응답할 수 있어요.</p>
-            </S.Field>
+            {draft.collectsClass && (
+              <S.Field>
+                <span id="grades-label">응답 학년</span>
+                <S.GradePicker role="group" aria-labelledby="grades-label">
+                  {allGrades.map((grade) => {
+                    const on = grades.includes(grade);
+                    return (
+                      <Option
+                        key={grade}
+                        role="checkbox"
+                        aria-checked={on}
+                        selected={on}
+                        disabled={readOnly || (on && grades.length === 1)}
+                        onClick={() =>
+                          update({
+                            audience: audienceOf(
+                              on
+                                ? grades.filter((g) => g !== grade)
+                                : [...grades, grade].sort((a, b) => a - b),
+                            ),
+                          })
+                        }
+                      >
+                        {grade}학년
+                      </Option>
+                    );
+                  })}
+                </S.GradePicker>
+                <p>선택한 학년의 학생만 응답할 수 있어요.</p>
+              </S.Field>
+            )}
             {problems.length > 0 && (
               <div role="alert">
                 {problems.map((problem) => (
