@@ -20,7 +20,7 @@ The sender uses [Gmail SMTP](https://support.google.com/mail/answer/7104828?hl=e
 
 Start the API with `npm --workspace @dimigo-council/backend run dev`. The API applies pending migrations before it starts serving requests or running scheduled jobs. The production image includes the migration files and does the same on startup. The database user needs permission to create the `drizzle` schema and application tables. You can also apply migrations manually with `npm --workspace @dimigo-council/backend run db:migrate`.
 
-The API writes request logs to the console through Nest's logger. Each completed request records its method, path, response status, and duration. Query strings, request bodies, cookies, and authorization headers are not logged. Responses with 4xx statuses use the warning level; 5xx responses use the error level.
+The API writes Dimion-style request logs to the console and a `requests` database table. Each completed request records the client address, user agent, method, path, HTTP version, response status, authenticated user, and duration. Query strings, request bodies, cookies, and authorization headers are not logged. A database logging failure is reported without changing the HTTP response.
 
 ## Authentication API
 

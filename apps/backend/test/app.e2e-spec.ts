@@ -5,18 +5,23 @@ import { App } from 'supertest/types.js';
 import { vi } from 'vitest';
 import { AppModule } from './../src/app.module.ts';
 import { DatabaseService } from './../src/db/database.service.ts';
+import { requests } from './../src/db/schema/index.ts';
 import { configureCors } from './../src/cors.ts';
 import { configureRequestLogging } from './../src/request-logging.ts';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
+  let insert: ReturnType<typeof vi.fn>;
+  let values: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    values = vi.fn().mockResolvedValue(undefined);
+    insert = vi.fn().mockReturnValue({ values });
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(DatabaseService)
-      .useValue({})
+      .useValue({ db: { insert } })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -32,23 +37,47 @@ describe('AppController (e2e)', () => {
       .expect('Hello World!');
   });
 
-  it('logs the method, path, status, and duration without query values', async () => {
+  it('logs Dimion-style request details to the console and database', async () => {
     const log = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-    const warn = vi
-      .spyOn(Logger.prototype, 'warn')
-      .mockImplementation(() => {});
 
-    await request(app.getHttpServer()).get('/?token=secret').expect(200);
-    await request(app.getHttpServer()).get('/missing?token=secret').expect(404);
+    await request(app.getHttpServer())
+      .get('/?token=secret')
+      .set('User-Agent', 'logger-test')
+      .set('X-Forwarded-For', '203.0.113.10, 192.0.2.1')
+      .expect(200);
 
     expect(log).toHaveBeenCalledWith(
-      expect.stringMatching(/^GET \/ 200 \d+\.\dms$/),
+      expect.stringMatching(
+        /^From 203\.0\.113\.10 >  192\.0\.2\.1 through .+ \(logger-test\) - Requested "GET \/ HTTP\/1\.1" \| Responded with HTTP 200 by uid\{unknown\} \+\d+ms$/,
+      ),
     );
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringMatching(/^GET \/missing 404 \d+\.\dms$/),
+    expect(insert).toHaveBeenCalledWith(requests);
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ip: expect.any(String),
+        userAgent: 'logger-test',
+        reqMethod: 'GET',
+        originURL: '/',
+        httpVersion: 'HTTP/1.1',
+        statusCode: 200,
+        authorization: 'unknown',
+        durationMs: expect.any(Number),
+      }),
     );
     expect(log.mock.calls.flat().join(' ')).not.toContain('secret');
-    expect(warn.mock.calls.flat().join(' ')).not.toContain('secret');
+    expect(JSON.stringify(values.mock.calls)).not.toContain('secret');
+  });
+
+  it('reports database logging failures without failing the request', async () => {
+    const error = new Error('database unavailable');
+    values.mockRejectedValueOnce(error);
+    const logError = vi
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
+
+    await request(app.getHttpServer()).get('/').expect(200);
+
+    expect(logError).toHaveBeenCalledWith('Failed to log request to DB', error);
   });
 
   it('allows credentialed preflight requests from the configured frontend only', async () => {

@@ -116,6 +116,22 @@ export const emailCodes = pgTable(
   ],
 );
 
+/** HTTP access log, written after each response finishes. */
+export const requests = pgTable('requests', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  ip: text('ip').notNull(),
+  userAgent: text('user_agent'),
+  reqMethod: text('req_method').notNull(),
+  originURL: text('origin_url').notNull(),
+  httpVersion: text('http_version').notNull(),
+  statusCode: integer('status_code').notNull(),
+  authorization: text('authorization').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  durationMs: integer('duration_ms').notNull(),
+});
+
 /** Builds `column IN ('a', 'b')` for a CHECK constraint from a list of allowed values. */
 function oneOf(column: AnyColumn, values: readonly string[]) {
   return sql`${column} IN (${sql.join(
